@@ -1,0 +1,72 @@
+==Getting started==
+
+Put the following in your startup (~/.emacs) file:
+
+ (require 'gimp-init)
+
+That file sets up some hooks to only load the stuff once needed.  Edit
+the file to be consistent with your setup (load-paths an stuff).
+
+Byte compile gimp.el (and optionally scheme-complete.el).
+
+Put the file emacs-interaction.scm (a scheme file that ought to be
+loaded for the Gimp to serve us some proper feedback) in
+
+  ~/.gimp-2.4/scripts/
+
+... or in another directory loaded by the Gimp.
+
+On Linux, BSDs and Macs, a symbolic link works fine too (that's what I
+do to keep my cvs tree nice in one place).
+
+Now run M-x run-gimp to start the Gimp and its console within Emacs. This takes a while,
+so just be patient. Run it with a prefix arg, i.e. C-u M-x run-gimp, to start up the
+Gimp without a graphical user interface.
+
+To inquire about gimp-specific keybindings in either `inferior-gimp-mode', `gimp-mode'
+or `gimp-help-mode', press C-c? respectively ?.
+
+==Not only for fu==
+
+See the functions `gimp-search-fu', `gimp-search-core-function' and
+`gimp-search-plug-in-file'.
+
+`gimp-search-fu' searches the source for script-fu functions
+`gimp-search-plug-in-file' searches the source file of specified plug-in
+`gimp-search-core-function' tries to find the source definition for core gimp functions.
+
+These functions need the variables `gimp-rel-fu-dir' and `gimp-src-dir' to be set.
+
+==Caveats==
+
+I only have had very little time to test this on a win32 machine. It did not work. I do
+not now about its behaviour on OSX.
+
+Newly created gimp-functions are not available in completion candidates during
+the same session.
+
+I have not yet written a single script-fu file to test this mode. Please give
+me something to work on.
+
+==ToDo==
+
+Make completion user-definable, as in a list of form
+
+   ((test . list-or-function)...)
+
+==Related==
+
+TIP on using `emacs-w3m' to browse gimp documentation:
+
+To use emacs-w3m as the browser for help files from within the Gimp, put the
+following in your .gimprc:
+
+(help-browser web-browser)
+(web-browser "emacsclient -e '(w3m-browse-url \"%s\")'")
+
+and (server-start) in your .emacs
+
+Browsing the help with emacs-w3m is very nice, esp. since you can make use of the
+ubiquitous w3m-scroll-down-or-previous-url, w3m-scroll-up-or-next-url (SPACE) and
+w3m-scroll-down-or-previous-url (b)
+
