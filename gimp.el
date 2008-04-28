@@ -31,8 +31,20 @@
 ;; (dedicated buffer) or sparse (echoed)
 
 ;; - other documentation
+e-complete.el by Alex
+;;  Shinn if you want something alike for core scheme functions
+;;  too.
+
+;; - extensive Gimp Procedural Browser documentation lookup, either full
+;; (dedicated buffer) or sparse (echoed)
+
+;; - other documentation
 
 ;; - poor mans source code browsing
+
+;; ToDo:
+
+;; - returning empty list give args out of range error
 
 ;; Requirements
 (require 'cmuscheme)
@@ -56,7 +68,8 @@
   "Completion hash table.")
 (defvar gimp-help-history ()
   "History cache for Gimp Help")
-(eval-when (compile load) (defconst gimpeldir "~/.gimpel"))
+(defcustom gimpeldir "~/.gimpel" 
+  "Directory to store gimp elisp files (including caches)")
 
 ;; High level interactive gimp-functions. These should be kept to a bare minimum, and
 ;; enough to get one started.
@@ -88,9 +101,9 @@ Prefix argument NO-GUI means: do not start the GUI."
 
 (defun gimp-quit ()
   (interactive)
+  (gimp-save-caches)
   (gimp-eval-to-string "(gimp-quit 0)" t)
   (kill-buffer "*Gimp*")
-  (gimp-save-caches)
   (message "Gimp process ended."))
 
 (defun gimp-open (imgs)
@@ -116,7 +129,7 @@ Return the Gimp image number(s) in a list."
 The rel in -rel- stands for released."
   :group 'gimp)
 
-(defcustom gimp-src-dir "/home/sharik/src/gimp-2.3.13/"
+(defcustom gimp-src-dir "/home/sharik/src/gimp-2.4/"
   "Source directory for the Gimp"
   :group 'gimp)
 
@@ -130,7 +143,8 @@ The rel in -rel- stands for released."
   "Alist of gimp documentation URLs"
   :group 'gimp)
 
-(defconst gimp-interactive t "Provide interaction with inferior gimp process?
+(defconst gimp-interactive t
+  "Provide interaction with inferior gimp process?
 Leave this a non-nil-val; this might turn into a defcustom one time or
 another.  Now best left at the non-nil value.")
 
@@ -175,7 +189,7 @@ another.  Now best left at the non-nil value.")
     (define-key m "q" 'bury-buffer)
     (define-key m "?" 'gimp-help-help)
     (define-key m "n" 'next-line)
-    (define-key m "p" 'previous-line)
+    (define-key m "p" 'gimp-help-previous-line-and-show)
     (define-key m "r" 'run-gimp)
     (define-key m "d" 'gimp-documentation)
     (define-key m "s" 'gimp-search)
@@ -192,10 +206,14 @@ another.  Now best left at the non-nil value.")
   (cond  ((eq major-mode 'gimp-help-mode)
           (gimp-help-describe-procedure-at-point)
           (unless (= (point-at-eol) (point-max)) (next-line)))
-         ((or (gimp-in-string-p)
-              (and (not (looking-back " ")) (looking-at ")")))
-          (self-insert-command n))
-         (t (gimp-doc))))
+	 (t (self-insert-command n)
+	    (gimp-doc))
+;;          ((or (gimp-in-string-p)
+;; 	      (gimp-in-comment-p)
+;;               (and (not (looking-back " ")) (looking-at "[()]")))
+;;           (self-insert-command n))
+;;          (t (gimp-doc))
+	 ))
 
 ;;From "http://lispy.wordpress.com/2007/12/27/building-a-better-mapcro/":
 (defmacro gimp-mapcro (macro &rest args)
@@ -459,7 +477,8 @@ Use `outline-mode' commands to navigate and fold stuff."
   (interactive)
   (let* ((hist (mapcar (lambda (s) (symbol-name (car s))) gimp-pdb-desc-cache))
          (sym (gimp-intern (or (gimp-procedure-at-point)
-                               (car (member (gimp-fnsym-in-current-sexp) gimp-pdb-cache))
+                               (car (member (symbol-name 
+					     (gimp-fnsym-in-current-sexp)) gimp-pdb-cache))
                                (completing-read "Procedure: " gimp-pdb-cache nil t
                                                 (symbol-name (symbol-at-point))
                                                 'hist))))
@@ -621,6 +640,14 @@ Use `outline-mode' commands to navigate and fold stuff."
       (beginning-of-defun)
       (let ((parses (parse-partial-sexp (point) orig)))
         (nth 3 parses)))))
+
+(defun gimp-in-comment-p ()
+  "Is (point) in a string?"
+  (let ((orig (point)))
+    (save-excursion
+      (beginning-of-defun)
+      (let ((parses (parse-partial-sexp (point) orig)))
+        (nth 4 parses)))))
 
 ;; Completion
 (defun gimp-indent-and-complete ()
@@ -691,7 +718,7 @@ Optional argument LIJST specifies a list of completion candidates."
                  (completion (try-completion pattern lijst nil)))
             (cond ((eq completion t))
                   ((null completion)
-                   (message "Can't find completion for \"%s\"" pattern)
+;                   (message "Can't find completion for \"%s\"" pattern)
                    (ding))
                   ((not (string= pattern completion))
                    (delete-region beg end)
@@ -1039,6 +1066,33 @@ wrong char at the minibuffer prompt."
      (insert "\"\"")                      ;"side effect"
      (forward-char -1)))
   ("" . nil)))
+
+;; snippets
+  (snippet-with-abbrev-table
+   'gimp-mode-abbrev-table
+   ("reg" . "(define ($${name}))
+ 
+
+\(script-fu-register \"$${name}\"
+                    _\"$${menu-name (use _ before shortcut letter!) }\"
+                    _\"$${hint}\"
+                    \"$${author} ($${email})\"
+                    \"$${author}\"
+                    \"$${date}\"
+                    \"\")
+
+
+\(script-fu-menu-register \"$${name}\"
+                         _\"<Toolbox>/Xtns/Script-Fu\")"
+					))
+
+  (add-hook 'gimp-mode-hook
+	    (lambda ()
+	      (abbrev-mode 1)
+	      ;; This line is not in the documentation of snippet.el, but seems to be
+	      ;; essential for various modes (not for python-mode though, which serves as
+	      ;; the example mode in said documentation)
+	      (setq local-abbrev-table gimp-mode-abbrev-table)))
 
 (provide 'gimp)
 ;;; gimp.el ends here
