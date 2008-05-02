@@ -177,10 +177,10 @@ Return the Gimp image number(s) in a list."
   :group 'multimedia
   :group 'languages)
 
-(defcustom gimp-rel-fu-dir "/usr/share/gimp/2.0/scripts/"
-  "Directory of scripts that come with the Gimp. 
-The rel in -rel- stands for released."
-  :group 'gimp)
+;; (defcustom gimp-rel-fu-dir "/usr/share/gimp/2.0/scripts/"
+;;   "Directory of scripts that come with the Gimp. 
+;; The rel in -rel- stands for released."
+;;   :group 'gimp)
 
 (defcustom gimp-src-dir (expand-file-name "~/src/gimp-2.4/")
   "Source directory for the Gimp"
@@ -937,8 +937,7 @@ If a procedure, cache the result in `gimp-pdb-desc-cache'"
 
 ;; Find source of stuff that comes with the Gimp:
 (defun gimp-search-fu ()
-  "Search for definition of script-fu procedure.
-Needs the variable `gimp-rel-fu-dir' to be set."
+  "Search for definition of script-fu procedure."
   (interactive)
   (save-match-data
     (let* ((proc 
@@ -951,8 +950,8 @@ Needs the variable `gimp-rel-fu-dir' to be set."
 			      (lambda (thing) 
 				(string-match "^script-fu-" thing)) t)))
            (file
-	    (format "%s/%s.scm"
-		    gimp-rel-fu-dir
+	    (format "%s/scripts/%s.scm"
+		    (in-gimp gimp-data-dir)
 		    (replace-regexp-in-string "^script-fu-" "" proc))))
       (when 
 	  (and proc 
@@ -961,8 +960,8 @@ Needs the variable `gimp-rel-fu-dir' to be set."
 			  (shell-command-to-string
 			   (apply 'format
 				  "grep -rm1 -l %s %s/* ~/.gimp-%s.%s/scripts/*"
-				  "script-fu-sunray"
-				  gimp-rel-fu-dir
+				  file
+				  (format "%s/scripts/" (in-gimp gimp-data-dir))
 				  (destructuring-bind (v maj min rev)
 				      (gimp-version)
 				    (list maj min))))))
@@ -991,8 +990,7 @@ Needs the variable `gimp-src-dir' to be set."
 			      (lambda (thing)
 				(string-match "^plug-in-" thing))
 			      nil (gimp-procedure-at-point t))
-	     (concat gimp-src-dir "/plug-ins/")
-	     ))
+	     (concat gimp-src-dir "/plug-ins/")))
     0 -1)))
 
 (defun gimp-search-core-function ()

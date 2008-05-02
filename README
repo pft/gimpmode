@@ -1,8 +1,10 @@
 ==Getting started==
 
+Unpack the tar file. I'd put it in ~/.emacs.d/
+
 Put the following in your startup (~/.emacs) file:
 
- (require 'gimp-init)
+ (load "/path/to/gimp-init.el")
 
 That file sets up some hooks to only load the stuff once needed.  Edit
 the file to be consistent with your setup (load-paths an stuff).
@@ -19,14 +21,16 @@ loaded for the Gimp to serve us some proper feedback) in
 On Linux, BSDs and Macs, a symbolic link works fine too (that's what I
 do to keep my cvs tree nice in one place).
 
-Now run M-x run-gimp to start the Gimp and its console within Emacs. This takes a while,
-so just be patient. Run it with a prefix arg, i.e. C-u M-x run-gimp, to start up the
-Gimp without a graphical user interface.
+Now run M-x run-gimp to start the Gimp and its console within
+Emacs. This takes a little while (just a little longer than the
+graphical start-up phase), so just be patient. See the customization
+for `gimp-program-args' to tweak it to your needs.
 
-To inquire about gimp-specific keybindings in either `inferior-gimp-mode', `gimp-mode'
-or `gimp-help-mode', press C-c? respectively ?.
+To inquire about gimp-specific keybindings in either
+`inferior-gimp-mode', `gimp-mode' or `gimp-help-mode', press C-c?
+respectively ?.
 
-==Not only for fu==
+==Beyond script-fu==
 
 See the functions `gimp-search-fu', `gimp-search-core-function' and
 `gimp-search-plug-in-file'.
@@ -35,24 +39,23 @@ See the functions `gimp-search-fu', `gimp-search-core-function' and
 `gimp-search-plug-in-file' searches the source file of specified plug-in
 `gimp-search-core-function' tries to find the source definition for core gimp functions.
 
-These functions need the variables `gimp-rel-fu-dir' and `gimp-src-dir' to be set.
+Some of these functions need the variable and `gimp-src-dir' to be
+set, as they search uncompiled files.
 
 ==Caveats==
 
-I only have had very little time to test this on a win32 machine. It did not work. I do
-not now about its behaviour on OSX.
+This mode is developed on and for a GNU/Linux environment.  I only
+have had very little time to test this on a win32 machine. It did not
+work. Somehow the Gimp opens a second 'console', so it does not return
+anything. I do not now about the behaviour on OSX. Not tested on BSD
+either.  Writing a mode based on the script-fu server would solve this
+problem. I am looking into this, but on the whole it seems to me to be
+more fragile than running Gimp as a sub-process (lost connections,
+problems with the reader, having to wrap a (write ...) around
+everything...). Perhaps.
 
-Newly created gimp-functions are not available in completion candidates during
-the same session.
-
-I have not yet written a single script-fu file to test this mode. Please give
-me something to work on.
-
-==ToDo==
-
-Make completion user-definable, as in a list of form
-
-   ((test . list-or-function)...)
+I have not written many script-fu files to test this mode on. Please
+give me something to work on.
 
 ==Related==
 
@@ -66,7 +69,10 @@ following in your .gimprc:
 
 and (server-start) in your .emacs
 
-Browsing the help with emacs-w3m is very nice, esp. since you can make use of the
-ubiquitous w3m-scroll-down-or-previous-url, w3m-scroll-up-or-next-url (SPACE) and
-w3m-scroll-down-or-previous-url (b)
+Browsing the help with emacs-w3m is very nice, esp. since you can make
+use of the nice w3m-scroll-down-or-previous-url,
+w3m-scroll-up-or-next-url (SPACE) and w3m-scroll-down-or-previous-url
+(b). 
+
+
 
