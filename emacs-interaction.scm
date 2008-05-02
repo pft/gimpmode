@@ -3,6 +3,7 @@
 
 ;; Do not use these functions in your own programs, though anyone is free to copy them
 ;; using a different namespace.
+(define (emacs-cache-dir "/home/sharik/.gimpel/cache"))
 
 (define (emacs-describe-function sym)
   (gimp-procedural-db-proc-info (symbol->string sym)))
@@ -82,7 +83,6 @@
                   (cadr info) "\n\nAuthor(s): " (list-ref info 2)
                   "\nCopyright: " (list-ref info 3) ", " (list-ref info 4))))
 
-
 (define (emacs-type-of-arg name position)
   (let* ((name (if (symbol? name)
                    (symbol->string name)
@@ -95,12 +95,35 @@
              'other-string))
       (else 'other))))
 
+(define emacs-cache-dir "/home/sharik/.gimpel/cache/")
+
+(define (emacs-cache)
+  (write "Creating emacs caches")
+  (with-output-to-file (string-append emacs-cache-dir "gimp-fonts-cache")
+   (lambda ()
+     (write (cadr (gimp-fonts-get-list "")))))
+  (with-output-to-file (string-append emacs-cache-dir "gimp-oblist-cache")
+    (lambda ()
+      (write (emacs-flatten (oblist)))))
+  (with-output-to-file (string-append emacs-cache-dir "gimp-pdb-cache") 
+    (lambda ()
+      (write (cadr (gimp-procedural-db-query ".*" ".*" ".*" ".*" ".*" ".*" ".*"))))))
+  
+(emacs-cache)
+
 ;; (define (delete elem lst)
 ;;    lst (when (pair? lst)
 ;;          (append (if (eqv? elem (car lst))
 ;;                    ()
 ;;                    (list (car lst)))
-;;                  (delete elem (cdr lst)))))
+;;                  (delq elem (cdr lst)))))
 
-
+;; (define (emacs-uniq list)
+;;   "Uniquify elements of LIST. Quite fast."
+;;   (let loop ((list list)
+;; 	     (tolist))
+;;     (cond ((null? list) tolist)
+;; 	  ((member (car list) tolist)
+;; 	   (loop (cdr list) tolist))
+;; 	  (else (loop (cdr list) (cons (car list) tolist))))))
 
