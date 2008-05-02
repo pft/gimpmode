@@ -1,0 +1,9 @@
+2008-05-02  Niels Giesen  <sharik@reetkevert.sshunet.nl>
+
+	* gimp-init.el (Module): made things not optionally 
+
+	* gimp.el (Module): 
+
+	* emacs-interaction.scm (Module): loaded by the Gimp on startup;
+	defines functions and makes cache files to be read by emacs.
+

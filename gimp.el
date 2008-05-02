@@ -10,7 +10,7 @@
 ;;    Pimped for 
 ;;    .
 ;;  ((Emacs May Annihilate Command Structures)
-;;   (Language of Insufferable Superfluous Parentheses) (with a period....)))
+;;   (Language of Insufferable Superfluous Parentheses)-niks))
 
 ;; What is it for?
 
@@ -18,34 +18,26 @@
 
 ;; - inferior-gimp-mode: interaction mode for the Gimp console
 
-;; - TAB-completion on Gimp Procedures, both in inferior gimp buffer and scheme
-;; files.  If scheme-complete is provided, that is a fallback for core scheme
-;; symbols.
+;; - TAB-completion on all Gimp Procedures (and some more symbols
+;; interned by tiny-fu), both in inferior gimp buffer and scheme
+;; files.  Through scheme-complete.el (written by Alex Shinn) support
+;; for completion of R5RS scheme symbols is provided.
 
 ;; - (function (arg1 TYPE).. (argN TYPE)) - echoing a la slime/eldoc
-;;  for gimp procedures. Simply require scheme-complete.el by Alex
-;;  Shinn if you want something alike for core scheme functions
-;;  too.
+;;  for gimp procedures.  Echoing for Scheme symbols from R5RS is
+;;  provided by scheme-complete.
 
-;; - extensive Gimp Procedural Browser documentation lookup, either full
-;; (dedicated buffer) or sparse (echoed)
+;; - extensive Gimp Procedural Browser documentation lookup, either
+;; full (dedicated buffer in outline-derived mode) or sparse (echoed).
 
-;; - other documentatione-complete.el by Alex
-;;  Shinn if you want something alike for core scheme functions
-;;  too.
+;; - Simple interface to other documentation
 
-;; - extensive Gimp Procedural Browser documentation lookup, either full
-;; (dedicated buffer) or sparse (echoed)
-
-;; - other documentation
-
-;; - poor mans source code browsing
-
-;; To bind the gimp-selector globally:  (global-set-key "\C-cg" 'gimp-selector)
+;; - Poor mans source code lookup (on C, Python and Scheme files). I
+;; do not know Python or C that well, but it seems to work pretty ok.
 
 ;; Bugs:
 
-;; - Returning empty list give args out of range error
+;; - Returning empty list give args out of range error. 
 
 ;; Wishes: 
 
@@ -72,7 +64,6 @@
        (in-gimp (car (gimp-version))))
     (message "Gimp version: %s" version)
     (list version major minor rev)))
-
 ;; Global variables
 
 (defvar gimp-output nil
@@ -92,30 +83,53 @@
   "Cache of available fonts")
 (defvar gimp-help-history ()
   "History cache for Gimp Help")
-(defcustom gimpeldir "~/.gimpel" 
-  "Directory to store gimp elisp files (including caches)")
 (defvar gimp-oblist-cache nil
   "Cache containing ALL symbols in TinyFu, whether bound or not.
 
-  The last may change.")
+  The last might be subject to change.")
 (defvar gimp-doc-echo-cache (make-hash-table :test 'equal)
   "Cache for echoes created by `gimp-doc'.")
 (defvar gimp-completion-cache (make-hash-table :test 'eql)
   "Completion hash table.")
+(defcustom gimp-program-args "-cs"
+  "Arguments to give to the Gimp. 
 
+  -v, --version                  Show version information and exit
+  --license                      Show license information and exit
+  --verbose                      Be more verbose
+  -n, --new-instance             Start a new GIMP instance
+  -a, --as-new                   Open images as new
+  -i, --no-interface             Run without a user interface
+  -d, --no-data                  Do not load brushes, gradients, patterns, ...
+  -f, --no-fonts                 Do not load any fonts
+  -s, --no-splash                Do not show a startup window
+  --no-shm                       Do not use shared memory between GIMP and plugins
+  --no-cpu-accel                 Do not use special CPU acceleration functions
+  --session=<name>               Use an alternate sessionrc file
+  -g, --gimprc=<filename>        Use an alternate user gimprc file
+  --system-gimprc=<filename>     Use an alternate system gimprc file
+  -b, --batch=<command>          Batch command to run (can be used multiple times)
+  --batch-interpreter=<proc>     The procedure to process batch commands with
+  -c, --console-messages         Send messages to console instead of using a dialog
+  --pdb-compat-mode=<mode>       PDB compatibility mode (off|on|warn)
+  --stack-trace-mode=<mode>      Debug in case of a crash (never|query|always)
+  --debug-handlers               Enable non-fatal debugging signal handlers
+  --g-fatal-warnings             Make all warnings fatal
+  --dump-gimprc                  Output a gimprc file with default settings
+  --display=DISPLAY              X display to use"
+  :group 'gimp)
 
 ;; Interactive gimp-functions. These should be kept to a bare minimum,
 ;; and enough to get one started.
 ;;;###autoload
-(defun run-gimp (no-gui)
-  "Start the Gimp and its REPL.
-Prefix argument NO-GUI means: do not start the GUI."
-  (interactive "P")
+(defun run-gimp ()
+  "Start the Gimp and its REPL."
+  (interactive)
   (if (buffer-live-p (get-buffer "*Gimp*"))
       (switch-to-buffer-other-window "*Gimp*")
     (run-scheme (format
-		 "gimp -c %s --batch-interpreter=plug-in-script-fu-eval -b -"
-		 (if no-gui "-i" "")))
+		 "gimp %s --batch-interpreter=plug-in-script-fu-eval -b -"
+		 gimp-program-args))
     (message "Starting-up the Gimp")
     (unwind-protect 
         (while (= (point-max) (point-min))
@@ -168,7 +182,7 @@ Return the Gimp image number(s) in a list."
 The rel in -rel- stands for released."
   :group 'gimp)
 
-(defcustom gimp-src-dir "/home/sharik/src/gimp-2.4/"
+(defcustom gimp-src-dir (expand-file-name "~/src/gimp-2.4/")
   "Source directory for the Gimp"
   :group 'gimp)
 
@@ -257,13 +271,7 @@ another.  Now best left at the non-nil value.")
           (gimp-help-describe-procedure-at-point)
           (unless (= (point-at-eol) (point-max)) (next-line)))
 	 (t (self-insert-command n)
-	    (gimp-doc))
-	 ;;          ((or (gimp-in-string-p)
-	 ;; 	      (gimp-in-comment-p)
-	 ;;               (and (not (looking-back " ")) (looking-at "[()]")))
-	 ;;           (self-insert-command n))
-	 ;;          (t (gimp-doc))
-	 ))
+	    (gimp-doc))))
 
 ;; Misc lisp tweaks
 ;; From "http://lispy.wordpress.com/2007/12/27/building-a-better-mapcro/":
@@ -282,74 +290,43 @@ another.  Now best left at the non-nil value.")
 	  (push (match-string v str) result))))))
 
 (defmacro gimp-save-cache (c)
-  `(with-temp-file ,(format "%s/cache/%s" gimpeldir c)
+  `(with-temp-file ,(format "%s/emacs-%s" (in-gimp gimp-dir) c)
      (insert (format "%S" ,c))))
 
 (defmacro gimp-get-cache (c)
   `(with-temp-buffer 
-     (when (file-exists-p ,(format "%s/cache/%s" gimpeldir c))
-       (message "In file")
-       (find-file ,(format "%s/cache/%s" gimpeldir c))
+     (when (file-exists-p ,(format "%s/emacs-%s" (in-gimp gimp-dir) c))
+       (find-file ,(format "%s/emacs-%s" (in-gimp gimp-dir) c))
        (goto-char (point-min))
        (setq ,c (prog1 (read (buffer-substring (point-min) (point-max)))
                   (kill-buffer nil))))))
 
 (defun gimp-save-caches (&optional non-interactive)
-  ;; Caching note: gimp-pdb-cache, gimp-pdb-desc-cache and
-  ;; gimp-oblist-cache get filed. The other ones, as they are
-  ;; hash-tables, do not get cached over sessions.  But the above are
-  ;; the most time consuming anyway.
-  "Write all saveable caches to a file, to later read out again."
+  ;; Only cache description cache for now (to cache completion, we
+  ;; would need a way to serialize hash tables). The other caches are
+  ;; regenerated everytime the Gimp starts up anyway (see file
+  ;; `emacs-interaction' in ~/gimp-2.4/scripts/).
+  "Write the description cache to a file, to later read out again."
   (interactive)
-  (if (or non-interactive (yes-or-no-p "Save caches? "))
-      (gimp-mapcro gimp-save-cache (gimp-pdb-cache 
-                                    gimp-pdb-desc-cache
-;                                    gimp-oblist-cache
-				    ))
+  (if (or non-interactive (yes-or-no-p "Save description cache? "))
+      (gimp-save-cache gimp-pdb-desc-cache)
     (gimp-delete-caches))
-  (message "You can save caches anytime by running \
+  (message "You can save the cache anytime by running \
 the command `gimp-save-caches'"))
 
 (defun gimp-delete-caches ()
-  (if (yes-or-no-p "Delete old caches from disk? ")
-      (mapc (lambda (c)
-              (delete-file (format "%s/cache/%s" gimpeldir c)))
-            '(gimp-pdb-cache gimp-pdb-desc-cache gimp-oblist-cache))))
+  (if (yes-or-no-p "Delete the old cache from disk? ")
+      (delete-file (format "%s/%s" (in-gimp emacs-cache-dir) gimp-pdb-desc-cache))))
 
 (defun gimp-get-caches ()
   (gimp-mapcro gimp-get-cache
                (gimp-pdb-cache 
                 gimp-pdb-desc-cache
 		gimp-fonts-cache))
-  (gimp-refresh-oblist-cache))
-
-(defun gimp-refresh-oblist-cache ()
-  "Refresh `gimp-oblist-cache'.
-
-Run when `run-gimp' is executed first time in an Emacs session."
-  (interactive)
   (setq gimp-oblist-cache
 	(mapcar 'symbol-name
 		(gimp-uniq-list!
 		 (gimp-get-cache gimp-oblist-cache)))))
-
-(defun gimp-refresh-fonts-cache ()
-  "Refresh `gimp-fonts-cache'.
-
-Run when `run-gimp' is executed first time in an Emacs session."
-  (interactive)
-  (setq gimp-fonts-cache nil)
-  (in-gimp (emacs-cache-fonts)))
-
-(defun gimp-refresh-pdb-cache ()
-  (interactive)
-  (message "Creating `gimp-pdb-cache' for info on procedural database, \
-be patient...")
-  (setq
-   gimp-pdb-cache
-   (gimp-eval
-    "(cadr (gimp-procedural-db-query \".*\" \".*\" \".*\" \".*\" \".*\" \".*\" \".*\"))" t))
-  (message "Done"))
 
 ;; Modes
 (define-derived-mode gimp-mode scheme-mode "Gimp mode" 
@@ -359,26 +336,19 @@ be patient...")
 (define-derived-mode inferior-gimp-mode inferior-scheme-mode
   "Inferior Gimp"
   "Mode for interaction with inferior gimp process."
-  (use-local-map inferior-gimp-mode-map))
+  (use-local-map inferior-gimp-mode-map)
+  (make-variable-buffer-local 'comint-input-filter-functions)
+  (setq comint-input-filter-functions 
+	'(gimp-add-define-to-oblist)))
 
 (define-derived-mode gimp-help-mode outline-mode "Gimp Help"
   "Help mode for the Gimp. 
 Requires running inferior gimp process, see `inferior-gimp-mode'."
   (use-local-map gimp-help-mode-map)
-  (setq buffer-read-only t)
-  (font-lock-mode -1))
-
+  (setq buffer-read-only t))
 
 ;; Core inferior interaction functions
 (defun gimp-proc ()
-  ;; (unless (or 
-  ;;          ;; not a gimp  mode so please leave us alone
-  ;;          ;; (not (memq major-mode '(gimp-mode inferior-gimp-mode gimp-help-mode))) 
-  ;;          ;; is a gimp mode and gimp is already running
-  ;;          (and scheme-buffer
-  ;;               (get-buffer scheme-buffer)
-  ;;               (comint-check-proc scheme-buffer)))
-  ;;   (run-gimp t))
   (scheme-get-process))
 
 (defun gimp-filter (proc string)
@@ -387,7 +357,8 @@ Requires running inferior gimp process, see `inferior-gimp-mode'."
 
 (defadvice comint-send-input (before ungimp activate) 
   "Ungimp process-filter for other scheme processes."
-  (if (and (eq (get-buffer-process (current-buffer)) (gimp-proc))
+  (if (and (eq (get-buffer-process (current-buffer)) 
+	       (gimp-proc))
            (gimp-proc)
            (process-filter (gimp-proc))
            'gimp-filter)
@@ -396,8 +367,10 @@ Requires running inferior gimp process, see `inferior-gimp-mode'."
 (defun scheme-send-string (string &optional newline)
   "Send STRING to the scheme process.
 When optional argument NEWLINE is non-nil, append a newline char."
-  (comint-send-string (gimp-proc)
-                      (concat string (if newline "\n" ""))))
+  (gimp-add-define-to-oblist string)
+  (comint-send-string 
+   (gimp-proc)
+   (concat string (if newline "\n" ""))))
 
 (defun gimp-send-last-sexp (&optional insert)
   "Send the previous sexp to the inferior Scheme process."
@@ -416,10 +389,12 @@ When optional argument NEWLINE is non-nil, append a newline char."
 (defun gimp-eval (string &optional long)
   "Eval STRING, and return it read, somewhat, though not fully, elispified.
 Argument LONG with a non-`nil' value, means a long answer is
-expected.  In most cases, LONG can be omitted.  Argument LONG is
-used internally in the calls to `gimp-refresh-pdb-cache' and
-`gimp-refresh-oblist-cache'. Use it only when you notice that
-`gimp-eval' does not return almost instantly."
+expected.  In most cases, LONG can (must!) be omitted.  Argument
+LONG is used solely when you notice that `gimp-eval' does not
+return almost instantly. This nasty behaviour led me to have
+intermediate files for those long lists beginning with
+~/.gimp-2.4/emacs- that gimp writes and elisp reads. Which
+works like a charm ;)."
   (let (output)
     (if (not (condition-case nil (read string)
 	       (error nil)))
@@ -434,8 +409,7 @@ used internally in the calls to `gimp-refresh-pdb-cache' and
 				 (read gimp-output)
 			       (read (substring gimp-output 1)))
 			   (error nil))))
-	(scheme-send-string "" t)
-	)	;force flush
+	(scheme-send-string "" t));force flush
       output)))
 
 (defun gimp-eval-to-string (string &optional discard)
@@ -488,11 +462,14 @@ Lisp syntax [elem1 ...] for such uses.
 
 (defun gimp-help-apropos ()
   (interactive)
-  (let ((query (read-from-minibuffer "Apropos term: " (thing-at-point 'word))))
-    (gimp-help-wrapper
-     (insert (mapconcat (lambda (proc)
-			  (propertize proc 'mouse-face 'highlight))
-			(gimp-help-apropos-list query) "\n")))))
+  (let* ((query (read-from-minibuffer "Apropos term: " (thing-at-point 'word)))
+	 (new-contents (mapconcat (lambda (proc)
+				    (propertize proc 'mouse-face 'highlight))
+				  (gimp-help-apropos-list query) "\n")))
+    (if (> (length new-contents) 0)
+	(gimp-help-wrapper
+	 (insert new-contents))
+      (message "No match"))))
 
 (defun gimp-help ()
   (interactive)
@@ -742,10 +719,12 @@ Use `outline-mode' commands to navigate and fold stuff."
 (defun gimp-indent-and-complete ()
   "Indent and complete function or argument at point."
   (interactive)
-  (condition-case err (lisp-indent-line t)
-    (error nil))
-  (gimp-complete)
-  (gimp-doc))
+  (condition-case err 
+      (progn 
+	(gimp-complete)
+	(lisp-indent-line t)
+	(gimp-doc))
+    (error nil)))
 
 (defun gimp-complete-savvy (&optional lijst)
   "Perform completion on script-fu symbol preceding point.
@@ -754,11 +733,6 @@ If no characters can be completed, display a list of possible completions.
 Repeating the command at that point scrolls the list.
 Optional argument LIJST specifies a list of completion candidates."
   (interactive)
-  ;; First time setup
-  (when (null gimp-pdb-cache)
-    (gimp-refresh-pdb-cache))
-  (when (null gimp-oblist-cache)
-    (gimp-refresh-oblist-cache))
   (let ((window (get-buffer-window "*Completions*" 0)))
     (if (and (eq last-command this-command)
 	     window (window-live-p window) (window-buffer window)
@@ -933,7 +907,8 @@ argument at point is highlighted."
 		     (set-text-properties 0 (length this-arg)
 					  nil (nth pos cache-resp))))))
 	      ((featurep 'scheme-complete)
-	       (message (scheme-get-current-symbol-info)))))))
+	       (condition-case err (message (scheme-get-current-symbol-info))
+		 (error nil)))))))
 
 (defun gimp-doc-at-point ()
   "Call `gimp-doc' on the symbol at point."
@@ -1016,7 +991,8 @@ Needs the variable `gimp-src-dir' to be set."
 			      (lambda (thing)
 				(string-match "^plug-in-" thing))
 			      nil (gimp-procedure-at-point t))
-	     (concat gimp-src-dir "/plug-ins/")))
+	     (concat gimp-src-dir "/plug-ins/")
+	     ))
     0 -1)))
 
 (defun gimp-search-core-function ()
@@ -1079,9 +1055,13 @@ wrong char at the minibuffer prompt."
 	   (string-match "file" name))
 	 .				;files
 	 (lambda (&rest ignore)
-	   (comint-dynamic-complete-filename)))
+	   'comint-dynamic-complete-filename))
 	("font" . (lambda (&rest ignore)
 		    gimp-fonts-cache))
+	("The procedure name" 
+	 . 
+	 (lambda (&rest ignore)
+	   gimp-pdb-cache))
 	("{.*}" 
 	 .                              ;doc provided list of values.
 	 (lambda (desc &rest ignore)
@@ -1128,10 +1108,8 @@ wrong char at the minibuffer prompt."
                     \"$${date}\"
                     \"\")
 
-
 \(script-fu-menu-register \"$${name}\"
-                         _\"<Toolbox>/Xtns/Script-Fu\")"
-      )
+                         _\"<Toolbox>/Xtns/Script-Fu\")")
      ("sft" . "SF-TOGGLE\t_\"$${On or Off?}\"\t$${TRUE}$>")
      ("sfv" . "SF-VALUE\t_\"$${text}\"\t\"$${STRING}\"$>")
      ("sfs" . "SF-STRING\t_\"$${text}\"\t\"$${STRING}\"$>")
@@ -1177,6 +1155,13 @@ wrong char at the minibuffer prompt."
     (?i (call-interactively 'run-gimp))
     (?? (message "i = inferior gimp buffer; l: last lisp buffer; h: help; "))
     (t (call-interactively 'gimp-selector))))
+
+(defun gimp-add-define-to-oblist (str)
+  "Put defined vars or functions in the oblist."
+  (set-text-properties 0 (length str) nil str)
+  (let* ((var-or-fun (gimp-string-match "[[:space:]]*(define[[:space:]]+(?\\([[:word:]-?!><]+\\)" str 1)))
+    (if (and var-or-fun (not (member var-or-fun gimp-oblist-cache)))
+	(push var-or-fun gimp-oblist-cache))))
 
 (provide 'gimp)
 ;;; gimp.el ends here
