@@ -1,10 +1,5 @@
 ;; Stuff needed for interaction with the emacs-modes `gimp-mode' `inferior-gimp-mode'
 ;; and `gimp-help-mode'.
-
-;; Do not use these functions in your own programs, though anyone is free to copy them
-;; using a different namespace.
-(define (emacs-cache-dir "/home/sharik/.gimpel/cache"))
-
 (define (emacs-describe-function sym)
   (gimp-procedural-db-proc-info (symbol->string sym)))
 
@@ -66,7 +61,7 @@
                                     (list (cadr argument)
                                            (car argument))))))))))
 
-                                                                                               
+                                                                                              
 (define (emacs-funstring sym)
   (emacs-describe-function-args sym))
 
@@ -95,22 +90,19 @@
              'other-string))
       (else 'other))))
 
-(define emacs-cache-dir "/home/sharik/.gimpel/cache/")
-
 (define (emacs-cache)
-  (write "Creating emacs caches")
-  (with-output-to-file (string-append emacs-cache-dir "gimp-fonts-cache")
+  (write "Creating emacs caches... ")
+  (with-output-to-file (string-append gimp-dir "/emacs-gimp-fonts-cache")
    (lambda ()
      (write (cadr (gimp-fonts-get-list "")))))
-  (with-output-to-file (string-append emacs-cache-dir "gimp-oblist-cache")
+  (with-output-to-file (string-append gimp-dir "/emacs-gimp-oblist-cache")
     (lambda ()
       (write (emacs-flatten (oblist)))))
-  (with-output-to-file (string-append emacs-cache-dir "gimp-pdb-cache") 
+  (with-output-to-file (string-append gimp-dir "/emacs-gimp-pdb-cache") 
     (lambda ()
       (write (cadr (gimp-procedural-db-query ".*" ".*" ".*" ".*" ".*" ".*" ".*"))))))
-  
-(emacs-cache)
 
+(emacs-cache)
 ;; (define (delete elem lst)
 ;;    lst (when (pair? lst)
 ;;          (append (if (eqv? elem (car lst))
