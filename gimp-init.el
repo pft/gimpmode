@@ -4,6 +4,10 @@
 ;; or add the parent dir of gimp.el to your `load-path'.
 
 (add-to-list 'load-path "~/.emacs.d/elisp")
+(add-to-list 'load-path "~/.emacs.d/elisp/gimp/")
+(add-to-list 'load-path "~/.emacs.d/elisp/gimp/related")
+
+(require 'snippet)
 
 (autoload 'run-gimp "gimp" 
   "Inferior Gimp Interaction Mode Pimped for Emacs Lispniks" t)
@@ -14,6 +18,7 @@
 (autoload 'gimp-help "gimp" 
   "Help for the Gimp" t)    
 
+(global-set-key "\C-cg" 'gimp-selector)
 ;; Uncomment the below if you have scheme-complete.el in your
 ;; load-path and want to get echoing for core scheme functions too:
 
