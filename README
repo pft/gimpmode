@@ -9,7 +9,7 @@ Put the following in your startup (~/.emacs) file:
 That file sets up some hooks to only load the stuff once needed.  Edit
 the file to be consistent with your setup (load-paths an stuff).
 
-Byte compile gimp.el (and optionally scheme-complete.el).
+Optionally, byte-compile gimp.el (and scheme-complete.el and snippet.el).
 
 Put the file emacs-interaction.scm (a scheme file that ought to be
 loaded for the Gimp to serve us some proper feedback) in
@@ -18,17 +18,29 @@ loaded for the Gimp to serve us some proper feedback) in
 
 ... or in another directory loaded by the Gimp.
 
-On Linux, BSDs and Macs, a symbolic link works fine too (that's what I
-do to keep my cvs tree nice in one place).
+On Linux, BSDs and Macs, a symbolic link for emacs-interaction.scm works fine
+too (that's what I do to keep my cvs tree nice in one place).
 
-Now run M-x run-gimp to start the Gimp and its console within
+Now run M-x run-gimp to start the Gimp and its REPL within
 Emacs. This takes a little while (just a little longer than the
 graphical start-up phase), so just be patient. See the customization
-for `gimp-program-args' to tweak it to your needs.
+for `gimp-program-command-line' to tweak it to your needs.
 
-To inquire about gimp-specific keybindings in either
-`inferior-gimp-mode', `gimp-mode' or `gimp-help-mode', press C-c?
-respectively ?.
+To inquire about gimp-specific keybindings in a gimp buffer, say M-x
+ gimp-help-on-help.
+
+==Features==
+
+TAB-completion like in Slime: the whole tiny-fu oblist is available and define'd
+vars/functions are added to completion. 
+
+Completion on arguments is done via guesses, based on regexp-parsing/custom
+commands that work on the documentation. This might have to be improved and
+extended upon (see variable `gimp-completion-rules'). 
+
+Argument echoing whereby current argument is highlighted.
+
+Documentation lookup: for current argument or entire function.
 
 ==Beyond script-fu==
 
@@ -69,10 +81,40 @@ following in your .gimprc:
 
 and (server-start) in your .emacs
 
-Browsing the help with emacs-w3m is very nice, esp. since you can make
-use of the nice w3m-scroll-down-or-previous-url,
-w3m-scroll-up-or-next-url (SPACE) and w3m-scroll-down-or-previous-url
-(b). 
+Browsing the help with emacs-w3m is very nice, esp. since you can make use of
+the nice w3m-scroll-down-or-previous-url, w3m-scroll-up-or-next-url (SPACE) and
+w3m-scroll-down-or-previous-url (b), as relative links are provided by the HTML
+documentation of the Gimp.
+
+==FAQ==
+
+Q: Why don't you use the script-fu server? 
+
+A: It is way easier to start the Gimp as a subprocess, defining gimp-inferior
+mode as a derived mode from inferior-scheme-mode then hacking up (write
+(convert-form-to-emacs-readable FORM)) stuff. Maybe in the future.
+
+Q: What about a Python interface?
+
+A: Like the script-fu server, the Python batch-interpreter doesn't talk back
+(except on error). Therefore, this would require quite some
+tweaking. Furthermore, the python console within the Gimp is quite good.
+
+Q. Why don't you simply use the script-fu console from within the Gimp?
+
+A. Have you tried it?
+
+Q. What about menu information?
+
+A. I have not yet found out how to get there with fu.
+
+Q. Why do you use all these separate cache files instead of
+gimp-procedural-db-dump?
+
+A. Implemented caches before I knew about the dump. 
+
+
+
 
 
 

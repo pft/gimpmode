@@ -24,6 +24,7 @@
 (autoload 'gimp-selector "gimp" 
   "Help for the Gimp" t)    
 
+;; Uncomment the following line to have a nice selector:
 (global-set-key "\C-cg" 'gimp-selector)
 
 (mapc (lambda (hook)

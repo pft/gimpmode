@@ -121,7 +121,7 @@ make a vector in SCHEME with `in-gimp'.
 ;; Global variables
 
 (make-variable-buffer-local 'comint-input-filter-functions)
-(defvar gimp-output nil
+(defvar output nil
   "Contains output from inferior gimp process.")
 ;; (Bases of following caches) generated on Gimp startup (by
 ;; emacs-interaction.scm)
@@ -359,7 +359,8 @@ another.  Now best left at the non-nil value.")
   (interactive "p")
   (cond  ((eq major-mode 'gimp-help-mode)
           (gimp-describe-procedure-at-point)
-          (unless (= (point-at-eol) (point-max)) (call-interactively 'next-line)))
+          (unless (= (point-at-eol) (point-max)) 
+            (call-interactively 'next-line)))
 	 (t (self-insert-command n)
 	    (gimp-doc))))
 
@@ -969,7 +970,8 @@ argument at point is highlighted."
 		 (setq cache-resp
 		       (gimp-eval (format "(emacs-pdb-doc '%s)" sym)))
 		 (setq cache-resp
-		       (mapcar (lambda (item) (format "%S" item)) cache-resp))
+		       (mapcar (lambda (item) (format "%S" item))
+                               cache-resp))
 		 (setf (car cache-resp)
 		       (propertize sym 'face 'font-lock-keyword-face))
 		 (puthash sym cache-resp gimp-doc-echo-cache))
