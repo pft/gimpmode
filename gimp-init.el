@@ -21,6 +21,9 @@
 (autoload 'gimp-help "gimp" 
   "Help for the Gimp" t)    
 
+(autoload 'gimp-selector "gimp" 
+  "Help for the Gimp" t)    
+
 (global-set-key "\C-cg" 'gimp-selector)
 
 (mapc (lambda (hook)
