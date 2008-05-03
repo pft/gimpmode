@@ -103,6 +103,20 @@
       (write (cadr (gimp-procedural-db-query ".*" ".*" ".*" ".*" ".*" ".*" ".*"))))))
 
 (emacs-cache)
+;; (define (emacs-lispify item)
+;;   "To use emacs as a client to the TCP/IP server."
+;;   (cond 
+;;    ((number? item) (number->string item 10))
+;;    ((string? item) (string-append "\"" item  "\""))
+;;    ((null? item)  "()")
+;;    ((eq? #t item) "t")
+;;    ((pair? item)
+;;     (string-append "("
+;;                    (unbreakupstr
+;;                     (map emacs-lispify item) " ")
+;;                    ")"))
+;;    (TRUE (symbol->string item))))
+
 ;; (define (delete elem lst)
 ;;    lst (when (pair? lst)
 ;;          (append (if (eqv? elem (car lst))

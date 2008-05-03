@@ -87,8 +87,6 @@
   "Cache containing ALL symbols in TinyFu, whether bound or not.
 
   The last might be subject to change.")
-(defvar gimp-doc-echo-cache (make-hash-table :test 'equal)
-  "Cache for echoes created by `gimp-doc'.")
 (defvar gimp-completion-cache (make-hash-table :test 'eql)
   "Completion hash table.")
 (defcustom gimp-program-args "-cs"
@@ -424,15 +422,18 @@ works like a charm ;)."
       (substring gimp-output 0 -2))))
 
 (defmacro in-gimp (body)
-  "Evaluate fu sexps. Syntactic sugar.
-Optional argument BODY is a scheme sexp.
-Caveats:
+  "Evaluate fu sexps without having to quote them. Syntactic sugar.
 
-1. Inclusion of literal Scheme vectors is impossible.  This is due to read
-syntax of Emacs lisp.  Be sure to use (vector elem1 elem2...) or the native
-Lisp syntax [elem1 ...] for such uses.
+Argument BODY is a SCHEME sexp. Caveats:
 
-2. As body must be a single sexp, use (begin ...) in your scheme code."
+1. Inclusion of literal Scheme vectors is impossible. This is due to read
+syntax of Emacs lisp and the use of [] in scheme as if they were
+parentheses. Be sure to use portable (vector elem1 elem2...) if you want to
+make a vector in SCHEME with `in-gimp'.
+
+2. As body must be a single sexp, use (begin ...) in your scheme code.
+
+3. Possibly others. Use it lightly."
   `(gimp-eval
     (format "%S" (backquote ,body))))
 

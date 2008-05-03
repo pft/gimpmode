@@ -22,8 +22,6 @@
   "Help for the Gimp" t)    
 
 (global-set-key "\C-cg" 'gimp-selector)
-;; Uncomment the below if you have scheme-complete.el in your
-;; load-path and want to get echoing for core scheme functions too:
 
 (mapc (lambda (hook)
 	(add-hook hook
