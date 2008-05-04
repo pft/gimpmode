@@ -220,23 +220,22 @@ make a vector in SCHEME with `in-gimp'.
       (scheme-get-process))))
 
 ;; Emacs 22 compatibility
-(eval-when (compile load)
-  (when (not (fboundp 'ring-member))
+(when (not (fboundp 'ring-member))
   (defun ring-member (ring item)
     "Return index of ITEM if on RING, else nil.
 Comparison is done via `equal'.  The index is 0-based."
     (catch 'found
       (dotimes (ind (ring-length ring) nil)
         (when (equal item (ring-ref ring ind))
-          (throw 'found ind)))))))
-(eval-when (compile load)
+          (throw 'found ind))))))
+
 (when (not (fboundp 'ring-next))
   (defun ring-next (ring item)
     "Return the next item in the RING, after ITEM.
 Raise error if ITEM is not in the RING."
     (let ((curr-index (ring-member ring item)))
       (unless curr-index (error "Item is not in the ring: `%s'" item))
-      (ring-ref ring (ring-plus1 curr-index (ring-length ring)))))))
+      (ring-ref ring (ring-plus1 curr-index (ring-length ring))))))
 
 (defun gimp-progress (message test)
   (interactive)
@@ -293,6 +292,7 @@ Return the Gimp image number(s) in a list."
 (defcustom gimp-docs-alist
   '(("script-fu introduction" . 
      "http://www.ve3syb.ca/wiki/doku.php?id=software:sf:start")
+    ("script-fu tutorial" . "http://docs.gimp.org/en/gimp-using-script-fu-tutorial.html")
     ("yahoo script-fu group" . "http://tech.groups.yahoo.com/group/script-fu/")
     ("mailing lists" . "http://www.gimp.org/mail_lists.html")
     ("developer.gimp.org" . "http://developer.gimp.org/")
@@ -628,12 +628,12 @@ When optional argument NEWLINE is non-nil, append a newline char."
 ;; FIXME: Argument LONG needn't be necessary.
 (defun gimp-eval (string &optional long)
   "Eval STRING, and return it read, somewhat, though not fully, elispified.
-Argument LONG with a non-`nil' value, means a long answer is
+Argument LONG with a non-nil value, means a long answer is
 expected.  In most cases, LONG can (must!) be omitted.  Argument
 LONG is used solely when you notice that `gimp-eval' does not
-return almost instantly. This nasty behaviour led me to have
+return almost instantly.  This nasty behaviour led me to have
 intermediate files for those long lists beginning with
-~/.gimp-2.4/emacs- that gimp writes and elisp reads. Which
+~/.gimp-2.4/emacs- that gimp writes and elisp reads.  Which
 works like a charm ;)."
   (let (output)
     (if (not (condition-case nil (read string)
@@ -644,13 +644,16 @@ works like a charm ;)."
       (scheme-send-string string t)
       (unless long (sit-for .1))
       (while (null (setq output
-			 (condition-case err
-			     (if (null (string-match "^#" gimp-output))
-				 (read gimp-output)
-			       (read (substring gimp-output 1)))
-			   (error nil))))
-	(scheme-send-string "" t))      ;force flush
+        		 (condition-case err
+        		     (if (null (string-match "^#" gimp-output))
+        			 (read gimp-output)
+;                               gimp-output
+;                               (substring gimp-output 1))
+        		       (read (substring gimp-output 1)))
+        		   (error nil))))
+        (scheme-send-string "" t))      ;force flush
       output)))
+
 
 (defun gimp-eval-to-string (string &optional discard)
   (if (not (condition-case nil (read string)
@@ -1098,37 +1101,163 @@ Caches completion candidates (in the variable `gimp-completion-cache')"
               'field 'input))
 
 ;; Helpful echoing
+;; (defun gimp-doc (&optional sym)
+;;   "Echo function  and argument information for SYM.
+;; The echo takes the form of (function (name-1 TYPE)...(name-n TYPE)), where the
+;; argument at point is highlighted."
+;;   (interactive )
+;;   (if (gimp-interactive-p)
+;;       (let* ((sym (or sym (symbol-name (gimp-fnsym-in-current-sexp))))
+;;              (cache-resp (gethash sym gimp-doc-echo-cache))
+;;              (pos (gimp-position)))
+;;         (cond ((member sym gimp-pdb-cache)
+;; 	       (unless cache-resp
+;; 		 (setq cache-resp
+;; 		       (gimp-eval (format "(emacs-pdb-doc '%s)" sym)))
+;; 		 (setq cache-resp
+;; 		       (mapcar (lambda (item) (format "%S" item))
+;;                                cache-resp))
+;; 		 (setf (car cache-resp)
+;; 		       (propertize sym 'face 'font-lock-keyword-face))
+;; 		 (puthash sym cache-resp gimp-doc-echo-cache))
+;; 	       (let ((this-arg (nth pos cache-resp)))
+;; 		 (when this-arg
+;; 		   (when (> pos 0)
+;; 		     (setf (nth pos cache-resp)
+;; 			   (propertize (nth pos cache-resp) 'face 'highlight)))
+;; 		   (message "(%s)" (mapconcat 'identity cache-resp " "))
+;; 		   (when (> pos 0)
+;; 		     (set-text-properties 0 (length this-arg)
+;; 					  nil (nth pos cache-resp))))))
+;;               (t
+;;                ;; Get it (unless cached)
+;; 	       (unless cache-resp
+;; 	         (setq cache-resp
+;;                        (progn
+;;                        (read
+;;                         (gimp-eval-to-string
+;;                          (apply 'format
+;;                                 "(let ((code (get-closure-code %s))) (if code (cons '%s (cadr code)) 'nil)))"
+;;                                 (make-list 3 sym))))))
+;;                  ;; Cache it
+;;                  (when cache-resp
+;;                    (setq cache-resp
+;;                          (mapcar (lambda (item) (format "%S" item))
+;;                                  cache-resp))
+;;                    (setf (car cache-resp)
+;;                          (propertize sym 'face 'font-lock-keyword-face))
+;;                    (puthash sym cache-resp gimp-doc-echo-cache)))
+               
+;;                ;; Show it
+;;                (let ((this-arg (nth pos cache-resp)))
+;; 	         (when this-arg
+;; 	           (when (> pos 0)
+;; 	             (setf (nth pos cache-resp)
+;; 	        	   (propertize (nth pos cache-resp) 'face 'highlight)))
+;; 	           (message "(%s)" (mapconcat 'identity cache-resp " "))
+;; 	           (when (> pos 0)
+;; 	             (set-text-properties 0 (length this-arg)
+;; 	        			  nil (nth pos cache-resp))))))
+
+;; 	      ((featurep 'scheme-complete)
+;; 	       (condition-case err (message (scheme-get-current-symbol-info))
+;; 		 (error nil)))))))
+
+;; Helpful echoing
 (defun gimp-doc (&optional sym)
   "Echo function  and argument information for SYM.
 The echo takes the form of (function (name-1 TYPE)...(name-n TYPE)), where the
 argument at point is highlighted."
   (interactive )
   (if (gimp-interactive-p)
-      (let* ((sym (or sym (symbol-name (gimp-fnsym-in-current-sexp))))
-             (cache-resp (gethash sym gimp-doc-echo-cache))
-             (pos (gimp-position)))
-        (cond ((member sym gimp-pdb-cache)
-	       (unless cache-resp
-		 (setq cache-resp
-		       (gimp-eval (format "(emacs-pdb-doc '%s)" sym)))
-		 (setq cache-resp
-		       (mapcar (lambda (item) (format "%S" item))
-                               cache-resp))
-		 (setf (car cache-resp)
-		       (propertize sym 'face 'font-lock-keyword-face))
-		 (puthash sym cache-resp gimp-doc-echo-cache))
-	       (let ((this-arg (nth pos cache-resp)))
-		 (when this-arg
-		   (when (> pos 0)
-		     (setf (nth pos cache-resp)
-			   (propertize (nth pos cache-resp) 'face 'highlight)))
-		   (message "(%s)" (mapconcat 'identity cache-resp " "))
-		   (when (> pos 0)
-		     (set-text-properties 0 (length this-arg)
-					  nil (nth pos cache-resp))))))
-	      ((featurep 'scheme-complete)
-	       (condition-case err (message (scheme-get-current-symbol-info))
-		 (error nil)))))))
+      (let ((result))
+        (catch 'a
+          (let* ((sym (or sym (symbol-name (gimp-fnsym-in-current-sexp))))
+               (cache-resp (gethash sym gimp-doc-echo-cache))
+               (pos (gimp-position)))
+          (cond ((member sym gimp-pdb-cache)
+                 ;; Get it (unless cached)
+                 (unless cache-resp
+                   (setq cache-resp
+                         (gimp-eval (format "(emacs-pdb-doc '%s)" sym)))))
+                ((let
+                     ((info (scheme-get-current-symbol-info)))
+                   (if (and info (listp (read info)))
+                       (progn
+                         (setq cache-resp (read info))
+                         (setq result (gimp-string-match "(.*)\\(.*\\)" info 1))
+                         t)
+                     nil)))
+                (t
+                 ;; Get it (unless cached)
+                 (unless cache-resp
+                   (setq cache-resp
+                         (read
+                          (gimp-eval-to-string
+                           (apply 'format
+                                  "(let ((code (get-closure-code %s))) (if code (cons '%s (cadr code)) 'nil)))"
+                                  (make-list 3 sym)))))
+                   (when (not (consp cache-resp))
+                     (setq cache-resp nil)))))
+
+          (when cache-resp
+            (setq cache-resp
+                  (mapcar (lambda (item) (format "%s" item))
+                          (dotted-to-list cache-resp)))
+            (setf (car cache-resp)
+                  (propertize sym 'face 'font-lock-keyword-face))
+            ;; Cache it
+            (puthash sym cache-resp gimp-doc-echo-cache)
+          ;; Show it
+            (let ((this-arg (nth pos cache-resp)))
+              (when this-arg
+                (when (> pos 0)
+                  (let ((arg (nth pos cache-resp)))
+                    (setf (nth pos cache-resp)
+                          (if (string-match "^\. " arg)
+                              (concat ". " (propertize (substring arg 2) 'face 'highlight))
+                            (propertize arg 'face 'highlight)))))
+                (message (format "(%s)%s" (mapconcat 'identity cache-resp " ")
+                                 (or result "")))
+                (when (> pos 0)
+                  (set-text-properties 0 (length this-arg)
+                                       nil (nth pos cache-resp)))))))))))
+
+;; (defun map-dotted (f dl)
+;;   (cond ((atom (cdr dl))
+;;          (cons (funcall f (car dl))
+;;                (if (endp (cdr dl))
+;;                    nil
+;;                  (funcall f (cdr dl)))))
+;;         (t (cons (funcall f (car dl))
+;;                  (map-dotted f (cdr dl))))))
+
+;; (defun dotted-p (dl)
+;;   (cond ((atom (cdr dl))
+;;          (if (endp (cdr dl))
+;;              nil
+;;            (cdr dl)))
+;;         (t (dotted-p (cdr dl)))))
+
+(defun dotted-to-list (dl)
+  (cond ((atom (cdr dl))
+         (cons (car dl)
+               (if (endp (cdr dl))
+                   nil
+                 (list (format ". %s" (cdr dl))))))
+        (t (cons (car dl)
+                 (dotted-to-list (cdr dl))))))
+
+;; (defun dotconcat (function dl &optional sep)
+;;   (let ((foo "")
+;;         (sep (or sep " ")))
+;;     (substring 
+;;      (car 
+;;       (reverse 
+;;        (map-dotted (lambda (arg)
+;;                      (setq foo (concat foo sep arg)))
+;;                    dl)))
+;;      (length sep))))
 
 (defun gimp-doc-at-point ()
   "Call `gimp-doc' on the symbol at point."
@@ -1312,7 +1441,7 @@ wrong char at the minibuffer prompt."
         action))))
 
 ;; snippets
-(if (featurep 'snippets)
+(if (featurep 'snippet)
     (snippet-with-abbrev-table
      'gimp-mode-abbrev-table
      ("reg" . "(define ($${name}))
@@ -1384,4 +1513,3 @@ wrong char at the minibuffer prompt."
 
 (provide 'gimp)
 ;;; gimp.el ends here
-

@@ -1,6 +1,14 @@
+2008-05-04  Niels Giesen  <niels.giesen@gmail.com>
+
+	* gimp.el (gimp-doc): Added doc-echoing for any function that
+	TinyScheme can provide code of (via `get-closure-code'). And
+	positionalized core scheme echoing. Dotted argument lists are
+	handled by converting them to normal lists first, where the atom
+	after the dot gets a dot prepended (as a string).
+
 2008-05-02  Niels Giesen  <sharik@reetkevert.sshunet.nl>
 
-	* gimp-init.el (Module): made things not optionally 
+	* gimp-init.el (Module): made external libs not optionally 
 
 	* gimp.el (Module): 
 
