@@ -1,3 +1,8 @@
+2008-05-05  Niels Giesen  <niels.giesen@gmail.com>
+
+	* gimp.el (Module): added documentation for main interactive
+	functions.
+
 2008-05-04  Niels Giesen  <niels.giesen@gmail.com>
 
 	* gimp.el (gimp-doc): Added doc-echoing for any function that
