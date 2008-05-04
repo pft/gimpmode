@@ -1,3 +1,4 @@
+;; This is gimp.el $Id: gimp.el,v 1.12 2008-05-04 22:21:43 sharik Exp $
 ;; See the file README in this directory
 
 ;; What does gimp.el stand for? 
