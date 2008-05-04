@@ -104,6 +104,7 @@ make a vector in SCHEME with `in-gimp'.
 
 ;; Version
 (defun gimp-mode-version ()
+  "Version of this mode."
   (interactive)
   (let ((major 0)
 	(minor 5))
@@ -111,10 +112,11 @@ make a vector in SCHEME with `in-gimp'.
     (cons major minor)))
 
 (defun gimp-version ()
+  "Version of the Gimp."
   (interactive)
   (destructuring-bind (version major minor rev)
       (gimp-string-match
-       "\\([[:digit:]]\\)\.\\([[:digit:]]\\)\.\\([[:digit:]]\\)" 
+       "\\([[:digit:]]\\)\.\\([[:digit:]]\\)\.\\([[:digit:]]\\)"
        (in-gimp (car (gimp-version))))
     (message "Gimp version: %s" version)
     (list version major minor rev)))
@@ -134,10 +136,10 @@ make a vector in SCHEME with `in-gimp'.
 
   The last might be subject to change.")
 (defvar gimp-commands
-  '("apropos" "describe-procedure" "documentation" "help" "help-on-help"
+  '("apropos" "describe-procedure" "documentation" "help" "list-shortcuts"
     "mode-version" "open-image" "quit" "search" "selector" "trace"
     "untrace" "version" "commands")
-  "Commands that can be completed from inferior Gimp buffer")
+  "Commands that can be completed from inferior Gimp buffer.")
 ;; User generated caches (will be saved on quit) :
 (defconst gimp-user-generated-caches
   '(gimp-pdb-desc-cache
@@ -256,6 +258,7 @@ Raise error if ITEM is not in the RING."
   "Alias so people gimp-TABbing can find `run-gimp'")
 
 (defun gimp-quit ()
+  "Quit gimp session."
   (interactive)
   (gimp-save-input-ring)
   (gimp-save-caches)
@@ -316,7 +319,7 @@ another.  Now best left at the non-nil value.")
     (define-key m "\C-cf" 'gimp-describe-procedure)
     (define-key m "\C-ca" 'gimp-apropos)
     (define-key m "\C-ch" 'gimp-help)
-    (define-key m "\C-c?" 'gimp-help-on-help)
+    (define-key m "\C-c?" 'gimp-list-shortcuts)
     (define-key m "\C-cd" 'gimp-documentation)
     (define-key m "\C-cs" 'gimp-search)
     (define-key m "\C-m" 'gimp-send-input)
@@ -348,7 +351,7 @@ another.  Now best left at the non-nil value.")
     (define-key m "\C-c," 'gimp-describe-this-arg)
     (define-key m "\C-c." 'gimp-doc)
     (define-key m "\C-ch" 'gimp-help)
-    (define-key m "\C-c?" 'gimp-help-on-help)
+    (define-key m "\C-c?" 'gimp-list-shortcuts)
     (define-key m "\C-cf" 'gimp-describe-procedure)
     (define-key m "\C-ca" 'gimp-apropos)
     (define-key m "\C-cd" 'gimp-documentation)
@@ -364,7 +367,7 @@ another.  Now best left at the non-nil value.")
     (define-key m "f" 'gimp-describe-procedure)
     (define-key m "a" 'gimp-apropos)
     (define-key m "q" 'bury-buffer)
-    (define-key m "?" 'gimp-help-on-help)
+    (define-key m "?" 'gimp-list-shortcuts)
     (define-key m "n" 'next-line)
     (define-key m "p" 'gimp-help-previous-line-and-show)
     (define-key m "r" 'run-gimp)
@@ -503,11 +506,17 @@ Argument CACHE is the cache to restore."
 
 ;; Tracing
 (defun gimp-trace ()
+  "Start tracing FU.
+
+Only for REPL input."
   (interactive)
   (message "Tracing turned on")
   (put 'gimp-trace 'trace-wanted t))
 
 (defun gimp-untrace ()
+  "Stop tracing FU.
+
+Only for REPL input."
   (interactive)
   (gimp-eval "(tracing 0)\n")
   (message "Tracing turned off")
@@ -667,11 +676,15 @@ works like a charm ;)."
       (substring gimp-output 0 -2))))
 
 (defun gimp-documentation ()
+  "Shortcut to (online) documentation.
+
+See variable `gimp-docs-alist'"
   (interactive)
   (let ((doc (completing-read "Documentation: " gimp-docs-alist nil t)))
     (browse-url (cdr (assoc doc gimp-docs-alist)))))
 
 (defun gimp-help ()
+  "Generic Gimp help."
   (interactive)
   (if (buffer-live-p (get-buffer "*Gimp Help*"))
       (switch-to-buffer (get-buffer "*Gimp Help*"))
@@ -683,6 +696,7 @@ works like a charm ;)."
 	collect i))
 
 (defun gimp-apropos ()
+  "Search pdb for submatch of name."
   (interactive)
   (let* ((query (read-from-minibuffer "Apropos term: " ))
 	 (new-contents (mapconcat (lambda (proc)
@@ -693,7 +707,10 @@ works like a charm ;)."
 	 (insert new-contents))
       (message "No match"))))
 
-(defun gimp-help-on-help ()
+(defun gimp-list-shortcuts ()
+  "List shortcuts.
+
+For full keyboard look-up, use \\[describe-mode\]"
   (interactive)
   (case major-mode
     (gimp-help-mode (message "ENTER short, echoed help
@@ -705,7 +722,7 @@ a     apropos: get list of procedures containing queried input (can be regexp)
 d     documentation in browser
 ?     this help"))
     ((gimp-mode inferior-gimp-mode)
-     (message 
+     (message
       "TAB             gimp-indent-and-complete
 SPC             gimp-space
 C-c ,           gimp-describe-this-arg
@@ -713,9 +730,9 @@ C-c .           gimp-doc: echo \"(function (name TYPE)...)\"
 C-c a           gimp-apropos
 C-c f           gimp-describe-procedure
 C-c h           gimp-help
-C-c ?           gimp-help-on-help
+C-c ?           gimp-list-shortcuts
 C-c d           gimp-documentation"))
-    (t (message "Use function `gimp-help-on-help' in one of the gimp-modes"))))
+    (t (message "Use function `gimp-list-shortcuts' in one of the gimp-modes"))))
 
 (defun gimp-help-last ()
   (interactive)
@@ -1074,6 +1091,8 @@ Caches completion candidates (in the variable `gimp-completion-cache')"
 
 
 (defun gimp-commands (&optional terse)
+  "Show interactive commands in the REPL.
+Optional argument TERSE means only show that I am there to help you."
   (interactive)
   (when (eq major-mode 'inferior-gimp-mode)
     (if terse (insert "Type ," (gimp-make-input-field "commands") " for list of commands")
@@ -1096,7 +1115,7 @@ Caches completion candidates (in the variable `gimp-completion-cache')"
                   (point)))))
 
 (defun gimp-make-input-field (arg)
-  (propertize arg 'help-echo (format "gimp-%s" arg)
+  (propertize arg 'help-echo (documentation (intern-soft (format "gimp-%s" arg)))
               'mouse-face 'highlight
               'field 'input))
 
@@ -1489,18 +1508,22 @@ wrong char at the minibuffer prompt."
 	      (setq local-abbrev-table gimp-mode-abbrev-table))))
 
 (defun gimp-selector (char)
-  (interactive "cSwitch to gimp buffer [ilh]: ")
+  "Buffer switcher like `slime-selector.
+Argument CHAR is used to choose between buffers.'."
+  (interactive "cSwitch to gimp buffer [ilh?]: ")
   (case char
     (?l (switch-to-buffer
-	 (car 
-	  (member-if 
+	 (car
+	  (member-if
 	   (lambda (b)
 	     (with-current-buffer b
 	       (eq major-mode 'gimp-mode)))
 	   (buffer-list)))))
     (?h (gimp-help))
     (?i (call-interactively 'run-gimp))
-    (?? (message "i = inferior gimp buffer; l: last lisp buffer; h: help; "))
+    (?? (message "i = inferior gimp buffer; l: last lisp buffer; h: help.")
+        (sit-for 3)
+        (call-interactively 'gimp-selector))
     (t (call-interactively 'gimp-selector))))
 
 (defun gimp-add-define-to-oblist (str)
