@@ -31,8 +31,8 @@ To inquire about gimp-specific keybindings in a gimp buffer, say M-x
 
 ==Features==
 
-TAB-completion like in Slime: the whole tiny-fu oblist is available and define'd
-vars/functions are added to completion. 
+TAB-completion like in Slime: the whole tiny-fu oblist is available and
+vars/functions that are defined during a session are added to completion. 
 
 Completion on arguments is done via guesses, based on regexp-parsing/custom
 commands that work on the documentation. This might have to be improved and
@@ -112,6 +112,11 @@ Q. Why do you use all these separate cache files instead of
 gimp-procedural-db-dump?
 
 A. Implemented caches before I knew about the dump. 
+
+Q. Stuff does not work correctly when I turn on tracing via (tracing 1)
+
+A. Use the wrapper gimp-trace / gimp-untrace for that; at the REPL: ,trace ENTER
+and ,untrace ENTER
 
 
 
