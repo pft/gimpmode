@@ -1,17 +1,5 @@
-;; This is gimp.el $Id: gimp-mode.el,v 1.1 2008-05-05 10:03:24 sharik Exp $
+;; This is gimp-mode.el $Id: gimp-mode.el,v 1.2 2008-05-05 10:06:29 sharik Exp $
 ;; See the file README in this directory
-
-;; What does gimp.el stand for? 
-
-;; Hmm, let's try and make up a multiple recursive acronym:
-
-;; (((GNU's Not Unix) Image Manipulation Program)
-;;    Interaction
-;;    Mode 
-;;    Pimped for 
-;;    .
-;;  ((Emacs May Annihilate Command Structures)
-;;   (Language of Insufferable Superfluous Parentheses)-niks))
 
 ;; What is it for?
 
@@ -107,7 +95,7 @@ make a vector in SCHEME with `in-gimp'.
 (defun gimp-mode-version ()
   "Version of this mode."
   (interactive)
-  (let ((version (gimp-string-match "[1-9]\.[1-9]+" "$Revision: 1.1 $" 0)))
+  (let ((version (gimp-string-match "[1-9]\.[1-9]+" "$Revision: 1.2 $" 0)))
     (if (interactive-p) (message "Gimp mode version: %s" version))
     version))
 
@@ -1560,5 +1548,5 @@ In %s\n\n\n"
 			   (buffer-local-value mode from-buffer)))))
     (insert "\n"))))
 
-(provide 'gimp)
-;;; gimp.el ends here
+(provide 'gimp-mode)
+;;; gimp-mode.el ends here

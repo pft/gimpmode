@@ -42,6 +42,9 @@ Argument echoing whereby current argument is highlighted.
 
 Documentation lookup: for current argument or entire function.
 
+Snippets are provided through snippet.el. A registration template is provided
+(reg SPACE), and handy templates for script-fu-register arguments (sf* SPACE).
+
 ==Beyond script-fu==
 
 See the functions `gimp-search-fu', `gimp-search-core-function' and
@@ -56,15 +59,14 @@ set, as they search uncompiled files.
 
 ==Caveats==
 
-This mode is developed on and for a GNU/Linux environment.  I only
-have had very little time to test this on a win32 machine. It did not
-work. Somehow the Gimp opens a second 'console', so it does not return
+This mode is developed on and for a GNU/Linux environment, on Emacs22 and Emacs
+from CVS. I only have had very little time to test this on a win32 machine. It
+did not work. Somehow the Gimp opens a second 'console', so it does not return
 anything. I do not now about the behaviour on OSX. Not tested on BSD
-either.  Writing a mode based on the script-fu server would solve this
-problem. I am looking into this, but on the whole it seems to me to be
-more fragile than running Gimp as a sub-process (lost connections,
-problems with the reader, having to wrap a (write ...) around
-everything...). Perhaps.
+either. Writing a mode based on the script-fu server would solve this problem. I
+am looking into this, but on the whole it seems to me to be more fragile than
+running Gimp as a sub-process (lost connections, problems with the reader,
+having to wrap a (write ...) around everything...). Perhaps.
 
 I have not written many script-fu files to test this mode on. Please
 give me something to work on.
@@ -118,8 +120,9 @@ Q. Stuff does not work correctly when I turn on tracing via (tracing 1)
 A. Use the wrapper gimp-trace / gimp-untrace for that; at the REPL: ,trace ENTER
 and ,untrace ENTER
 
+Q. Why didn't you name it gimp.el?
 
-
-
-
-
+A. There is already a gimp.el in the nxhtml distribution. And GimpMode is nicer
+for wiki pages anyway. So gimp-mode.el it shall be. Just harder to interpret it
+as a recursive acronym: gimp interaction mode for programmers mildly... gimp
+interaction mode performed mostly on... Yes, it is hard.

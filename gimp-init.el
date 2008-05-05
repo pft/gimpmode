@@ -1,9 +1,6 @@
 ;; This is gimp-init.el
 
-;; Put this in your .emacs (load-file "~/.emacs.d/elisp/gimp/gimp-init.el")
-
-;; Put gimp.el (and scheme-complete.el) somewhere in your `load-path'
-;; or add the parent dir of gimp.el to your `load-path'.
+;; Put this in your .emacs (load-file "~/.emacs.d/gimp/gimp-init.el")
 (let* ((this-dir (file-name-directory
 		  (if load-file-name load-file-name buffer-file-name)))
        (related-dir (file-name-as-directory
@@ -12,16 +9,16 @@
   (add-to-list 'load-path this-dir)
   (add-to-list 'load-path related-dir))
 
-(autoload 'run-gimp "gimp" 
+(autoload 'run-gimp "gimp-mode" 
   "Inferior Gimp Interaction Mode Pimped for Emacs Lispniks" t)
 
-(autoload 'gimp-mode "gimp" 
+(autoload 'gimp-mode "gimp-mode" 
   "Gimp Interaction Mode Pimped for Emacs Lispniks" t)
 
-(autoload 'gimp-help "gimp" 
+(autoload 'gimp-help "gimp-mode" 
   "Help for the Gimp" t)    
 
-(autoload 'gimp-selector "gimp" 
+(autoload 'gimp-selector "gimp-mode" 
   "Help for the Gimp" t)    
 
 ;; Uncomment the following line to have a nice selector:
