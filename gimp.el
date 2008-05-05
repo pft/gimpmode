@@ -1,4 +1,4 @@
-;; This is gimp.el $Id: gimp.el,v 1.13 2008-05-05 09:49:21 sharik Exp $
+;; This is gimp.el $Id: gimp.el,v 1.14 2008-05-05 09:56:45 sharik Exp $
 ;; See the file README in this directory
 
 ;; What does gimp.el stand for? 
@@ -107,8 +107,9 @@ make a vector in SCHEME with `in-gimp'.
 (defun gimp-mode-version ()
   "Version of this mode."
   (interactive)
-  (message "Gimp mode version: $Revision: 1.13 $")
-  "$Revision: 1.13 $")
+  (let ((version (gimp-string-match "[1-9]\.[1-9]+" "$Revision: 1.14 $" 0)))
+    (if (interactive-p) (message "Gimp mode version: %s" version))
+    version))
 
 (defun gimp-version ()
   "Version of the Gimp."
@@ -1541,13 +1542,10 @@ Please describe exactly what actions triggered the bug
 and the precise symptoms of the bug (it may also be
 helpful to include an *EXAMPLE FILE*!):
 
-Gimp-mode version: $Revision: 1.13 $
+Gimp-mode version: %s
 
 In %s\n\n\n"
-             ;; (destructuring-bind (maj . min)
-             ;;     (gimp-mode-version)
-             ;;   (format "%d.%d" maj min))
-             
+             (gimp-mode-version)
              (emacs-version)))
     (save-excursion
     (insert (format "\n\nMajor mode: %s\n"
