@@ -1,12 +1,14 @@
-;; Stuff needed for interaction with the emacs-modes `gimp-mode' `inferior-gimp-mode'
-;; and `gimp-help-mode'.
+;; Stuff needed for interaction with the emacs-modes `gimp-mode'
+;; `inferior-gimp-mode' and `gimp-help-mode'.
 (define (emacs-describe-function sym)
   (gimp-procedural-db-proc-info (symbol->string sym)))
 
 (define (emacs-describe-function-arg sym arg)
-  (let ((output (gimp-procedural-db-proc-arg (symbol->string sym) arg)))
+  (let ((output (gimp-procedural-db-proc-arg
+                 (symbol->string sym) arg)))
     (set-car! output
-              (cdr (assv (car output) emacs-type-to-readable-type-map)))))
+              (cdr (assv (car output)
+                         emacs-type-to-readable-type-map)))))
 
 (define (emacs-describe-function-args sym)
     (let ((arg (list-ref (emacs-describe-function sym) 6))
@@ -61,7 +63,6 @@
                                     (list (cadr argument)
                                            (car argument))))))))))
 
-                                                                                              
 (define (emacs-funstring sym)
   (emacs-describe-function-args sym))
 
@@ -76,7 +77,8 @@
    (string-append (car info)
                   "\n\n"
                   (cadr info) "\n\nAuthor(s): " (list-ref info 2)
-                  "\nCopyright: " (list-ref info 3) ", " (list-ref info 4))))
+                  "\nCopyright: " (list-ref info 3) ", "
+                  (list-ref info 4))))
 
 (define (emacs-type-of-arg name position)
   (let* ((name (if (symbol? name)
@@ -91,18 +93,28 @@
       (else 'other))))
 
 (define (emacs-cache)
-  (write "Creating emacs caches... ")
-  (with-output-to-file (string-append gimp-dir "/emacs-gimp-fonts-cache")
+  (with-output-to-file
+      (string-append gimp-dir "/emacs-gimp-fonts-cache")
    (lambda ()
      (write (cadr (gimp-fonts-get-list "")))))
-  (with-output-to-file (string-append gimp-dir "/emacs-gimp-oblist-cache")
+  (with-output-to-file
+      (string-append gimp-dir "/emacs-gimp-oblist-cache")
     (lambda ()
       (write (emacs-flatten (oblist)))))
-  (with-output-to-file (string-append gimp-dir "/emacs-gimp-pdb-cache") 
+  (with-output-to-file
+      (string-append gimp-dir "/emacs-gimp-pdb-cache") 
     (lambda ()
-      (write (cadr (gimp-procedural-db-query ".*" ".*" ".*" ".*" ".*" ".*" ".*"))))))
+      (write (cadr (gimp-procedural-db-query
+                    ".*" ".*" ".*" ".*" ".*" ".*" ".*"))))))
 
 (emacs-cache)
+
+;; (define-macro (with-tracing body) 
+;;   `(begin
+;;      (tracing 1)
+;;      ,@body
+;;      (tracing 0)))
+
 ;; (define (emacs-lispify item)
 ;;   "To use emacs as a client to the TCP/IP server."
 ;;   (cond 
@@ -132,4 +144,6 @@
 ;; 	  ((member (car list) tolist)
 ;; 	   (loop (cdr list) tolist))
 ;; 	  (else (loop (cdr list) (cons (car list) tolist))))))
+
+
 

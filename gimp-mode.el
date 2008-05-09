@@ -1,4 +1,4 @@
-;; This is gimp-mode.el $Id: gimp-mode.el,v 1.2 2008-05-05 10:06:29 sharik Exp $
+;; This is gimp-mode.el $Id: gimp-mode.el,v 1.3 2008-05-09 09:09:14 sharik Exp $
 ;; See the file README in this directory
 
 ;; What is it for?
@@ -30,8 +30,9 @@
 
 ;; Wishes: 
 
-;; - Find way to get to menu documentation 
-;; - Something other than snippets that is able to eval lisp expressions
+;; - Find way to get to menu documentation.
+;; - Something other than snippets that is able to eval lisp expressions.
+;; - Make search functions better.
 
 ;; Requirements
 (require 'cmuscheme)
@@ -95,7 +96,7 @@ make a vector in SCHEME with `in-gimp'.
 (defun gimp-mode-version ()
   "Version of this mode."
   (interactive)
-  (let ((version (gimp-string-match "[1-9]\.[1-9]+" "$Revision: 1.2 $" 0)))
+  (let ((version (gimp-string-match "[1-9]\.[1-9]+" "$Revision: 1.3 $" 0)))
     (if (interactive-p) (message "Gimp mode version: %s" version))
     version))
 
@@ -866,6 +867,7 @@ Use `outline-mode' commands to navigate and fold stuff."
          (gimp-intern (current-word)))))
 
 (defun gimp-fnsym-in-current-sexp ()
+  "Return function symbol in current sexp."
   (let ((p (point)))
     (gimp-without-string
      (gimp-beginning-of-sexp)
@@ -877,6 +879,7 @@ Use `outline-mode' commands to navigate and fold stuff."
        (goto-char p)))))
 
 (defun gimp-position ()
+  "Return position of point in current lambda form."
   (if (bolp)                       ;correct, but does not intercept all possible
                                         ;0-positions, of course
       0
@@ -988,15 +991,20 @@ Optional argument LIJST specifies a list of completion candidates."
     (aset place pos vals)))
 
 (defun gimp-completion-cache-get (fun pos)
+  "Get completion for argument at POS in FUN."
   (interactive)
   (let ((answer (gethash fun gimp-completion-cache)))
     (if answer (aref answer pos))))
 
 (defun gimp-completion-cache-get-length (fun)
+  "Get length of completion vector for FUN."
   (length  
    (gimp-completion-cache-arg-vector fun)))
 
 (defun gimp-completion-cache-arg-vector (fun)
+  "Return completion vector for FUN.
+
+Make and cache it if not cached already."
   (or (gethash fun gimp-completion-cache) 
       (puthash fun 
                (make-vector
@@ -1165,7 +1173,11 @@ argument at point is highlighted."
                    (setq cache-resp
                          (gimp-eval (format "(emacs-pdb-doc '%s)" sym)))))
                 ((let
-                     ((info (scheme-get-current-symbol-info)))
+                     ((info (condition-case err
+                                (scheme-get-current-symbol-info) ;circumvent a
+                                                                 ;bug (?) in
+                                                                 ;scheme-complete at defines.
+                              (error nil))))
                    (if (and info (listp (read info)))
                        (progn
                          (setq cache-resp (read info))
@@ -1225,6 +1237,10 @@ argument at point is highlighted."
 ;;         (t (dotted-p (cdr dl)))))
 
 (defun dotted-to-list (dl)
+  "'Undot' DL.
+
+Turn DL (of the form (\"a\" \"b\" . \"c\")) into a list of the form (\"a\"
+\"b\" \". c\"))."
   (cond ((atom (cdr dl))
          (cons (car dl)
                (if (endp (cdr dl))
@@ -1256,7 +1272,7 @@ argument at point is highlighted."
 
 (defun gimp-describe-this-arg ()
   "Echo description for argument or procedure at point;
-If a procedure, cache the result in `gimp-pdb-desc-cache'"
+If a procedure, cache the result in `gimp-pdb-desc-cache'."
   (interactive)
   (let* ((sym (gimp-without-string (gimp-fnsym-in-current-sexp))))
     (if (member (symbol-name sym) gimp-pdb-cache)
@@ -1274,23 +1290,23 @@ If a procedure, cache the result in `gimp-pdb-desc-cache'"
   "Search for definition of script-fu procedure."
   (interactive)
   (save-match-data
-    (let* ((proc 
-	    (or 
+    (let* ((proc
+	    (or
 	     (and
-	      (string-match "^script-fu-" 
+	      (string-match "^script-fu-"
 			    (symbol-name (gimp-procedure-at-point)))
 	      (symbol-name (gimp-procedure-at-point)))
 	     (completing-read "Procedure: " gimp-pdb-cache
-			      (lambda (thing) 
+			      (lambda (thing)
 				(string-match "^script-fu-" thing)) t)))
            (file
 	    (format "%s/scripts/%s.scm"
 		    (in-gimp gimp-data-dir)
 		    (replace-regexp-in-string "^script-fu-" "" proc))))
-      (when 
-	  (and proc 
+      (when
+	  (and proc
 	       (or (file-exists-p file)
-		   (let ((grep-output 
+		   (let ((grep-output
 			  (shell-command-to-string
 			   (apply 'format
 				  "grep -rm1 -l %s %s/* ~/.gimp-%s.%s/scripts/*"
@@ -1358,7 +1374,8 @@ Needs the variable `gimp-src-dir' to be set."
 
 (defun gimp-search (&optional incorrect)
   "Source search dispatch function.
-Optional argument INCORRECT is internal only, and given when user inserts a
+
+Optional argument INCORRECT is internal only.  It is given when user inserts a
 wrong char at the minibuffer prompt."
   (interactive)
   (let ((choice
@@ -1478,10 +1495,10 @@ wrong char at the minibuffer prompt."
 	      (setq local-abbrev-table gimp-mode-abbrev-table))))
 
 (defun gimp-add-define-to-oblist (str)
-  "Put defined vars or functions in the oblist."
+  "Put vars, functions and macros defined by STR in the oblist."
   (set-text-properties 0 (length str) nil str)
   (let* ((var-or-fun (gimp-string-match
-         "[[:space:]]*(define[[:space:]]+(?\\([[:word:]-?!><]+\\)" str 1)))
+         "[[:space:]]*(define\\(-macro\\)?[[:space:]]+(?\\([[:word:]-?!><]+\\)" str 2)))
     (if (and var-or-fun (not (member var-or-fun gimp-oblist-cache)))
 	(push var-or-fun gimp-oblist-cache))))
 
