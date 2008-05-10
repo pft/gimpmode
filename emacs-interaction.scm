@@ -1,3 +1,4 @@
+;; -*- mode: Gimp; -*-
 ;; Stuff needed for interaction with the emacs-modes `gimp-mode'
 ;; `inferior-gimp-mode' and `gimp-help-mode'.
 (define (emacs-describe-function sym)
@@ -52,16 +53,33 @@
                                           (car desc)
                                            ")"))))))
 
+;; (define (emacs-pdb-doc sym)
+;;   (let ((arg (list-ref (emacs-describe-function sym) 6))
+;;         (lst (list sym)))
+;;     (do ((i 0 (+ i 1)))
+;;         ((>=  i arg) lst)
+;;       (let ((argument (emacs-describe-function-arg sym i)))
+;;         (if (and
+;;              (string=? (substring (symbol->string  sym) 0 9) "script-fu")
+;;              (string=? (cadr argument) "run-mode"))
+;;                                         ;skip this nonsense
+;;             (set! i (+ i 1))
+;;             (set! lst (append lst (list
+;;                                    (map string->atom
+;;                                         (list (cadr argument)
+;;                                                (car argument)))))))))))
+
 (define (emacs-pdb-doc sym)
   (let ((arg (list-ref (emacs-describe-function sym) 6))
         (lst (list sym)))
     (do ((i 0 (+ i 1)))
-        ((= i arg) lst)
+        ((>=  i arg) lst)
       (let ((argument (emacs-describe-function-arg sym i)))
         (set! lst (append lst (list
                                (map string->atom
                                     (list (cadr argument)
                                            (car argument))))))))))
+
 
 (define (emacs-funstring sym)
   (emacs-describe-function-args sym))
@@ -94,6 +112,14 @@
 
 (define (emacs-cache)
   (with-output-to-file
+      (string-append gimp-dir "/emacs-gimp-menu") ;menu entries for plugins
+   (lambda ()
+     (let ((all (gimp-plugins-query "")))
+       (write (mapcar (lambda (menu plugin)
+                        (list plugin menu))
+                      (nth 1 all)
+                      (nth 11 all))))))
+  (with-output-to-file
       (string-append gimp-dir "/emacs-gimp-fonts-cache")
    (lambda ()
      (write (cadr (gimp-fonts-get-list "")))))
@@ -108,6 +134,8 @@
                     ".*" ".*" ".*" ".*" ".*" ".*" ".*"))))))
 
 (emacs-cache)
+
+;(script-fu-alien-glow-logo "Glow Hiero"  20 "BPG Elite" "#23647e")
 
 ;; (define-macro (with-tracing body) 
 ;;   `(begin

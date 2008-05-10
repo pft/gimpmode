@@ -1,3 +1,12 @@
+2008-05-10  Niels Giesen  <niels.giesen@gmail.com>
+
+	* README (Module): update to reflect changes
+	
+	* emacs-interaction.scm (Module): emacs-caches now also creates a
+	menu file
+
+	* gimp-mode.el (Module): Added a menu interface `gimp-menu'
+
 2008-05-05  Niels Giesen  <niels.giesen@gmail.com>
 
 	* gimp.el (Module): added documentation for main interactive
