@@ -1,4 +1,4 @@
-;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.5 2008-05-10 13:08:18 sharik Exp $
+;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.6 2008-05-10 16:51:48 sharik Exp $
 ;; Copyright (C) 2008  Niels Giesen <niels.giesen@gmail.com>
 
 ;; Author: Niels Giesen <niels.giesen@gmail.com>
@@ -33,7 +33,8 @@
 (require 'cl)
 (require 'ring)
 (eval-when-compile (require 'scheme-complete))
-
+(defvar gimp-email-regexp
+  "\\b[A-Z0-9._%+-]+@[A-Z0-9.-]+.[A-Z]\\{2,4\\}\\b")
 (defmacro gimp-hash-to-list (hash-table)
   (let ((nl (gensym)))
     `(let (,nl)
@@ -66,18 +67,67 @@ make a vector in SCHEME with `in-gimp'.
 
 
 ;; Gimp Help
+;; (defmacro gimp-help-wrapper (&rest body)
+;;   `(progn
+;;      (unless (eq (current-buffer)
+;; 		 (get-buffer "*Gimp Help*"))
+;;        (unless (buffer-live-p "*Gimp Help*")
+;;          (split-window-vertically (- (window-height) 15)))
+;;        (switch-to-buffer-other-window "*Gimp Help*"))
+;;      (gimp-help-mode)
+;;      (let (buffer-read-only)
+;;        (delete (buffer-substring (point-min) (point-max)) gimp-help-history) 
+;;        (push (list (buffer-substring (point-min) (point-max))
+;;                    gimp-current-procedure
+;;                    (point)) gimp-help-history)
+;;        (erase-buffer)
+;;        ,@body)))
+
 (defmacro gimp-help-wrapper (&rest body)
   `(progn
-     (unless (eq (current-buffer)
-		 (get-buffer "*Gimp Help*"))
-       (switch-to-buffer-other-window "*Gimp Help*"))
+     (let ((window (get-window-with-predicate
+                    (lambda (w)
+                      (eq (window-buffer w)
+                          (get-buffer "*Gimp Help*"))))))
+       (if window
+           (select-window window)
+         (when (= (length (window-list)) 1)
+           (split-window-vertically (- (window-height)
+                                       15)))
+         (other-window 1)
+         (switch-to-buffer
+          "*Gimp Help*")))
      (gimp-help-mode)
      (let (buffer-read-only)
        (delete (buffer-substring (point-min) (point-max)) gimp-help-history) 
-       (push (buffer-substring (point-min) (point-max)) gimp-help-history)
+       (setq gimp-help-history
+             (list 
+              (list 
+               (buffer-substring (point-min) (point-max))
+               gimp-current-procedure
+               (point))
+              (car gimp-help-history)))
        (erase-buffer)
-       ,@body)
-     (goto-char (point-min))))
+       ,@body)))
+
+(defun gimp-help ()
+  "Generic Gimp help."
+  (interactive)
+  (let ((window (get-window-with-predicate
+                (lambda (w)
+                  (eq (window-buffer w)
+                      (get-buffer "*Gimp Help*"))))))
+    (if window
+        (select-window window)
+      (when (= (length (window-list)) 1)
+          (split-window-vertically (- (window-height)
+                                    15)))
+      (other-window 1)
+      (switch-to-buffer
+       "*Gimp Help*")
+      (if (= (point-min)
+             (point-max))
+          (gimp-apropos)))))
 
 (defmacro gimp-without-string (&rest body)
   `(save-excursion
@@ -89,7 +139,7 @@ make a vector in SCHEME with `in-gimp'.
 (defun gimp-gimp-mode-version ()
   "Version of this mode."
   (interactive)
-  (let ((version (gimp-string-match "[1-9]\.[1-9]+" "$Revision: 1.5 $" 0)))
+  (let ((version (gimp-string-match "[1-9]\.[1-9]+" "$Revision: 1.6 $" 0)))
     (if (interactive-p) (message "Gimp mode version: %s" version))
     version))
 
@@ -332,7 +382,8 @@ another.  Now best left at the non-nil value.")
 
 (defvar gimp-help-mode-map
   (let ((m (copy-keymap outline-mode-map)))
-    (define-key m "\C-m" 'gimp-describe-procedure-at-point)
+    (define-key m "\C-m" 'gimp-dispatch-enter)
+    (define-key m "\t" 'gimp-hop-fields)
     (define-key m " " 'gimp-space)
     (define-key m "," 'gimp-doc-at-point)
     (define-key m "l" 'gimp-help-last)
@@ -352,12 +403,38 @@ another.  Now best left at the non-nil value.")
     (interactive)
     (let ((event (read-event)))
       (mouse-set-point event)
-      (cond ((eq (field-at-pos (point)) 'submenu)
-             (gimp-menu 
-              (gimp-submenu-at-point (point))))
-            ((cddr event)
-             (gimp-describe-procedure))
-            (t (gimp-describe-procedure-at-point))))))
+      (gimp-dispatch-enter))))
+
+(defun gimp-dispatch-enter (&optional event)
+  "Dispatch enter key or mouse click in Gimp Help buffer.
+Optional argument EVENT is a mouse event."
+  (interactive)
+  (cond ((or (eq (field-at-pos (point)) 'submenu)
+             (eq (field-at-pos (1+ (point))) 'submenu))
+         (gimp-menu
+          (gimp-submenu-at-point (point))))
+        ((gimp-procedure-at-point)
+         (gimp-describe-procedure (gimp-procedure-at-point)))
+        ((or (eq (field-at-pos (point)) 'email)
+             (eq (field-at-pos (1+ (point))) 'email))
+         (mail nil (field-string-no-properties (1+ (point)))
+               (symbol-name gimp-current-procedure)))
+        (t (error "Nothing to do at point"))))
+
+(defun gimp-hop-fields (num)
+  (interactive "p")
+  (dotimes (n (abs num))
+    (let ((next-field
+           (if (< num 0)
+               (field-beginning (1- (field-beginning (point) t)))
+             (1+ (field-end (point) t)))))
+      (if (or (>= next-field (point-max))
+              (>= (field-end next-field) (point-max)))
+          (error "No next field")
+        (goto-char next-field))
+      (when (eq (field-at-pos (point))
+                'email)
+        (backward-char 1)))))
 
 (defun gimp-submenu-at-point (pos)
   "Return submenu at POS."
@@ -529,6 +606,7 @@ Only for REPL input."
   "Help mode for the Gimp. 
 Requires running inferior gimp process, see `inferior-gimp-mode'."
   (use-local-map gimp-help-mode-map)
+  (make-variable-buffer-local 'gimp-current-procedure)
   (setq buffer-read-only t))
 
 ;; Core inferior interaction functions
@@ -647,9 +725,21 @@ See variable `gimp-docs-alist'"
 (defun gimp-help ()
   "Generic Gimp help."
   (interactive)
-  (if (buffer-live-p (get-buffer "*Gimp Help*"))
-      (switch-to-buffer (get-buffer "*Gimp Help*"))
-    (gimp-apropos)))
+  (let ((window (get-window-with-predicate
+                (lambda (w)
+                  (eq (window-buffer w)
+                      (get-buffer "*Gimp Help*"))))))
+    (if window
+        (select-window window)
+      (when (= (length (window-list)) 1)
+          (split-window-vertically (- (window-height)
+                                    15)))
+      (other-window 1)
+      (switch-to-buffer
+       "*Gimp Help*")
+      (if (= (point-min)
+             (point-max))
+          (gimp-apropos)))))
 
 (defun gimp-apropos-list (input)
   (loop for i in (sort (copy-list gimp-pdb-cache) 'string<) 
@@ -667,13 +757,18 @@ See variable `gimp-docs-alist'"
            (gimp-apropos-list query) "\n")))
     (if (> (length new-contents) 0)
 	(gimp-help-wrapper
-	 (insert new-contents))
+	 (insert new-contents)
+         (goto-char (point-min)))
       (message "No match"))))
 
 (defun gimp-help-last ()
   (interactive)
   (gimp-help-wrapper
-   (insert (cadr gimp-help-history))))
+   (let ((last-page (cadr gimp-help-history)))
+     (insert (car last-page))
+     (setq gimp-current-procedure
+           (cadr last-page))
+     (goto-char (caddr last-page)))))
 
 (defun gimp-describe-procedure-at-point ()
   (interactive)
@@ -720,15 +815,26 @@ Optional argument PROC is a string identifying a procedure."
                     (if (null menu)
                         "No menu entry"
                       (setq menu (nreverse (split-string menu "/")))
-                      (concat (mapconcat 'identity
-                                         (reverse (mapcar (lambda (submenu) ;
-                                                            (propertize submenu
-                                                                        'mouse-face 'highlight
-                                                                        'field 'submenu
-                                                                        'help-echo "Find more plugins under this submenu"))
-                                                          (cdr menu)))
-                                         "/") "/" (car menu))))
-		  (gimp-procedure-description sym)
+                      (concat
+                       (mapconcat 'identity
+                                  (reverse (mapcar
+                                            (lambda (submenu) ;
+                                              (propertize submenu
+                                                          'mouse-face 'highlight
+                                                          'field 'submenu
+                                                          'help-echo "Find more plugins under this submenu"))
+                                            (cdr menu)))
+                                  "/") "/" (car menu))))
+                  (let ((case-fold-search t))
+                    (replace-regexp-in-string gimp-email-regexp
+                                              (lambda (match)
+                                                (propertize match
+                                                            'field                'email
+                                                            'help-echo            "Mail author"
+                                                            'mouse-face           'highlight
+                                                            'face                 'w3m-current-anchor-face))
+                                              (gimp-procedure-description sym)))
+
 		  (mapconcat
 		   (lambda
 		     (argument)
@@ -749,15 +855,17 @@ Optional argument PROC is a string identifying a procedure."
 					      (match-string 2 item))
 				    item))
 				(split-string desc2 "\\(, \\|\n\\)") "\n")))
-		       (format "** %-2d %-20s %s\n%s"
-			       (incf count)
-			       (cadr argument)
-			       (car argument)
-			       desc2)))
+                        (format "** %-2d %-20s %s\n%s"
+                                (incf count)
+                                (cadr argument)
+                                (car argument)
+                                desc2)))
 		   (gimp-procedure-args sym) "\n\n"))))
 
 	    (add-to-list 'gimp-pdb-long-desc-cache (cons sym desc))
-	    desc))))))
+	    desc)))
+     (setq gimp-current-procedure sym)))
+  (goto-char (point-min)))
 
 ;; General 
 (defun gimp-interactive-p ()
