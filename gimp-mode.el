@@ -1,4 +1,4 @@
-;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.4 2008-05-10 12:48:27 sharik Exp $
+;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.5 2008-05-10 13:08:18 sharik Exp $
 ;; Copyright (C) 2008  Niels Giesen <niels.giesen@gmail.com>
 
 ;; Author: Niels Giesen <niels.giesen@gmail.com>
@@ -89,7 +89,7 @@ make a vector in SCHEME with `in-gimp'.
 (defun gimp-gimp-mode-version ()
   "Version of this mode."
   (interactive)
-  (let ((version (gimp-string-match "[1-9]\.[1-9]+" "$Revision: 1.4 $" 0)))
+  (let ((version (gimp-string-match "[1-9]\.[1-9]+" "$Revision: 1.5 $" 0)))
     (if (interactive-p) (message "Gimp mode version: %s" version))
     version))
 
@@ -118,6 +118,7 @@ make a vector in SCHEME with `in-gimp'.
   "Cache containing ALL symbols in TinyScheme, whether bound or not.
 
   The last might be subject to change.")
+(defvar gimp-menu nil)
 (defvar gimp-shortcuts
   '("help" "apropos" "describe-procedure" "menu" "documentation"
     "search" "selector" "trace" "untrace" "shortcuts" "open-image"
