@@ -111,6 +111,12 @@ documentation of the Gimp.
 - Fuzzy completion like in slime.
 - Better debugging/recovering from non-returning functions.
 - Implement true history in gimp-help.
+- Implement a nice way to see args from closure code alongside the registered stuff.
+- Strip RUN-(NON)INTERACTIVE argument from script-fu procs (?).
+
+==Known Bugs==
+
+- gimp-help-last does not set gimp-current-procedure
 
 ==FAQ==
 

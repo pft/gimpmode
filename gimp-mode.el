@@ -1,4 +1,4 @@
-;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.7 2008-05-11 09:57:40 sharik Exp $
+;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.8 2008-05-11 10:39:56 sharik Exp $
 ;; Copyright (C) 2008  Niels Giesen <(rot13 "avryf.tvrfra@tznvy.pbz")>
 
 
@@ -262,6 +262,10 @@ Raise error if ITEM is not in the RING."
   (let ((m (copy-keymap outline-mode-map)))
     (define-key m "\C-m" 'gimp-help-enter)
     (define-key m "\t" 'gimp-hop-fields)
+    (define-key m [(backtab)]
+      (lambda (n)
+        (interactive "p")
+        (gimp-hop-fields (- n))))
     (define-key m " " 'gimp-space)
     (define-key m "," 'gimp-doc-at-point)
     (define-key m "l" 'gimp-help-last)
@@ -339,7 +343,7 @@ Optional argument EVENT is a mouse event."
 (defun gimp-mode-version ()
   "Version of this mode."
   (interactive)
-  (let ((version (gimp-string-match "[1-9]\.[1-9]+" "$Revision: 1.7 $" 0)))
+  (let ((version (gimp-string-match "[1-9]\.[1-9]+" "$Revision: 1.8 $" 0)))
     (if (interactive-p) (message "Gimp mode version: %s" version))
     version))
 
@@ -376,7 +380,8 @@ make a vector in SCHEME with `in-gimp'.
 
 ;; Core inferior interaction functions
 (defun gimp-proc ()
-  (scheme-get-process))
+  (or (scheme-get-process)
+      (error "Gimp not running; start it with M-x run-gimp")))
 
 (defun gimp-filter (proc string)
   "Filter for inferior gimp-process."
@@ -593,7 +598,7 @@ Turn DL (of the form (\"a\" \"b\" . \"c\")) into a list of the form (\"a\"
       (if (= (point-min)
              (point-max))
           (let (buffer-read-only)
-            (insert "Type a for gimp-apropos, f for function query, C-h m for all keys.\n\n"
+            (insert "Type a for gimp-apropos, f for function query, m to select a procedure via the menu, hC-h m for all keys.\n\n"
                     "For general help on gimp-mode, please consult the README file.")
             (goto-char (point-min)))))))
 
@@ -602,10 +607,14 @@ Turn DL (of the form (\"a\" \"b\" . \"c\")) into a list of the form (\"a\"
   (dotimes (n (abs num))
     (let ((next-field
            (if (< num 0)
-               (field-beginning (1- (field-beginning (point) t)))
+               (let ((fb (field-beginning (point) t)))
+                 (if (<= fb (point-min))
+                     fb
+                   (field-beginning (1- fb) t)))
              (1+ (field-end (point) t)))))
       (if (or (>= next-field (point-max))
-              (>= (field-end next-field) (point-max)))
+              (>= (field-end next-field) (point-max))
+              (<= next-field (point-min)))
           (error "No next field")
         (goto-char next-field))
       (when (member (field-at-pos (point))
