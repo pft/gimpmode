@@ -21,10 +21,11 @@ loaded for the Gimp to serve us some proper feedback) in
 On Linux, BSDs and Macs, a symbolic link for emacs-interaction.scm works fine
 too (that's what I do to keep my cvs tree nice in one place).
 
-Now run M-x run-gimp to start the Gimp and its REPL within
-Emacs. This takes a little while (just a little longer than the
-graphical start-up phase), so just be patient. See the customization
-for `gimp-program-command-line' to tweak it to your needs.
+Now run M-x run-gimp to start the Gimp and its REPL within Emacs. This takes a
+little while (just a little longer than the graphical start-up fase - the Gimp
+is told by emacs-interaction.scm to set up some caches in your local gimp
+directory), so just be patient. See the customization for
+`gimp-program-command-line' to tweak it to your needs.
 
 To inquire about gimp-specific keybindings in a gimp buffer, say M-x
  gimp-help-on-help.
@@ -81,11 +82,11 @@ am looking into this, but on the whole it seems to me to be more fragile than
 running Gimp as a sub-process (lost connections, problems with the reader,
 having to wrap a (write ...) around everything...). Perhaps.
 
-I have not written many script-fu files to test this mode on. Please
-give me something to work on.
+I have not written many script-fu files to test this mode on.
 
 There is no way currently to recover from non-returning forms, such an infinite
-loop, save for killing the process altogether.
+loop, save for killing the process altogether.  I'd love to find a way to deal
+with instability stuff like this.
 
 ==Related==
 
@@ -106,13 +107,10 @@ documentation of the Gimp.
 
 ==Wishes==
 
-- Offline mode
-- Fuzzy completion like in slime
+- Offline mode.
+- Fuzzy completion like in slime.
 - Better debugging/recovering from non-returning functions.
-
-==Known Bugs==
-
-- gimp-evalling '() never returns.
+- Implement true history in gimp-help.
 
 ==FAQ==
 

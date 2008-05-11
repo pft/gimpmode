@@ -1,3 +1,23 @@
+2008-05-11  Niels Giesen  <niels.giesen@gmail.com>
+
+	* emacs-interaction.scm: add emacs-only-bound-symbols? to specify
+	what symbols you would like to see present in completions. Added
+	emacs-interaction-possible? to check whether emacs-interaction.scm
+	has actually been loaded.
+ 
+	* README: misc changes
+
+	* gimp-init.el (Module): Changed order, added TOC, stuff like that
+
+	* gimp-mode.el (Module): 
+
+	* gimp-init.el (gimp-mode-dir): added gimp-mode-dir as a defvar
+	for later symlinking emacs-interaction.scm on execution of run-gimp
+
+	* gimp-mode.el (Module): redesigned gimp-eval and
+	gimp-eval-string (now simply checks for prompt to see whether the
+	gimp has returned). Let's see how they work.
+ 
 2008-05-10  Niels Giesen  <niels.giesen@gmail.com>
 
 	* README (Module): update to reflect changes

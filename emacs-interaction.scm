@@ -1,6 +1,13 @@
 ;; -*- mode: Gimp; -*-
 ;; Stuff needed for interaction with the emacs-modes `gimp-mode'
 ;; `inferior-gimp-mode' and `gimp-help-mode'.
+
+;; Set the following to #f if you want acces to all (so also uninterned) symbols
+;; returned by (oblist); this can be handy to have access to local variables in
+;; completion, but also confusing, as nothing is bound, and of course slower,
+;; because of the huge list generated (2933 versus 1781 symbols in my case).
+(define emacs-only-bound-symbols? #t)                                    
+
 (define (emacs-describe-function sym)
   (gimp-procedural-db-proc-info (symbol->string sym)))
 
@@ -90,6 +97,22 @@
          (append (emacs-flatten (car l)) (emacs-flatten (cdr l))))
         (else (list l))))
 
+(define (emacs-filter fun lst)
+  (cond ((null? lst) ())
+        ((fun (car lst))
+         (append (list (car lst))
+                 (emacs-filter fun (cdr lst))))
+        (else (emacs-filter fun (cdr lst)))))
+
+(define (emacs-flatten-and-filter-bound l)
+  (cond ((null? l) ())
+        ((list? l)
+         (append (emacs-flatten-and-filter-bound (car l))
+                 (emacs-flatten-and-filter-bound (cdr l))))
+        ((symbol-bound? l)
+         (list l))
+        (else ())))
+
 (define (emacs-short-description name)
  (let ((info (gimp-procedural-db-proc-info name)))
    (string-append (car info)
@@ -121,12 +144,14 @@
                       (nth 11 all))))))
   (with-output-to-file
       (string-append gimp-dir "/emacs-gimp-fonts-cache")
-   (lambda ()
-     (write (cadr (gimp-fonts-get-list "")))))
+    (lambda ()
+      (write (cadr (gimp-fonts-get-list "")))))
   (with-output-to-file
       (string-append gimp-dir "/emacs-gimp-oblist-cache")
     (lambda ()
-      (write (emacs-flatten (oblist)))))
+      (write (if emacs-only-bound-symbols?
+                 (emacs-flatten-and-filter-bound (oblist))
+                 (emacs-flatten (oblist))))))
   (with-output-to-file
       (string-append gimp-dir "/emacs-gimp-pdb-cache") 
     (lambda ()
@@ -135,43 +160,5 @@
 
 (emacs-cache)
 
-;(script-fu-alien-glow-logo "Glow Hiero"  20 "BPG Elite" "#23647e")
-
-;; (define-macro (with-tracing body) 
-;;   `(begin
-;;      (tracing 1)
-;;      ,@body
-;;      (tracing 0)))
-
-;; (define (emacs-lispify item)
-;;   "To use emacs as a client to the TCP/IP server."
-;;   (cond 
-;;    ((number? item) (number->string item 10))
-;;    ((string? item) (string-append "\"" item  "\""))
-;;    ((null? item)  "()")
-;;    ((eq? #t item) "t")
-;;    ((pair? item)
-;;     (string-append "("
-;;                    (unbreakupstr
-;;                     (map emacs-lispify item) " ")
-;;                    ")"))
-;;    (TRUE (symbol->string item))))
-
-;; (define (delete elem lst)
-;;    lst (when (pair? lst)
-;;          (append (if (eqv? elem (car lst))
-;;                    ()
-;;                    (list (car lst)))
-;;                  (delq elem (cdr lst)))))
-
-;; (define (emacs-uniq list)
-;;   "Uniquify elements of LIST. Quite fast."
-;;   (let loop ((list list)
-;; 	     (tolist))
-;;     (cond ((null? list) tolist)
-;; 	  ((member (car list) tolist)
-;; 	   (loop (cdr list) tolist))
-;; 	  (else (loop (cdr list) (cons (car list) tolist))))))
-
-
+(define emacs-interaction-possible? #t)
 

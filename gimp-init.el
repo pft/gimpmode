@@ -1,28 +1,30 @@
 ;; This is gimp-init.el
 
 ;; Put this in your .emacs (load-file "~/.emacs.d/gimp/gimp-init.el")
-(let* ((this-dir (file-name-directory
-		  (if load-file-name load-file-name buffer-file-name)))
-       (related-dir (file-name-as-directory
+(defvar gimp-mode-dir 
+  (file-name-directory
+		  (or load-file-name buffer-file-name)))
+
+(let* ((related-dir (file-name-as-directory
 		     (expand-file-name "related"
-				       this-dir))))
-  (add-to-list 'load-path this-dir)
+				       gimp-mode-dir))))
+  (add-to-list 'load-path gimp-mode-dir)
   (add-to-list 'load-path related-dir))
 
 (autoload 'run-gimp "gimp-mode" 
-  "Inferior Gimp Interaction Mode Pimped for Emacs Lispniks" t)
+  "Inferior Gimp Interaction Mode" t)
 
 (autoload 'gimp-mode "gimp-mode" 
-  "Gimp Interaction Mode Pimped for Emacs Lispniks" t)
+  "Mode for editing script-fu and interacting with an inferior gimp process" t)
 
 (autoload 'gimp-help "gimp-mode" 
   "Help for the Gimp" t)    
 
 (autoload 'gimp-selector "gimp-mode" 
-  "Help for the Gimp" t)    
+  "Gimp buffer switcher similar to `slime-selector." t)    
 
 ;; Uncomment the following line to have a nice selector:
-(global-set-key "\C-cg" 'gimp-selector)
+;(global-set-key "\C-cg" 'gimp-selector)
 
 (mapc (lambda (hook)
 	(add-hook hook
