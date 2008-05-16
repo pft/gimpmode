@@ -1,4 +1,4 @@
-;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.9 2008-05-16 19:40:51 sharik Exp $
+;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.10 2008-05-16 21:45:58 sharik Exp $
 ;; Copyright (C) 2008  Niels Giesen <(rot13 "avryf.tvrfra@tznvy.pbz")>
 
 
@@ -47,13 +47,17 @@
 
 ;;; Code:
 (provide 'gimp-mode)
-;; Requirements
+ ;; Requirements
 (require 'cmuscheme)
 (require 'outline)
 (require 'cl)
 (require 'ring)
-(eval-when-compile (require 'scheme-complete))
-;; Globals
+(eval-when-compile (load "gimp-init.el"))
+(eval-when-compile (require 'ring))
+(eval-when (compile load)
+  (require 'snippet)
+  (require 'scheme-complete))
+ ;; Globals
 (defconst gimp-email-regexp
   "\\b[A-Z0-9._%+-]+@[A-Z0-9.-]+.[A-Z]\\{2,4\\}\\b")
 (defconst gimp-url-regexp
@@ -88,7 +92,7 @@ another.  Now best left at the non-nil value.")
   '("help" "apropos" "describe-procedure" "menu" "documentation"
     "search" "selector" "trace" "untrace" "shortcuts" "open-image"
     "load-script" "refresh-scripts" "gimp-version" "gimp-mode-version"
-    "report-bug" "quit")
+    "report-bug" "list-snippets" "quit")
   "Commands that can be completed from inferior Gimp buffer.")
 (defvar gimp-completion-cache (make-hash-table :test 'eql)
   "Completion hash table.")
@@ -96,7 +100,7 @@ another.  Now best left at the non-nil value.")
 (setf (get 'gimp-help-ring 'gimp-help-positions)
       (make-vector 100 1))
 (put 'gimp-help-ring 'index 0)
-;; Customization
+ ;; Customization
 (defgroup gimp-mode nil "Customization group for Gimp (script-fu) programming."
   :group 'shell
   :group 'scheme
@@ -165,7 +169,7 @@ source gimp"
   "Inhibit start-up message for the Gimp"
   :group 'gimp-mode)
 
-;; General purpose functions and macros
+ ;; General purpose functions and macros
 (defmacro gimp-hash-to-list (hash-table)
   (let ((nl (gensym)))
     `(let (,nl)
@@ -194,22 +198,23 @@ source gimp"
 	  (push (match-string v str) result))))))
 
 ;; Emacs 22 compatibility for rings
-(when (not (fboundp 'ring-member))
-  (defun ring-member (ring item)
-    "Return index of ITEM if on RING, else nil.
+(eval-when (compile load)
+  (when (not (fboundp 'ring-member))
+    (defun ring-member (ring item)
+      "Return index of ITEM if on RING, else nil.
 Comparison is done via `equal'.  The index is 0-based."
-    (catch 'found
-      (dotimes (ind (ring-length ring) nil)
-        (when (equal item (ring-ref ring ind))
-          (throw 'found ind))))))
-
-(when (not (fboundp 'ring-next))
-  (defun ring-next (ring item)
-    "Return the next item in the RING, after ITEM.
+      (catch 'found
+	(dotimes (ind (ring-length ring) nil)
+	  (when (equal item (ring-ref ring ind))
+	    (throw 'found ind)))))))
+(eval-when (compile load)
+  (when (not (fboundp 'ring-next))
+    (defun ring-next (ring item)
+      "Return the next item in the RING, after ITEM.
 Raise error if ITEM is not in the RING."
-    (let ((curr-index (ring-member ring item)))
-      (unless curr-index (error "Item is not in the ring: `%s'" item))
-      (ring-ref ring (ring-plus1 curr-index (ring-length ring))))))
+      (let ((curr-index (ring-member ring item)))
+	(unless curr-index (error "Item is not in the ring: `%s'" item))
+	(ring-ref ring (ring-plus1 curr-index (ring-length ring)))))))
 
 ;; Adapted from elmo-util.el
 (defun gimp-uniq-list! (lst)
@@ -223,7 +228,7 @@ Raise error if ITEM is not in the RING."
 			  (car tmp)
 			  (cdr tmp)))))))
   lst)
-;; Keybindings
+ ;; Keybindings
 (defvar inferior-gimp-mode-map
   (let ((m (copy-keymap inferior-scheme-mode-map)))
     (define-key m "\t" 'gimp-indent-and-complete)
@@ -307,10 +312,10 @@ Optional argument EVENT is a mouse event."
           (gimp-submenu-at-point (point))))
         ((or (eq (field-at-pos (point)) 'procedure)
              (eq (field-at-pos (1+ (point))) 'procedure))
-           (let ((char (read-char "Insert at REPL or search source code [is]: ")))
-             (case char
-               (?i (gimp-insert-sexp-at-repl))
-               (?s (gimp-search (symbol-name (gimp-procedure-at-point)))))))
+	 (let ((char (read-char "Insert at REPL or search source code [is]: ")))
+	   (case char
+	     (?i (gimp-insert-sexp-at-repl))
+	     (?s (gimp-search (symbol-name (gimp-procedure-at-point)))))))
         ((gimp-procedure-at-point)
          (gimp-describe-procedure (gimp-procedure-at-point t)))
         ((or (eq (field-at-pos (point)) 'email)
@@ -349,7 +354,7 @@ Optional argument EVENT is a mouse event."
 	 (t
           (just-one-space 1)
           (gimp-doc))))
-;; Set up the modes
+ ;; Set up the modes
 (define-derived-mode gimp-mode scheme-mode "Gimp mode" 
   "Mode for editing script-fu and interacting with an inferior gimp process."
   (use-local-map gimp-mode-map))
@@ -360,11 +365,11 @@ Optional argument EVENT is a mouse event."
   (use-local-map inferior-gimp-mode-map)
   (setq comint-input-filter-functions 
 	'(gimp-add-define-to-oblist)))
-;; Versioning
+ ;; Versioning
 (defun gimp-mode-version ()
   "Version of this mode."
   (interactive)
-  (let ((version (gimp-string-match "[1-9]\.[1-9]+" "$Revision: 1.9 $" 0)))
+  (let ((version (gimp-string-match "[1-9]\.[1-9]+" "$Revision: 1.10 $" 0)))
     (if (interactive-p) (message "Gimp mode version: %s" version))
     version))
 
@@ -376,13 +381,13 @@ Optional argument EVENT is a mouse event."
   (destructuring-bind (version major minor rev)
       (gimp-string-match
        "\\([[:digit:]]\\)\.\\([[:digit:]]\\)\.\\([[:digit:]]\\)"
-       (in-gimp (car (gimp-version))))
+       (gimp-eval "(car (gimp-version))"))
     (when (interactive-p)
       (message "Gimp version: %s" version))
     (list version major minor rev)))
 
 
-;; Evaluation
+ ;; Evaluation
 (defmacro in-gimp (body)
   "Evaluate fu sexps without having to quote them. Syntactic sugar.
 
@@ -474,58 +479,17 @@ When optional argument NEWLINE is non-nil, append a newline char."
                (sit-for 0.1)
                (set 'gimp-output "")))))))
 
-;; (defun gimp-eval (string)
-;;   "Eval STRING, and return it read, somewhat, though not fully, elispified."
-;;   (let (output)
-;;     (if (not (condition-case nil (read string)
-;;                (error nil)))
-;;         nil
-;;       (setq gimp-output "")
-;;       (set-process-filter (gimp-proc) 'gimp-filter)
-;;       (scheme-send-string string t)
-;;       (sit-for .1)
-;;       (while (null (setq output
-;;         		 (condition-case err
-;;         		     (if (null (string-match "^#" gimp-output))
-;;         			 (read gimp-output)
-;;         		       (read (substring gimp-output 1)))
-;;         		   (error nil))))
-;;         (scheme-send-string "" t))      ;force flush
-;;       output)))
-
-;; (defun gimp-eval (string)
-;;   "Eval STRING, and return it read, somewhat, though not fully, elispified."
-;;     (setq gimp-output "")
-;;     (set-process-filter (gimp-proc) 'gimp-filter)
-;;     (scheme-send-string string t)
-;;     (while (not (string-match "^> $" gimp-output))
-;;       (sit-for .1))
-;;     (if (string-match "^#" gimp-output) ;unreadable by the lisp reader
-;;         (read (substring gimp-output 1))
-;;       (read gimp-output)))
-
 (defun gimp-eval (string)
   "Eval STRING, and return it read, somewhat, though not fully, elispified.
 
 Best is to craft STRING so that script-fu returns something universal to the
 Lisp world."
   (let ((output (gimp-eval-to-string string)))
-    (if (string-match "^#" output) ;unreadable by the lisp reader
+    (if (string-match "^#" output)	;unreadable by the lisp reader
         (if (string= "#f\n> " gimp-output) ;gimp returned #f
             nil
-          (read (substring output 1)))     ;so strip
+          (read (substring output 1)))	;so strip
       (read output))))
-
-;; (defun gimp-eval-to-string (string &optional discard)
-;;   (if (not (condition-case nil (read string)
-;; 	     (error nil)))
-;;       nil
-;;     (setq gimp-output "")
-;;     (set-process-filter (gimp-proc) 'gimp-filter)
-;;     (scheme-send-string string t)
-;;     (unless discard
-;;       (sit-for .1)
-;;       (substring gimp-output 0 -2))))
 
 (defun gimp-eval-to-string (string &optional discard)
   (setq gimp-output "")
@@ -533,7 +497,7 @@ Lisp world."
   (scheme-send-string string t)
   (unless discard
     (while (not (string-match "^> $" gimp-output)) ;prompt has not yet returned
-      (sit-for .01))                                ;keep polling
+      (sit-for .01))				   ;keep polling
     (substring gimp-output 0 -2)))                 ;strip prompt
 
 (defun gimp-insert-input (event)
@@ -573,15 +537,15 @@ Turn DL (of the form (\"a\" \"b\" . \"c\")) into a list of the form (\"a\"
         (t (cons (car dl)
                  (dotted-to-list (cdr dl))))))
 
-;; Help
+ ;; Help
 (defmacro gimp-help-wrapper (form &rest body)
   `(progn
      (when (and 
             ,form                       
-            (not (member ,form gimp-help-ring)));new branche
+            (not (member ,form gimp-help-ring))) ;new branche
        (setq gimp-help-ring 
              (member (nth (get 'gimp-help-ring 'index) gimp-help-ring)
-                     gimp-help-ring))   ;set help ring to history until now
+                     gimp-help-ring)) ;set help ring to history until now
        (push ,form gimp-help-ring)
        (put 'gimp-help-ring 'index 0)
        (setf 
@@ -607,32 +571,36 @@ Turn DL (of the form (\"a\" \"b\" . \"c\")) into a list of the form (\"a\"
        (save-excursion 
          (goto-char (point-max))
          (insert "\n\n" (if (< (get 'gimp-help-ring 'index)
-                        (1- (length gimp-help-ring)))
-                     (propertize "[back]" 
-                             'mouse-face 'highlight
-                             'field 'back
-                             'help-echo "Back in Help History")
-                   "      ")
+			       (1- (length gimp-help-ring)))
+			    (propertize "[back]" 
+					'mouse-face 'highlight
+					'field 'back
+					'help-echo "Back in Help History"
+					'font-lock-face 'widget-button)
+			  (propertize "[back]" 
+				      'font-lock-face 'widget-inactive))
                  " "
                  (if (> (get 'gimp-help-ring 'index) 0)
                      (propertize "[forward]" 
                                  'mouse-face 'highlight
                                  'field 'forward
-                                 'help-echo "Forward in Help History")
-                   "")
+                                 'help-echo "Forward in Help History"
+				 'font-lock-face 'widget-button)
+		   (propertize "[forward]" 
+			       'font-lock-face 'widget-inactive))
                  " ")))))
 
 (defun gimp-help ()
   "Generic Gimp help."
   (interactive)
   (let ((window (get-window-with-predicate
-                (lambda (w)
-                  (eq (window-buffer w)
-                      (get-buffer "*Gimp Help*"))))))
+		 (lambda (w)
+		   (eq (window-buffer w)
+		       (get-buffer "*Gimp Help*"))))))
     (if window
         (select-window window)
       (when (= (length (window-list)) 1)
-          (split-window-vertically (- (window-height)
+	(split-window-vertically (- (window-height)
                                     15)))
       (other-window 1)
       (switch-to-buffer
@@ -661,7 +629,7 @@ Turn DL (of the form (\"a\" \"b\" . \"c\")) into a list of the form (\"a\"
           (error "No next field")
         (goto-char next-field))
       (when (member (field-at-pos (point))
-                '(email url procedure))
+		    '(email url procedure))
         (backward-char 1))
       (when (null (field-at-pos (1+ (point))))
         (gimp-hop-fields 1)))))
@@ -699,9 +667,10 @@ Deletes any previous stuff at that REPL"
        (or (marker-position comint-accum-marker)
 	   (process-mark (get-buffer-process (current-buffer))))
        (point))
+      (set-text-properties 0 (length sexp) () sexp)
       ;; Insert the input at point
-      (insert sexp))))                      
-;; Stuff pertaining to running 'n' quitting
+      (insert sexp))))
+ ;; Stuff pertaining to running 'n' quitting
 ;;;###autoload
 (defun run-gimp ()
   "Start the Gimp and its REPL."
@@ -720,18 +689,18 @@ Deletes any previous stuff at that REPL"
         (gimp-shortcuts t))
       (when (not (gimp-eval
                   "(symbol-bound? 'emacs-interaction-possible?)"))
-            (let ((lnk (concat (gimp-dir) "/scripts/" 
-                               "99emacs-interaction.scm"))
-                  (emacs-interaction.scm
-                   (concat gimp-mode-dir "emacs-interaction.scm")))
-              (message "Creating symlink to emacs-interaction.scm...")
-              (make-symbolic-link emacs-interaction.scm lnk t)
-              (gimp-load-script lnk))
-            (gimp-progress (concat (current-message)
-                                   "and loading it ")
-                           (lambda ()
-                             (not (string-match "> $"  gimp-output)))
-                           " done!"))
+	(let ((lnk (concat (gimp-dir) "/scripts/" 
+			   "99emacs-interaction.scm"))
+	      (emacs-interaction.scm
+	       (concat gimp-mode-dir "emacs-interaction.scm")))
+	  (message "Creating symlink to emacs-interaction.scm...")
+	  (make-symbolic-link emacs-interaction.scm lnk t)
+	  (gimp-load-script lnk))
+	(gimp-progress (concat (current-message)
+			       "and loading it ")
+		       (lambda ()
+			 (not (string-match "> $"  gimp-output)))
+		       " done!"))
       (if (not (or gimp-oblist-cache
                    gimp-fonts-cache))
           (gimp-restore-caches))
@@ -766,7 +735,7 @@ Deletes any previous stuff at that REPL"
   (kill-buffer "*Gimp*")
   (message "Gimp process ended."))
 
-;; Utility functions
+ ;; Utility functions
 (defun gimp-dir ()
   (gimp-eval "gimp-dir"))
 
@@ -793,24 +762,6 @@ Deletes any previous stuff at that REPL"
    (get-buffer scheme-buffer)
    (comint-check-proc scheme-buffer)))
 
-;;Functions to get information on the (lexical and semantical) environment
-;; (defun gimp-procedure-at-point (&optional as-string)
-;;   (let  ((sym 
-;; 	  (car (member (format "%s" 
-;; ;; Chomping of quotes is needed for gimp-help,
-;; ;; where references to procedures names appear
-;; ;; single-quoted in descriptions
-;; 			       (replace-regexp-in-string 
-;; 				"'" ""
-;; 				(symbol-name (symbol-at-point))))
-;; 		        gimp-pdb-cache))))
-;;     (when sym
-;;       (apply 
-;;        (if as-string
-;;            'identity
-;;          'gimp-intern)
-;;        (list sym)))))
-
 (defun gimp-procedure-at-point (&optional as-string)
   (let  ((sym (when (gethash (symbol-at-point) gimp-dump)
                 (symbol-at-point))))
@@ -833,7 +784,7 @@ Deletes any previous stuff at that REPL"
     (gimp-without-string
      (gimp-beginning-of-sexp)
      (prog1
-;; Don't do anything if current word is inside a string.
+	 ;; Don't do anything if current word is inside a string.
          (if (= (or (char-after (1- (point))) 0) ?\")
              nil
            (gimp-current-symbol))
@@ -841,7 +792,7 @@ Deletes any previous stuff at that REPL"
 
 (defun gimp-position ()
   "Return position of point in current lambda form."
-  (if (bolp)                       ;correct, but does not intercept all possible
+  (if (bolp)		 ;correct, but does not intercept all possible
                                         ;0-positions, of course
       0
     (gimp-without-string
@@ -873,7 +824,7 @@ Deletes any previous stuff at that REPL"
       (let ((parses (parse-partial-sexp (point) orig)))
         (nth 4 parses)))))
 
-;; Caches: saving, deleting, restoring
+ ;; Caches: saving, deleting, restoring
 (defun gimp-save-cache (cache)
   (with-temp-file (format "%s/emacs-%s" (gimp-dir) cache)
     (let ((cache (symbol-value cache)))
@@ -920,7 +871,7 @@ Optional argument PREFIX specifies a prefix for the filename."
     (with-temp-buffer
       (when (file-exists-p file)
         (find-file file)
-;        (goto-char (point-min))
+					;        (goto-char (point-min))
         (set cache (prog1 (read (buffer-substring (point-min) (point-max)))
                      (kill-buffer nil)))
         (when to-hash (set cache (gimp-list-to-hash (symbol-value cache))))))
@@ -951,14 +902,14 @@ screwed up.  It is wise then to preceed it with a call to
     (with-temp-buffer
       (find-file file)
       (mapcar (lambda (i)
-                 (puthash (intern (cadr i))
-                          (cddr i)
-                          ht))
-               (read (concat 
-                      "("
-                      (buffer-substring-no-properties
-                       (point-min) (point-max))
-                      ")")))
+		(puthash (intern (cadr i))
+			 (cddr i)
+			 ht))
+	      (read (concat 
+		     "("
+		     (buffer-substring-no-properties
+		      (point-min) (point-max))
+		     ")")))
       (kill-buffer nil))
     (setq gimp-dump ht)
     (setq gimp-pdb-cache (let (list)
@@ -1119,89 +1070,97 @@ Optional argument PROC is a string identifying a procedure."
                                  (symbol-name (symbol-at-point)))))))
          (count 0))
     (gimp-help-wrapper `(gimp-describe-procedure ,(symbol-name sym))
-     (insert
-      (or (let ((desc
-		 (format
-		  "*  %s - %s\n\n%s\n\n%s"
-                  (propertize (symbol-name sym)
-                              'field 'procedure
-                              'mouse-face 'highlight
-                              'help-echo "i : insert symbol at REPL\ns : search source code for symbol")
-                  (let ((menu (cadr (assoc (symbol-name sym) gimp-menu))))
-                    (if (null menu)
-                        "No menu entry"
-                      (setq menu (nreverse (split-string menu "/")))
-                      (concat
-                       (mapconcat
-                        'identity
-                        (reverse (mapcar
-                                  (lambda (submenu) ;
-                                    (propertize
-                                     submenu
-                                     'mouse-face 'highlight
-                                     'field 'submenu
-                                     'help-echo
-                                     "Find more plugins under this submenu"))
-                                  (cdr menu)))
-                        "/") "/" (car menu))))
-                  (let ((case-fold-search t))
-                    (replace-regexp-in-string
-                     "'\\([[:alpha:]-]+\\)'"
-                     (lambda (match)
-                       (if (member (match-string 1 match) gimp-pdb-cache)
-                           (propertize match
-                                   'field 'function
-                                   'help-echo "Follow link"
-                                   'mouse-face 'highlight)
-                         match
-                         ))
-                     (replace-regexp-in-string
-                     gimp-url-regexp
-                     (lambda (match)
-                       (propertize match
-                                   'field                'url
-                                   'help-echo            "Follow link"
-                                   'mouse-face           'highlight))
-                     (replace-regexp-in-string
-                      gimp-email-regexp
-                      (lambda (match)
-                        (propertize match
-                                    'field                'email
-                                    'help-echo            "Mail author"
-                                    'mouse-face           'highlight))
-                      (gimp-procedure-description sym)))))
+		       (insert
+			(or (let ((desc
+				   (format
+				    "%s %s - %s\n\n%s\n\n%s"
+				    (propertize "* " 'invisible t)
+				    (propertize (symbol-name sym)
+						'field 'procedure
+						'mouse-face 'highlight
+						'help-echo "i : insert symbol at REPL\ns : search source code for symbol"
+						'font-lock-face 'info-title-3)
+				    (let ((menu (cadr (assoc (symbol-name sym) gimp-menu))))
+				      (if (null menu)
+					  "No menu entry"
+					(setq menu (nreverse (split-string menu "/")))
+					(concat
+					 (mapconcat
+					  'identity
+					  (reverse (mapcar
+						    (lambda (submenu) ;
+						      (propertize
+						       submenu
+						       'mouse-face 'highlight
+						       'field 'submenu
+						       'help-echo
+						       "Find more plugins under this submenu"
+						       'font-lock-face 'info-menu-header))
+						    (cdr menu)))
+					  "/")  "/" (propertize (car menu)
+							       'font-lock-face 'info-node))))
+				    (let ((case-fold-search t))
+				      (replace-regexp-in-string
+				       "'\\([[:alpha:]-]+\\)'"
+				       (lambda (match)
+					 (if (member (match-string 1 match) gimp-pdb-cache)
+					     (propertize match
+							 'field 'function
+							 'help-echo "Follow link"
+							 'mouse-face 'highlight
+							 'font-lock-face 'font-lock-function-name-face)
+					   match
+					   ))
+				       (replace-regexp-in-string
+					gimp-url-regexp
+					(lambda (match)
+					  (propertize match
+						      'field                'url
+						      'help-echo            "Follow link"
+						      'mouse-face           'highlight
+						      'font-lock-face       'button))
+					(replace-regexp-in-string
+					 gimp-email-regexp
+					 (lambda (match)
+					   (propertize match
+						       'field                'email
+						       'help-echo            "Mail author"
+						       'mouse-face           'highlight
+						       'font-lock-face       'button))
+					 (gimp-procedure-description sym)))))
 
-		  (mapconcat
-		   (lambda
-		     (argument)
-		     (let ((desc2 (car (cddr argument))))
-		       (when (string-match "{.*}" desc2)
-			 (setq desc2
-			       (replace-regexp-in-string " { " ":\n\n" desc2))
-			 (setq desc2
-			       (replace-regexp-in-string "}" "" desc2))
-			 (setq desc2
-			       (mapconcat
-				(lambda (item)
-				  (if
-				      (string-match
-				       "\\(.+\\) \\(([0-9]+)\\)" item)
-				      (format "      %-21s%2s"
-					      (match-string 1 item)
-					      (match-string 2 item))
-				    item))
-				(split-string desc2 "\\(, \\|\n\\)") "\n")))
-                        (format "** %-2d %-20s %s\n%s"
-                                (incf count)
-                                (cadr argument)
-                                (car argument)
-                                desc2)))
-		   (gimp-get-proc-args sym) "\n\n"))))
-	    desc)))
-     (setq gimp-current-procedure sym)))
+				    (mapconcat
+				     (lambda
+				       (argument)
+				       (let ((desc2 (car (cddr argument))))
+					 (when (string-match "{.*}" desc2)
+					   (setq desc2
+						 (replace-regexp-in-string " { " ":\n\n" desc2))
+					   (setq desc2
+						 (replace-regexp-in-string "}" "" desc2))
+					   (setq desc2
+						 (mapconcat
+						  (lambda (item)
+						    (if
+							(string-match
+							 "\\(.+\\) \\(([0-9]+)\\)" item)
+							(format "      %-21s%2s"
+								(match-string 1 item)
+								(match-string 2 item))
+						      item))
+						  (split-string desc2 "\\(, \\|\n\\)") "\n")))
+					 (format "%s %-2d %-20s %s\n%s"
+						 (propertize "**" 'invisible t)
+						 (incf count)
+						 (cadr argument) 
+						 (propertize (car argument) 'font-lock-face 'info-title-4)
+						 desc2)))
+				     (gimp-get-proc-args sym) "\n\n"))))
+			      desc)))
+		       (setq gimp-current-procedure sym)))
   (goto-char (point-min)))
 
-;; Internal information retrieval
+ ;; Internal information retrieval
 (defun gimp-get-proc-arg (proc arg)
   (nth arg (gimp-get-proc-args proc)))
 
@@ -1259,7 +1218,7 @@ Optional argument PROC is a string identifying a procedure."
             ", "
             (nth 4 info))))
 
-;; Completion
+ ;; Completion
 (defun gimp-indent-and-complete ()
   "Indent and complete function or argument at point."
   (interactive)
@@ -1281,16 +1240,16 @@ Optional argument LST specifies a list of completion candidates."
     (if (and (eq last-command this-command)
 	     window (window-live-p window) (window-buffer window)
 	     (buffer-name (window-buffer window)))
-;; If this command was repeated, and
-;; there's a fresh completion window with a live buffer,
-;; and this command is repeated, scroll that window.
+	;; If this command was repeated, and
+	;; there's a fresh completion window with a live buffer,
+	;; and this command is repeated, scroll that window.
 	(with-current-buffer (window-buffer window)
 	  (if (pos-visible-in-window-p (point-max) window)
 	      (set-window-start window (point-min))
 	    (save-selected-window
 	      (select-window window)
 	      (scroll-up))))
-;; Do completion.
+      ;; Do completion.
       (let* ((lst (or lst gimp-oblist-cache))
 	     (end (point))
 	     (beg (with-syntax-table emacs-lisp-mode-syntax-table
@@ -1312,7 +1271,7 @@ Optional argument LST specifies a list of completion candidates."
 	      ((not (string= pattern completion))
 	       (delete-region beg end)
 	       (insert completion)
-;; Don't leave around a completions buffer that's out of date.
+	       ;; Don't leave around a completions buffer that's out of date.
 	       (let ((win (get-buffer-window "*Completions*" 0)))
 		 (if win (with-selected-window win (bury-buffer)))))
 	      (t
@@ -1325,8 +1284,8 @@ Optional argument LST specifies a list of completion candidates."
 		   (if (> (length lst2) 1)
 		       (with-output-to-temp-buffer "*Completions*"
 			 (display-completion-list lst2 pattern))
-;; Don't leave around a completions buffer that's
-;; out of date.
+		     ;; Don't leave around a completions buffer that's
+		     ;; out of date.
 		     (let ((win (get-buffer-window "*Completions*" 0)))
 		       (if win (with-selected-window win (bury-buffer))))))
 		 (unless minibuf-is-in-use
@@ -1356,47 +1315,47 @@ Make and cache it if not cached already."
       (puthash fun
                (make-vector
                 (1+ (length (gimp-get-proc-args fun)))
-                 nil)
-                gimp-completion-cache)))
+		nil)
+	       gimp-completion-cache)))
 
- (defun gimp-completable-at-p ()
-   "Check whether thing at p is completable."
-   (let ((fun (gimp-fnsym-in-current-sexp)))
-     (and (gethash fun gimp-dump)
-          (> (gimp-completion-cache-get-length fun)
-             (gimp-position)))))
+(defun gimp-completable-at-p ()
+  "Check whether thing at p is completable."
+  (let ((fun (gimp-fnsym-in-current-sexp)))
+    (and (gethash fun gimp-dump)
+	 (> (gimp-completion-cache-get-length fun)
+	    (gimp-position)))))
 
 (defun gimp-complete ()
-   "Main completion function.
+  "Main completion function.
 
  Important side-effect:
  Caches completion candidates (in the variable `gimp-completion-cache')"
-   (interactive)
-   (let ((fun (gimp-fnsym-in-current-sexp))
-         (pos (gimp-position))
-         (gimp-command (save-excursion
-                         (cadr (gimp-string-match "^,\\([[:alpha:]-]*\\)"
-                                                  (comint-get-old-input-default)))))
-         fun-or-table)
-     (cond
-      (gimp-command (gimp-complete-savvy gimp-shortcuts))
-      ((gimp-completable-at-p)
-       (progn
-         (setq fun-or-table (gimp-completion-cache-get fun pos))
-         (or (and (functionp fun-or-table)
-                  (funcall fun-or-table))
-             (and (listp fun-or-table)
-                  (not (null fun-or-table))
-                  (if (or
-                       (looking-back "[a-zA-Z-]+")
-                       (gimp-in-string-p))
-                      (gimp-complete-savvy (cdr fun-or-table))
-                    (insert (completing-read (car fun-or-table)
-                                             (cdr fun-or-table)))))
-             (let* ((desc (gimp-get-proc-arg
+  (interactive)
+  (let ((fun (gimp-fnsym-in-current-sexp))
+	(pos (gimp-position))
+	(gimp-command (save-excursion
+			(cadr (gimp-string-match "^,\\([[:alpha:]-]*\\)"
+						 (comint-get-old-input-default)))))
+	fun-or-table)
+    (cond
+     (gimp-command (gimp-complete-savvy gimp-shortcuts))
+     ((gimp-completable-at-p)
+      (progn
+	(setq fun-or-table (gimp-completion-cache-get fun pos))
+	(or (and (functionp fun-or-table)
+		 (funcall fun-or-table))
+	    (and (listp fun-or-table)
+		 (not (null fun-or-table))
+		 (if (or
+		      (looking-back "[a-zA-Z-]+")
+		      (gimp-in-string-p))
+		     (gimp-complete-savvy (cdr fun-or-table))
+		   (insert (completing-read (car fun-or-table)
+					    (cdr fun-or-table)))))
+	    (let* ((desc (gimp-get-proc-arg
                           fun
                           (1- pos)))
-                    (gimp-make-completion desc)
+		   (gimp-make-completion desc)
                    (minibuffer-question
                     (format "Value for %s (%s, %s) : "
                             (replace-regexp-in-string
@@ -1456,7 +1415,7 @@ Make and cache it if not cached already."
      .
      ("RUN-INTERACTIVE" "RUN-NONINTERACTIVE"))
 
-    ((lambda (desc name &rest ignore)
+    ((lambda (desc name type)
        (or (string= name "toggle")
            (string-match "\\((TRUE or FALSE)\\|toggle\\)"
                          desc)))
@@ -1485,11 +1444,11 @@ Make and cache it if not cached already."
                   (vector->list (cadr (gimp-image-list)))))))
     
     ((lambda (desc name type)
-      (string= "operation" name))
-    . ("CHANNEL-OP-ADD"
-       "CHANNEL-OP-SUBTRACT"
-       "CHANNEL-OP-REPLACE"
-       "CHANNEL-OP-INTERSECT"))
+       (string= "operation" name))
+     . ("CHANNEL-OP-ADD"
+	"CHANNEL-OP-SUBTRACT"
+	"CHANNEL-OP-REPLACE"
+	"CHANNEL-OP-INTERSECT"))
 
     ((lambda (desc name type)
        (and (not (gimp-in-string-p))
@@ -1499,7 +1458,7 @@ Make and cache it if not cached already."
          (forward-char -1)))
 
     ((lambda (desc name type)
-       (string-match ""))
+       (string-match "" name))
      . nil))
   
   "Ruleset for deciding the completion to perform by `gimp-make-completion'.
@@ -1530,14 +1489,14 @@ arguments pertaining to the argument, in order:
            (cdr (assoc-if
                  (lambda (rule)
                    (if (functionp rule)
-                       (apply rule (list desc name type)))
-                   nil)
+                       (apply rule (list desc name type))
+		     nil))
                  gimp-completion-rules))))
       (if (functionp action)
           (apply action (list desc name type))
         action))))
 
-;; Shortcuts
+ ;; Shortcuts
 (defun gimp-shortcuts (&optional terse)
   "Show interactive commands in the REPL.
 Optional argument TERSE means only show that I am there to help you."
@@ -1557,7 +1516,7 @@ Optional argument TERSE means only show that I am there to help you."
         (let ((pmark (process-mark (gimp-proc))))
           (setq comint-save-input-ring-index comint-input-ring-index)
           (setq comint-input-ring-index nil)
-;; Update the markers to discard this 'input'.
+	  ;; Update the markers to discard this 'input'.
           (set-marker comint-last-input-start pmark)
           (set-marker comint-last-input-end (point))
           (set-marker (process-mark (gimp-proc))
@@ -1568,7 +1527,7 @@ Optional argument TERSE means only show that I am there to help you."
   (propertize arg 'help-echo (gimp-string-match "^\\(.*$\\)" (documentation (intern-soft (format "gimp-%s" arg))) 1)
               'mouse-face 'highlight
               'field 'input))
-;; Doc echoing
+ ;; Doc echoing
 (defun gimp-docstring (sym)
   (if (and 
        (eq (gimp-get-proc-type sym) 
@@ -1577,13 +1536,13 @@ Optional argument TERSE means only show that I am there to help you."
       (progn 
         (setq this-command 'other-command)
         (gimp-get-closure-code sym))
-  (cons sym 
-        (mapcar (lambda (arg)
-                  (list (read (car arg))
-                        (read (replace-regexp-in-string 
-                               "GIMP_PDB_"
-                               "" (cadr arg))))) 
-                (gimp-get-proc-args sym)))))
+    (cons sym 
+	  (mapcar (lambda (arg)
+		    (list (read (car arg))
+			  (read (replace-regexp-in-string 
+				 "GIMP_PDB_"
+				 "" (cadr arg))))) 
+		  (gimp-get-proc-args sym)))))
 
 (defun gimp-doc (&optional sym)
   "Echo function  and argument information for SYM.
@@ -1599,7 +1558,7 @@ Optional argument STR"
                  cache-resp
                  (pos (gimp-position)))
             (cond ((gethash sym gimp-dump)
-;; Get it
+		   ;; Get it
                    (setq cache-resp
                          (gimp-docstring (read str))))
                   ((unless (string-match "define\\(?:-macro\\)?\\|let" str)
@@ -1616,7 +1575,7 @@ Optional argument STR"
                              t)         ;break
                          nil))))
                   (t
-;; Get it (unless we have it already)
+		   ;; Get it (unless we have it already)
                    (unless cache-resp
                      (setq cache-resp
                            (gimp-get-closure-code sym))
@@ -1629,7 +1588,7 @@ Optional argument STR"
                             (dotted-to-list cache-resp)))
               (setf (car cache-resp)
                     (propertize str 'face 'font-lock-keyword-face))
-;; Show it
+	      ;; Show it
               (let ((this-arg (nth pos cache-resp)))
                 (when this-arg
                   (when (> pos 0)
@@ -1665,7 +1624,7 @@ Optional argument STR"
            (gimp-get-proc-arg-descriptive-name sym (1- (gimp-position)))))
       (message "%S: No information available" sym))))
 
-;; Source look-up
+ ;; Source look-up
 (defun gimp-search-fu (proc)
   "Search for definition of script-fu procedure PROC."
   (destructuring-bind (v maj min rev)
@@ -1715,7 +1674,7 @@ Needs the variable `gimp-src-dir' to be set."
       (fu (gimp-search-fu proc))
       (t (error "Look up-for %s unimplemented" proc)))))
 
-;; Snippets
+ ;; Snippets
 (snippet-with-abbrev-table
  'gimp-mode-abbrev-table
  ("reg" . (format 
@@ -1767,18 +1726,56 @@ Needs the variable `gimp-src-dir' to be set."
             (abbrev-mode 1)
             (setq local-abbrev-table gimp-mode-abbrev-table)))
 
-;; Misc interactive commands
+(defconst gimp-snippets 
+  '(("reg" . "Definition and registration set-up")
+    ("sft" . "SF-TOGGLE...")
+    ("sfv" . "SF-VALUE...")
+    ("sfs" . "SF-STRING...")
+    ("sfr" . "SF-RADIO...")
+    ("sfa" . "SF-ADJUSTMENT...")
+    ("sfc" . "SF-COLOR...")
+    ("sff" . "SF-FILENAME...")
+    ("sfd" . "SF-DIRNAME...")
+    ("sfo" . "SF-OPTION...")
+    ("sfe" . "SF-ENUM...")
+    ("sfb" . "SF-BRUSH...")
+    ("sfp" . "SF-PATTERN...")
+    ("sfg" . "SF-GRADIENT...")
+    ("sfpl" . "SF-PALETTE...")
+    ("sffont" . "SF-FONT...")
+    ("sfi" . "SF-IMAGE...")
+    ("sfdr" . "SF-DRAWABLE...")
+    ("sfl" . "SF-LAYER...")
+    ("sfvec" . "SF-VECTORS..."))
+  "Reference list snippets ")
+ 
+(defun gimp-list-snippets ()
+  "List predefined snippets for GimpMode."
+  (interactive)
+  (gimp-help-wrapper
+   (insert 
+    "LIST OF PREDEFINED GIMP-MODE SNIPPETS\n(type them in a buffer of script-fu code, and end with a space)\n"
+    (make-string fill-column ?=)
+    "\n"
+    (mapconcat
+     (lambda (i)
+       (format "%-17s%s"
+ 	       (car i)
+ 	       (cdr i)))
+     gimp-snippets "\n"))))
+
+ ;; Misc interactive commands
 (defun gimp-selector (char)
   "Gimp buffer switcher similar to `slime-selector.
 Argument CHAR is used to choose between buffers.'."
   (interactive "cSwitch to gimp buffer [ilh?]: ")
   (case char
     (?l (let ((buffer (car
-                        (member-if
-                         (lambda (b)
-                           (with-current-buffer b
-                             (eq major-mode 'gimp-mode)))
-                         (buffer-list)))))
+		       (member-if
+			(lambda (b)
+			  (with-current-buffer b
+			    (eq major-mode 'gimp-mode)))
+			(buffer-list)))))
           (if buffer
               (switch-to-buffer buffer)
             (error "No living gimp-mode buffers to switch to"))))
