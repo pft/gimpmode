@@ -1,3 +1,13 @@
+2008-05-16  Niels Giesen  <niels.giesen@gmail.com>
+
+	* gimp-mode.el: Huge changes, most stuff depends now on gimp-dump,
+	and gimp-pdb-cache which is derived from the former. Gimp Help has
+	true history, major clickability, cleaned up
+	gimp-completion-rules. Probably some more stuff I forgot.
+
+	* emacs-interaction.scm: deleted all old interaction functions,
+	saving just the stuff to dump info with emacs-cache.
+
 2008-05-11  Niels Giesen  <niels.giesen@gmail.com>
 
 	* emacs-interaction.scm: add emacs-only-bound-symbols? to specify
