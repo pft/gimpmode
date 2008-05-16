@@ -1,3 +1,7 @@
+2008-05-16  Niels Giesen  <sharik@reetkevert.sshunet.nl>
+
+	* gimp-mode.el (Module): added faces to Gimp Help, and
+	compiler-soothing stuff.
 2008-05-16  Niels Giesen  <niels.giesen@gmail.com>
 
 	* gimp-mode.el: Huge changes, most stuff depends now on gimp-dump,
