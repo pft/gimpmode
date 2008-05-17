@@ -74,7 +74,7 @@ they search uncompiled files.
 
 ==Caveats==
 
-This mode is developed on and for a GNU/Linux environment, on Emacs22 and Emacs
+1. This mode is developed on and for a GNU/Linux environment, on Emacs22 and Emacs
 from CVS. I only have had very little time to test this on a win32 machine. It
 did not work. Somehow the Gimp opens a second 'console', so it does not return
 anything. I do not now about the behaviour on OSX. Not tested on BSD
@@ -83,11 +83,11 @@ problem. However, it is a pain in the ass to get this to work stabily. (lost
 connections, problems with the reader, having to wrap a (write ...) around
 everything...). Ain't gonna do it. 
 
-I have not written many script-fu files to test this mode on.
+2. I have not written many script-fu files to test this mode on.
 
-There is no way currently to recover from non-returning forms, such an infinite
+3. There is no way currently to recover from non-returning forms, such an infinite
 loop, save for killing the process altogether.  I'd love to find a way to deal
-with instability stuff like this.
+with this.
 
 ==Related==
 

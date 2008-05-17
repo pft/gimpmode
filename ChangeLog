@@ -1,3 +1,11 @@
+2008-05-17  Niels Giesen  <niels.giesen@gmail.com>
+
+	* gimp-mode.el (load): Cool gimp-faces. Non-interactive mode.
+
+	* emacs-interaction.scm: registered procedure
+	`script-fu-dump-for-emacs' (with args) under script-fu menu. Added
+	a trick to run the cache-dump only the first-time.
+
 2008-05-16  Niels Giesen  <sharik@reetkevert.sshunet.nl>
 
 	* gimp-mode.el (Module): added faces to Gimp Help, and
