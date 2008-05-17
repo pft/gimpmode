@@ -1,4 +1,4 @@
-;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.11 2008-05-17 19:41:26 sharik Exp $
+;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.12 2008-05-17 19:52:01 sharik Exp $
 ;; Copyright (C) 2008  Niels Giesen <(rot13 "avryf.tvrfra@tznvy.pbz")>
 
 
@@ -179,6 +179,15 @@ another.  Now best left at the non-nil value.")
 
 On debian(-derivatives), get the source for your distribution with apt-get
 source gimp"
+  :group 'gimp-mode)
+
+(defcustom gimp-dir (expand-file-name "~/gimp-2.4")
+  "Fall-back user directory for the Gimp.
+
+This is only for non-interactive use, such as on windhoos.
+
+The Gimp puts its caches here.  Retrieve it by evaluating the variable
+`gimp-dir' in Gimp script-fu console."
   :group 'gimp-mode)
 
 (defun gimp-src-dir ()
@@ -440,7 +449,7 @@ Optional argument EVENT is a mouse event."
 (defun gimp-mode-version ()
   "Version of this mode."
   (interactive)
-  (let ((version (gimp-string-match "[1-9]\.[1-9]+" "$Revision: 1.11 $" 0)))
+  (let ((version (gimp-string-match "[1-9]\.[1-9]+" "$Revision: 1.12 $" 0)))
     (if (interactive-p) (message "Gimp mode version: %s" version))
     version))
 
@@ -816,7 +825,9 @@ Optional argument END-TEXT specifies the text appended to the message when TEST 
 
  ;; Utility functions
 (defun gimp-dir ()
-  (gimp-eval "gimp-dir"))
+  (if (not (gimp-interactive-p))
+      gimp-dir
+      (gimp-eval "gimp-dir")))
 
 (defun gimp-up-string ()
   "Move point to a place presumable not in a string."
