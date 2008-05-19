@@ -1,3 +1,10 @@
+2008-05-19  Niels Giesen  <sharik@reetkevert.sshunet.nl>
+
+	* gimp-mode.el (gimp-completion-rules): add other caches + fuzzy
+	completion
+
+	* emacs-interaction.scm: Add other caches
+
 2008-05-17  Niels Giesen  <niels.giesen@gmail.com>
 
 	* gimp-mode.el (load): Cool gimp-faces. Non-interactive mode.

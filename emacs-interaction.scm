@@ -26,7 +26,7 @@
          (list l))
         (else ())))
 
-(define (script-fu-dump-for-emacs only-bound? fonts? menu?)
+(define (script-fu-dump-for-emacs only-bound? menu? fonts? brushes? patterns? gradients? palettes?)
   (when (= menu? TRUE)
     (with-output-to-file
       (string-append gimp-dir "/emacs-gimp-menu") ;menu entries for plugins
@@ -41,12 +41,32 @@
       (string-append gimp-dir "/emacs-gimp-fonts-cache")
     (lambda ()
       (write (cadr (gimp-fonts-get-list ""))))))
+  (when (= brushes? TRUE)
+    (with-output-to-file                  ;dump brushes list
+      (string-append gimp-dir "/emacs-gimp-brushes-cache")
+    (lambda ()
+      (write (cadr (gimp-brushes-get-list ""))))))
+  (when (= patterns? TRUE)
+    (with-output-to-file                  ;dump patterns list
+      (string-append gimp-dir "/emacs-gimp-patterns-cache")
+    (lambda ()
+      (write (cadr (gimp-patterns-get-list ""))))))
+  (when (= gradients? TRUE)
+    (with-output-to-file                  ;dump gradients list
+      (string-append gimp-dir "/emacs-gimp-gradients-cache")
+    (lambda ()
+      (write (cadr (gimp-gradients-get-list ""))))))
+  (when (= palettes? TRUE)
+    (with-output-to-file                  ;dump patterns list
+      (string-append gimp-dir "/emacs-gimp-palettes-cache")
+    (lambda ()
+      (write (cadr (gimp-palettes-get-list ""))))))
   (with-output-to-file                  ;dump oblist
       (string-append gimp-dir "/emacs-gimp-oblist-cache")
     (lambda ()
       (write (if (= only-bound? TRUE)
-                 (emacs-flatten-and-filter-bound (oblist))
-                 (emacs-flatten (oblist))))))
+		 (emacs-flatten-and-filter-bound (oblist))
+		 (emacs-flatten (oblist))))))
   (gimp-procedural-db-dump              ;dump the dump
    (string-append gimp-dir "/dump.db")))
  
@@ -75,16 +95,25 @@ debugging)."
                     "Niels Giesen"
                     "2008-05-17"
                     ""
-                    SF-TOGGLE	_"Only dump bound symbols?"	TRUE
-                    SF-TOGGLE	_"Dump fonts?"	TRUE
-                    SF-TOGGLE	_"Dump Menu Structure?"	TRUE)
+                    SF-TOGGLE	_"Only dump bound symbols?" TRUE
+		    SF-TOGGLE	_"Dump Menu Structure?"	TRUE
+                    SF-TOGGLE	_"Dump fonts?" TRUE
+		    SF-TOGGLE	_"Dump brushes?"	TRUE
+		    SF-TOGGLE	_"Dump patterns?"	TRUE
+		    SF-TOGGLE	_"Dump gradients?"	TRUE
+		    SF-TOGGLE	_"Dump palettes"	TRUE)
 
 (script-fu-menu-register "script-fu-dump-for-emacs"
                          _"<Toolbox>/Xtns/Languages/Script-Fu")
 
 (if emacs-first-time?
     (begin
-      (script-fu-dump-for-emacs emacs-only-bound-symbols? TRUE TRUE)
+      (script-fu-dump-for-emacs emacs-only-bound-symbols? TRUE TRUE TRUE TRUE TRUE TRUE)
       (set! emacs-first-time? #f)))                                   
 
 (define emacs-interaction-possible? #t)
+
+
+
+
+
