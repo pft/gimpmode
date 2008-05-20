@@ -1,4 +1,4 @@
-;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.13 2008-05-19 06:25:29 sharik Exp $
+;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.14 2008-05-20 06:23:08 sharik Exp $
 ;; Copyright (C) 2008  Niels Giesen <(rot13 "avryf.tvrfra@tznvy.pbz")>
 
 
@@ -70,9 +70,17 @@
  ;; Faces
 (defface gimp-shy-face
   '((((class color)(background dark))
-     :foreground "darkslategray")
+     :foreground "saddlebrown")
     (((class color)(background light))
      :foreground  "#ecf"))
+"Face for uninteresting stuff."
+  :group 'gimp-faces)
+
+(defface gimp-less-shy-face
+  '((((class color)(background dark))
+     :foreground "darkkhaki")
+    (((class color)(background light))
+     :foreground  "darkslateblue"))
 "Face for uninteresting stuff."
   :group 'gimp-faces)
 
@@ -114,9 +122,9 @@
       :height 1.2
       :weight bold)
     (((class color)(background dark))
-     :foreground  "#cc0")
+     :foreground  "gold3")
     (((class color)(background light))
-     :foreground  "#200"))
+     :foreground  "gold"))
   "Face for level2 items (== arguments)"
   :group 'gimp-faces)
 
@@ -124,7 +132,7 @@
   '((default 
       :weight bold)
     (((class color)(background dark))
-     :foreground  "#cc0")
+     :foreground  "gold")
     (((class color)(background light))
      :foreground  "#200"))
   "Face for level2 items (== arguments)"
@@ -496,7 +504,7 @@ Optional argument EVENT is a mouse event."
 (defun gimp-mode-version ()
   "Version of this mode."
   (interactive)
-  (let ((version (gimp-string-match "[1-9]\.[1-9]+" "$Revision: 1.13 $" 0)))
+  (let ((version (gimp-string-match "[1-9]\.[1-9]+" "$Revision: 1.14 $" 0)))
     (if (interactive-p) (message "Gimp mode version: %s" version))
     version))
 
@@ -594,17 +602,24 @@ When optional argument NEWLINE is non-nil, append a newline char."
                (comint-send-input))))
           (gimp-command (message "No such command: %s" gimp-command))
           (t
-           (unwind-protect 
-               (progn 
-                 (when (get 'gimp-trace 'trace-wanted)
-                   (scheme-send-string "(tracing 1)" t)
-                   (sit-for 0.1)
-                   (set 'gimp-output ""))
-                 (call-interactively 'comint-send-input))
-             (when (get 'gimp-trace 'trace-wanted)
-               (scheme-send-string "(tracing 0)" t)
-               (sit-for 0.1)
-               (set 'gimp-output "")))))))
+	   (let ((undo-list (if (listp buffer-undo-list)
+				buffer-undo-list
+			      nil)))
+	     (setq buffer-undo-list t) ;Do not record the very
+					;verbose tracing in the undo list.
+	     
+	     (unwind-protect 
+		 (progn 
+		   (when (get 'gimp-trace 'trace-wanted)
+		     (scheme-send-string "(tracing 1)" t)
+		     (sit-for 0.1)
+		     (set 'gimp-output ""))
+		   (call-interactively 'comint-send-input))
+	       (when (get 'gimp-trace 'trace-wanted)
+		 (scheme-send-string "(tracing 0)" t)
+		 (sit-for 0.1)
+		 (set 'gimp-output ""))
+	       (setq buffer-undo-list undo-list)))))))
 
 (defun gimp-eval (string)
   "Eval STRING, and return it read, somewhat, though not fully, elispified.
@@ -1109,6 +1124,7 @@ Only for REPL input."
   "Help mode for the Gimp."
   (use-local-map gimp-help-mode-map)
   (setq buffer-read-only t)
+  (setq buffer-undo-list t)
   (if (null gimp-oblist-cache)
       (gimp-restore-caches)))
 
@@ -1134,12 +1150,21 @@ See variable `gimp-docs-alist'"
 	 (new-contents
           (mapconcat
            (lambda (proc)
-             (propertize proc 'mouse-face 'highlight
-                         'font-lock-face
-                         (if (member (read proc)
-                                     gimp-help-visited-pages)
-                             'gimp-visited-procedure-face
-                           'default)))
+	     (replace-regexp-in-string 
+	      (if (not (string= query "")) 
+		  query
+		"^ ")		;do not bother when matching anything
+	      (lambda (m)
+		(propertize m
+			    'font-lock-face 
+			    'gimp-less-shy-face)
+		)		       
+	      (propertize proc 'mouse-face 'highlight
+			  'font-lock-face
+			  (if (member (read proc)
+				      gimp-help-visited-pages)
+			      'gimp-visited-procedure-face
+                           'default))))
            (gimp-apropos-list query) "\n")))
     (if (> (length new-contents) 0)
 	(gimp-help-wrapper
@@ -1149,7 +1174,7 @@ See variable `gimp-docs-alist'"
                               (if (string= "" query)
                                   'anything
                                 query))
-                       'font-lock-face 'gimp-level1-face)
+		      'font-lock-face 'gimp-level1-face)
           (propertize (make-string (window-width) ?=)
                       'font-lock-face 'gimp-shy-face)
           "\n"
@@ -1485,10 +1510,10 @@ Optional argument PROC is a string identifying a procedure."
     ((lambda (desc name type)
        (string-match "image" name))
      . (lambda (&rest ignore)
-         (in-gimp
-          (mapcar number->string
+	  (in-gimp
+	   (mapcar number->string
                   (vector->list (cadr (gimp-image-list)))))))
-
+    
     ((lambda (desc name type)
        (string-match "color" name))
      . (lambda (&rest ignore)
@@ -1620,11 +1645,19 @@ Optional argument LST specifies a list of completion candidates."
 			     lst)
 			  (all-completions pattern lst nil))))
 		   (if (not gimp-complete-fuzzy-p)
-		       (setq lst2 (sort lst2 'string<)))
+		       (setq lst2 (sort lst2 'string<))
+					)
 		   (if (> (length lst2) 1)
-		       (with-output-to-temp-buffer "*Completions*"
-			 (display-completion-list lst2 ;pattern
-						  ))
+		       (progn 
+			 (with-output-to-temp-buffer "*Completions*" 
+			   (display-completion-list nil))
+					;set up a good buffer (with
+					;all them hooks (orig code:)
+			 ;; 			 (with-output-to-temp-buffer "*Completions*" 
+			 ;; 			   (display-completion-list lst2 completion))
+			 (gimp-complete-in-temp-buffer  "*Completions*"
+							 completion lst2))
+		     
 		     ;; Don't leave around a completions buffer that's
 		     ;; out of date.
 		     (if (not gimp-complete-fuzzy-p)
@@ -1632,9 +1665,64 @@ Optional argument LST specifies a list of completion candidates."
 			   (if win (with-selected-window win (bury-buffer))))
 		       (when (= 1 (length lst))
 			 (delete-region beg end)
-			 (insert (car lst2))))))
+			 (insert (car lst2)))))))
 		 (unless minibuf-is-in-use
-		   (message "Making completion list...%s" "done")))))))))
+		   (message "Making completion list...%s" "done"))))))))
+
+(with-completion-in-temp-buffer "*Completions*" "script-fu" gimp-oblist-cache)
+(defun with-completion-in-temp-buffer (buffer pattern list)
+  (save-window-excursion
+    (switch-to-buffer-other-window buffer)
+    (let (buffer-read-only)
+      (save-excursion
+	(erase-buffer)
+	(insert 
+	 (propertize "Click <mouse-2> on a completion to select it.
+In this buffer, type RET to select the completion near point.
+
+Type C-cr to toggle fuzzy completion.
+")
+	 (mapconcat 
+	  (lambda (candidate)
+	    (propertize 
+	     (replace-regexp-in-string 
+	      pattern 
+	      (lambda (m)
+		(propertize m
+			    'font-lock-face
+			    'gimp-level2-face))
+	      candidate)
+	     'mouse-face 'highlight))
+	  list
+	  "\n"
+	  ))))))
+
+(defun gimp-complete-in-temp-buffer (buffer pattern list)
+  (save-window-excursion
+    (switch-to-buffer-other-window buffer)
+    (let (buffer-read-only)
+      (save-excursion
+	(erase-buffer)
+	(insert 
+	 (propertize "Click <mouse-2> on a completion to select it.
+In this buffer, type RET to select the completion near point.
+
+Type C-cr to toggle fuzzy completion.
+")
+	 (mapconcat 
+	  (lambda (candidate)
+	    (propertize 
+	     (replace-regexp-in-string 
+	      pattern 
+	      (lambda (m)
+		(propertize m
+			    'font-lock-face
+			    'gimp-level2-face))
+	      candidate)
+	     'mouse-face 'highlight))
+	  list
+	  "\n"
+	  ))))))
 
 (defun gimp-completion-cache-put (fun pos vals)
   (interactive)
@@ -1713,8 +1801,6 @@ Make and cache it if not cached already."
                 (gimp-completion-cache-put fun pos fun-or-table))))))
      (t (gimp-complete-savvy)))))
 
-
-
 (defun gimp-make-completion (desc)
   (let ((name (car desc))
         (type (nth 1 desc))
@@ -1733,7 +1819,9 @@ Make and cache it if not cached already."
 (defun gimp-toggle-fuzzy-completion ()
   (interactive)
   (setq gimp-complete-fuzzy-p 
-	(not gimp-complete-fuzzy-p)))
+	(not gimp-complete-fuzzy-p))
+  (if (eq last-command 'gimp-indent-and-complete)
+      (call-interactively 'gimp-indent-and-complete)))
 
 (defun gimp-make-fuzzy-match-re (pattern)
   (let ((re (replace-regexp-in-string "-" "[^-]*-" pattern)))
