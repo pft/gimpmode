@@ -1,4 +1,4 @@
-;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.18 2008-05-22 09:36:08 sharik Exp $
+;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.19 2008-05-22 10:17:41 sharik Exp $
 ;; Copyright (C) 2008  Niels Giesen <(rot13 "avryf.tvrfra@tznvy.pbz")>
 
 
@@ -526,8 +526,8 @@ Optional argument EVENT is a mouse event."
   "Version of this mode."
   (interactive)
   (destructuring-bind (version major minor revision) 
-      (gimp-string-match "\\([0-9]\\)-\\([1-9]\\)+.*\\([0-9.]+\\)"
-                         "$Name:  $ $Id: gimp-mode.el,v 1.18 2008-05-22 09:36:08 sharik Exp $" )
+      (gimp-string-match "\\([0-9]+\\)-\\([1-9]+\\)+[^0-9]*\\([1-9.]+\\)"
+                         "$Name:  $ $Id: gimp-mode.el,v 1.19 2008-05-22 10:17:41 sharik Exp $" )
       (if (interactive-p) (message "Gimp mode version: %s.%s_%s" major minor revision)
         (format "%s.%s_%s" major minor revision))))
 
