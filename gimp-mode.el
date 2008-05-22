@@ -1,4 +1,4 @@
-;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.20 2008-05-22 10:45:34 sharik Exp $
+;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.21 2008-05-22 18:16:04 sharik Exp $
 ;; Copyright (C) 2008  Niels Giesen <(rot13 "avryf.tvrfra@tznvy.pbz")>
 
 
@@ -527,8 +527,8 @@ Optional argument EVENT is a mouse event."
   (interactive)
   (destructuring-bind (version major minor) 
       (gimp-string-match "\\([0-9]+\\)\.\\([0-9]+\\)"
-                         "$Id: gimp-mode.el,v 1.20 2008-05-22 10:45:34 sharik Exp $" )
-      (if (interactive-p) (message "Gimp mode version: %s.%s_%s" major minor)
+                         "$Id: gimp-mode.el,v 1.21 2008-05-22 18:16:04 sharik Exp $" )
+      (if (interactive-p) (message "Gimp mode version: %s.%s" major minor)
         (format "%s.%s" major minor))))
 
 (defalias 'gimp-gimp-mode-version 'gimp-mode-version)
@@ -1635,9 +1635,9 @@ arguments pertaining to the argument, in order:
 (defun gimp-indent-and-complete ()
   "Indent and complete function or argument at point."
   (interactive)
-  (progn 
+  (progn
     (gimp-complete)
-    (lisp-indent-line t)
+    (lisp-indent-line)
     (gimp-doc)))
 
 (defun gimp-current-arg ()
@@ -2017,10 +2017,10 @@ Optional argument STR"
  ;; Source look-up
 (defun gimp-search-fu (proc)
   "Search for definition of script-fu procedure PROC."
-  (grep (format "grep -nH \"( *define\\( (\\| +\\)%s\\([^a-z0-9!?<>-]\\|$\\)\" %s/scripts/* %s/scripts/*"
+  (grep (format "grep -rnH \"( *define\\( (\\| +\\)%s\\([^a-z0-9!?<>-]\\|$\\)\" %s %s"
 		proc
-		(gimp-data-dir)
-		(gimp-dir))))
+		(shell-quote-argumentx (format "%s/scripts/" (gimp-data-dir)))
+                (shell-quote-argument (format "%s/scripts/" (gimp-data-dir))))))
 
 (defun gimp-search-plug-in-file (proc)
   "Search for a plug-in file containing plug-in PROC.
@@ -2028,7 +2028,7 @@ Needs the variable `gimp-src-dir' to be set."
   (grep
    (format "grep -nHri \"#define .*\\\"%s\\\"\" %s*"
            proc
-           (concat (gimp-src-dir) "/plug-ins/"))))
+           (shell-quote-wildcard-pattern (concat (gimp-src-dir) "/plug-ins/")))))
 
 (defun gimp-search-core-function (proc)
   "Search for the definition of core procedure PROC.
@@ -2039,7 +2039,7 @@ Needs the variable `gimp-src-dir' to be set."
           "-" "_" proc)))
     (grep (format "grep -rnH \"^%s[^a-z0-9_]\" %s*"
                   proc
-                  (concat (gimp-src-dir) "/libgimp*/")))))
+                  (shell-quote-wildcard-pattern (concat (gimp-src-dir) "/libgimp*/"))))))
 
 (defun gimp-search (&optional proc)
   "Scavenge source for a procedure."
@@ -2179,13 +2179,13 @@ Argument CHAR is used to choose between buffers.'."
     (t (call-interactively 'gimp-selector))))
 
 (defun gimp-load-script (&optional script)
-  "Load a script into the scheme image."
+  "Load a SCRIPT into the scheme image."
   (interactive)
   (let* ((script (or script (read-file-name "Load script: " (format "%s/scripts/" (gimp-dir)))))
-         (command (format "(load \"%s\")" (expand-file-name script))))
+         (command (format "(load %S)"  (expand-file-name script))))
     (if (eq this-command 'gimp-send-input)
         command
-      (message "%s" (gimp-eval-to-string command)))))
+      (message "%s" command))))
 
 (defun gimp-report-bug (subject)
   "Send a bug report on Gimp Mode."
