@@ -6,6 +6,8 @@
 ;; returned by (oblist); this can be handy to have access to local variables in
 ;; completion, but also confusing, as nothing is bound, and of course slower,
 ;; because of the huge list generated (2933 versus 1781 symbols in my case).
+(define emacs-interaction-possible? #t)
+
 (define emacs-only-bound-symbols? TRUE)
 
 (if (not (symbol-bound? 'emacs-first-time?))
@@ -71,7 +73,7 @@
    (string-append gimp-dir "/dump.db")))
  
 (script-fu-register "script-fu-dump-for-emacs"
-                    _"Dump internals for Emacs' Gimp Mode"
+                    _"<Toolbox>/Xtns/Languages/Script-Fu/Dump internals for Emacs' Gimp Mode..."
 
                     _"Dump (part of) the oblist, fonts, the menu structure and
 the procedural database more for use with Emacs' Gimp Mode which you can find at
@@ -102,18 +104,14 @@ debugging)."
 		    SF-TOGGLE	_"Dump patterns?"	TRUE
 		    SF-TOGGLE	_"Dump gradients?"	TRUE
 		    SF-TOGGLE	_"Dump palettes"	TRUE)
+                                                             
 
-(script-fu-menu-register "script-fu-dump-for-emacs"
-                         _"<Toolbox>/Xtns/Languages/Script-Fu")
+;; (script-fu-menu-register "script-fu-dump-for-emacs"
+;;                          _"<Toolbox>/Xtns/Languages/Script-Fu")
 
 (if emacs-first-time?
     (begin
       (script-fu-dump-for-emacs emacs-only-bound-symbols? TRUE TRUE TRUE TRUE TRUE TRUE)
       (set! emacs-first-time? #f)))                                   
-
-(define emacs-interaction-possible? #t)
-
-
-
 
 

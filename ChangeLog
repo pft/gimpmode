@@ -1,3 +1,8 @@
+2008-05-22  Niels Giesen  <niels.giesen@gmail.com>
+
+	* gimp-mode.el (gimp-arg-from-scraped-registration): add
+	registered args, plus faces for traces.
+
 2008-05-19  Niels Giesen  <sharik@reetkevert.sshunet.nl>
 
 	* gimp-mode.el (gimp-completion-rules): add other caches + fuzzy
