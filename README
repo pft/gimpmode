@@ -110,6 +110,10 @@ documentation of the Gimp.
 
 - Better shortcuts to documentation
 - Better debugging/recovering from non-returning functions.
+- Find a way to get to python/C stuff REGISTERED on procedure arguments.
+  (such as: lower and upper bounds, step, precision, default values...)
+  (this has already been done for script-fu)
+- And of course I am open to suggestions
 
 ==Known Bugs==
 
