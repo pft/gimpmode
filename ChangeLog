@@ -1,3 +1,11 @@
+2008-05-25  Niels Giesen  <niels.giesen@gmail.com>
+
+	* gimp-mode.el (gimp-defcommand): added type checking and doc.
+	(run-gimp): changed to async (experimental!)
+	(gimp-complete-fuzzy-p): added doc
+	(gimp-completion-rules): ignore completion for drawables
+	(gimp-cache-always): removed
+
 2008-05-22  Niels Giesen  <niels.giesen@gmail.com>
 
 	* gimp-mode.el (gimp-arg-from-scraped-registration): add

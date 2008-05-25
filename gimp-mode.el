@@ -1,4 +1,4 @@
-;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.22 2008-05-24 18:02:43 sharik Exp $
+;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.23 2008-05-25 08:50:41 sharik Exp $
 ;; Copyright (C) 2008  Niels Giesen <(rot13 "avryf.tvrfra@tznvy.pbz")>
 
 
@@ -291,30 +291,34 @@ script-fu console."
   :group 'gimp
   :type 'string)
 
-(defcustom gimp-cache-always nil
-  "When non-nil gimp-mode saves caches at end of a session without asking."
-  :group 'gimp
-  :type 'boolean)
-
 (defcustom gimp-inhibit-start-up-message nil
-  "Inhibit start-up message for the GIMP"
+  "Inhibit start-up message in Inferior Gimp Mode."
   :group 'gimp
   :type 'boolean)
 
-(defcustom gimp-just-one-space nil 
+(defcustom gimp-just-one-space nil
   "When issuing `gimp-space', act as `just-one-space'?"
   :group 'gimp
   :type 'boolean)
 
  ;; General purpose functions and macros
-(defmacro gimp-defcommand (name args &rest body)
-  "Define a command."
+(defmacro gimp-defcommand (name arglist docstring &rest body)
+"Define NAME as a function.
+Put its name without the gimp-prefix in variable `gimp-shortcuts'.
+
+The definition is (lambda ARGLIST DOCSTRING BODY...).
+If no `interactive' form is used in BODY, an error is signalled."
   (declare (indent defun))
-  `(progn 
-     (eval-when (load eval) (add-to-list 'gimp-shortcuts ,(replace-regexp-in-string 
+  (when (not (stringp docstring))
+    (error "Error defining %S: docstring seems to be missing" name))
+  `(progn
+     (eval-when (load eval) (add-to-list 'gimp-shortcuts ,(replace-regexp-in-string
 				    "^gimp-" "" (symbol-name name))))
-     (defun ,name (,@args) 
-       ,@body)))
+     (defun ,name (,@arglist)
+       ,docstring
+       ,@body)
+     (when (not (commandp ',name))
+       (error "Error: function %S defined, but not interactive" ',name))))
 
 (defmacro gimp-hash-to-list (hash-table)
   (let ((nl (gensym)))
@@ -564,7 +568,7 @@ Optional argument EVENT is a mouse event."
   (interactive)
   (destructuring-bind (version major minor) 
       (gimp-string-match "\\([0-9]+\\)\.\\([0-9]+\\)"
-                         "$Id: gimp-mode.el,v 1.22 2008-05-24 18:02:43 sharik Exp $" )
+                         "$Id: gimp-mode.el,v 1.23 2008-05-25 08:50:41 sharik Exp $" )
       (if (interactive-p) (message "GIMP mode version: %s.%s" major minor)
         (format "%s.%s" major minor))))
 
@@ -926,32 +930,40 @@ Deletes any previous stuff at that REPL"
 	  (select-window (gimp-buffer-window "*GIMP*"))
 	(switch-to-buffer-other-window "*GIMP*"))
     (run-scheme gimp-program-command-line)
-    (unwind-protect
-        (gimp-progress "Starting-up the GIMP "
-                       (lambda () (= (point-max) (point-min))))
-      (setq scheme-buffer (rename-buffer "*GIMP*"))
-      (inferior-gimp-mode)
+    (setq buffer-read-only t)           ;make sure the test in the timer yields only
+                                        ;true when the GIMP outputs a message.
+    (lexical-let ((buffer (current-buffer))
+                  (timer-object))
+      (labels ((timer ()
+                      (with-current-buffer buffer
+                        (when (> (point-max) (point-min))
+                          (cancel-timer timer-object)
+                          (setq scheme-buffer (rename-buffer "*GIMP*"))
+                          (inferior-gimp-mode)
                                         ;therefore read them from file
-      (message "%s The GIMP is loaded. Have FU." (current-message))
-      (unless gimp-inhibit-start-up-message
-        (gimp-shortcuts t))
-      (when (not (gimp-eval
-                  "(symbol-bound? 'emacs-interaction-possible?)"))
-	(let ((lnk (concat (gimp-dir) "/scripts/" 
-			   "99emacs-interaction.scm"))
-	      (emacs-interaction.scm
-	       (concat gimp-mode-dir "emacs-interaction.scm")))
-	  (message "Creating symlink to emacs-interaction.scm...")
-	  (make-symbolic-link emacs-interaction.scm lnk t)
-	  (gimp-load-script lnk))
-	(gimp-progress (concat (current-message)
-			       "and loading it ")
-		       (lambda ()
-			 (not (string-match "> $"  gimp-output)))
-		       " done!"))
-      (gimp-restore-caches)
-      (gimp-restore-input-ring)
-      (scheme-get-process))))
+                          (setq buffer-read-only nil) ;make the buffer capable
+                                                      ;of receiving user input etc.
+                          (unless gimp-inhibit-start-up-message
+                            (gimp-shortcuts t))
+                          (when (not (gimp-eval
+                                      "(symbol-bound? 'emacs-interaction-possible?)"))
+                            (let ((lnk (concat (gimp-dir) "/scripts/"
+                                               "99emacs-interaction.scm"))
+                                  (emacs-interaction.scm
+                                   (concat gimp-mode-dir "emacs-interaction.scm")))
+                              (message "Creating symlink to emacs-interaction.scm...")
+                              (make-symbolic-link emacs-interaction.scm lnk t)
+                              (gimp-load-script lnk))
+                            (gimp-progress (concat (current-message)
+                                                   "and loading it ")
+                                           (lambda ()
+                                             (not (string-match "> $"  gimp-output)))
+                                           " done!"))
+                          (gimp-restore-caches)
+                          (gimp-restore-input-ring)
+                          (message "%s The GIMP is loaded. Have FU." (current-message))
+                          (scheme-get-process)))))
+        (setq timer-object (run-with-timer 4 .1  (function timer)))))))
 
 (defun gimp-progress (message test &optional end-text)
   "Show MESSAGE with rotating thing at end while TEST yields a non-nil value.
@@ -1572,7 +1584,31 @@ Optional argument PROC is a string identifying a procedure."
 
  ;; Completion
 (defcustom gimp-complete-fuzzy-p t
-  "Perform fuzzy completion?"
+  "Perform fuzzy completion?
+
+This is a special implementation of fuzziness to aid in
+completion of hyphen-separated symbols that are frequent in lisp.
+It lets you type in the first letter(s) of the combining parts of
+such symbol.  Of course, the basic case of consecutive characters
+found anywhere in a target string will match.
+
+Examples of the implementation of fuzziness:
+
+s-f-c-s => script-fu-coffee-stain
+stain => script-fu-coffee-stain
+scr-f- => script-fu-
+s-f--logo => suggestions for script-fu-neon-logo,
+script-fu-comic-logo, script-fu-chalk-logo ...
+
+Note on comparison with other fuzzy algorithms:
+ 
+It does *not* match like symbols, as do other implementations.
+Neither does e.g. \"sif\" match \"script-fu\".
+
+You can toggle this variable at any time with the command
+`gimp-toggle-fuzzy-completion'.
+
+Its state is indicated in the mode-line."
   :group 'gimp
   :type 'boolean)
 
@@ -1696,7 +1732,11 @@ Optional argument PROC is a string identifying a procedure."
         "YCbCr ITU R709 256"))
 
     ((lambda (desc name type)
-       (string-match "" name))
+       (string= "GIMP_PDB_DRAWABLE" type))
+     .
+     nil)
+    ((lambda (desc name type)
+       t)
      . (lambda (&rest ignore)
          gimp-oblist-cache)))
   
@@ -1926,24 +1966,7 @@ Optional argument LST specifies a list of completion candidates."
 (gimp-defcommand gimp-toggle-fuzzy-completion ()
   "Toggle fuzzy completion.
 
-This is a special implementation of fuzziness to aid in
-completion of hyphen-separated symbols that are frequent in lisp.
-It lets you type in the first letter(s) of the combining parts of
-such symbol.  Of course, the basic case of consecutive characters
-found anywhere in a target string will match.
-
-Examples of the implementation of fuzziness:
-
-s-f-c-s => script-fu-coffee-stain
-stain => script-fu-coffee-stain
-scr-f- => script-fu- 
-s-f--logo => suggestions for script-fu-neon-logo,
-script-fu-comic-logo, script-fu-chalk-logo ...
-
-Note on comparison with other fuzzy algorithms:
- 
-It does *not* match like symbols, as do other implementations.
-Neither does e.g. \"sif\" match \"script-fu\"."
+See variable `gimp-complete-fuzzy-p' for a bit more detailed information."
  (interactive)
  (setq gimp-complete-fuzzy-p 
 	(not gimp-complete-fuzzy-p))
