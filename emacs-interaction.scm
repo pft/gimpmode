@@ -112,6 +112,10 @@ debugging)."
 (if emacs-first-time?
     (begin
       (script-fu-dump-for-emacs emacs-only-bound-symbols? TRUE TRUE TRUE TRUE TRUE TRUE)
-      (set! emacs-first-time? #f)))                                   
+      (set! emacs-first-time? #f)))
 
-
+(define-macro (emacs-output . body)
+  `(with-output-to-file 
+       (string-append gimp-dir "/ecom")
+     (lambda ()
+       (write ,@body))))

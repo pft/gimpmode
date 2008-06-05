@@ -154,3 +154,55 @@ A. There is already a gimp.el in the nxhtml distribution. And GimpMode is nicer
 for wiki pages anyway. So gimp-mode.el it shall be. Just harder to interpret it
 as a recursive acronym: gimp interaction mode for programmers mildly... gimp
 interaction mode performed mostly on... Yes, it is hard.
+
+
+
+== Registration Description
+
+Emacs IDE for developing GIMP script-fu.
+
+Runs the Gimp as subprocess in Emacs. Interaction with the Gimp
+script-fu engine directly from the code that is being edited and/or
+from a special REPL (read-eval-print-loop) buffer. Code completion
+(both by dumps and live). Doc echoing (by dumps).  The dumps are
+created (in ~/.gimp-2.4/, or the value of `gimp-dir') by the Gimp at
+start-up or any time later on user request, and subsequently read by
+Gimp Mode. Use of dumps is partly inspired by major slowdowns that
+happen when large lists (such as the oblist or
+gimp-procedural-db-query) are spit out, and partly to provide a
+working environment when interaction is impossible/unimplemented (such
+as on windows, see below).
+
+Implementation Languages:
+Emacs lisp and scheme (script-fu). 
+
+Comparison: It differs from gimp-shell.el in that it runs the GIMP as
+a subprocess instead of hooking into the scrip-fu server as a
+client. On win32 this does not seem possible (yet?), so there is no
+REPL there. Due to caches (see above), Gimp Mode is still highly
+usable even on that system.
+
+The REPL has some shortcuts for actions such as tracing/untracing,
+loading files, images, and invoking the hypertext help system that
+comes with Gimp Mode.
+
+Some basic, but very useful, snippets are included as well (for use
+with snippet.el) for templated coding.
+
+Tested OSs: GNU/Linux: works Win32: works, save for the REPL and some
+features implemented through live interaction with the Gimp.
+
+
+== Public description
+
+Emacs Interaction Mode for editing script-fu files for the GIMP Image
+Manipulation Program.
+
+Features: Smart&fuzzy TAB-completion both at the REPL
+(read-eval-print-loop, or: console) and in file buffers.
+
+Positional documentation echoing for procedures and for Scheme
+Closures gives helpful feedback on what you are working at.
+
+Apart from this, it has a hypertext help system for the Gimp
+Procedural Database, complete with a history ring
