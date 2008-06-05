@@ -1,4 +1,4 @@
-;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.23 2008-05-25 08:50:41 sharik Exp $
+;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.24 2008-06-05 07:19:36 sharik Exp $
 ;; Copyright (C) 2008  Niels Giesen <(rot13 "avryf.tvrfra@tznvy.pbz")>
 
 
@@ -568,7 +568,7 @@ Optional argument EVENT is a mouse event."
   (interactive)
   (destructuring-bind (version major minor) 
       (gimp-string-match "\\([0-9]+\\)\.\\([0-9]+\\)"
-                         "$Id: gimp-mode.el,v 1.23 2008-05-25 08:50:41 sharik Exp $" )
+                         "$Id: gimp-mode.el,v 1.24 2008-06-05 07:19:36 sharik Exp $" )
       (if (interactive-p) (message "GIMP mode version: %s.%s" major minor)
         (format "%s.%s" major minor))))
 
@@ -604,44 +604,41 @@ make a vector in SCHEME with `in-gimp'.
 ;; Core inferior interaction functions
 (defun gimp-proc ()
   (or (scheme-get-process)
-      (error "Inferior GIMP not running, type M-x run-gimp to start a new session.")))
+      (prog1
+	  nil
+	  (message "Inferior GIMP not running, type M-x run-gimp to start a new session."))))
 
 (defun gimp-filter (proc string)
   "Filter for inferior gimp-process."
   (setq gimp-output
         (replace-regexp-in-string "Eval"  "" (concat gimp-output string))))
 
-(defadvice comint-send-input (before ungimp activate)
-  "Ungimp `process-filter' for other scheme processes."
-  (if (and (eq (get-buffer-process (current-buffer))
-	       (gimp-proc))
-           (gimp-proc)
-           (process-filter (gimp-proc))
-           'gimp-filter)
-      (set-process-filter
-       (gimp-proc)
-       (lambda (proc string)
-         (gimp-filter proc string)
-         (comint-output-filter
-          proc
-          (let ((string (replace-regexp-in-string
-                         "\n> \nEval: (tracing 0)\nEval: tracing\nEval: 0\nApply to: (0)1"
-                         "" string)))
-            (setq string
-                  (replace-regexp-in-string "^\\(?:Apply to\\|Eval\\|Gives\\): .*\n"
-                                      (lambda (m)
-                                        (propertize m 'font-lock-face
-                                                    (case
-                                                        (aref m 0)
-                                                      (?E 'gimp-shy-face)
-                                                      (?A 'gimp-less-shy-face)
-                                                      (?G 'gimp-visited-procedure-face)))) string))
-            (replace-regexp-in-string "[]()[]"
-                                      (lambda (m)
-                                        (propertize m
-                                                    'font-lock-face
-                                                    'gimp-red-face)) string)))))))
+(defun gimp-set-comint-filter ()
+  (set-process-filter
+   (gimp-proc)
+   'gimp-comint-filter))
 
+(defun gimp-comint-filter (proc string)
+  (gimp-filter proc string)
+  (comint-output-filter
+   proc
+   (let ((string (replace-regexp-in-string
+		  "\n> \nEval: (tracing 0)\nEval: tracing\nEval: 0\nApply to: (0)1"
+		  "" string)))
+     (setq string
+	   (replace-regexp-in-string "^\\(?:Apply to\\|Eval\\|Gives\\): .*\n"
+				     (lambda (m)
+				       (propertize m 'font-lock-face
+						   (case
+						       (aref m 0)
+						     (?E 'gimp-shy-face)
+						     (?A 'gimp-less-shy-face)
+						     (?G 'gimp-visited-procedure-face)))) string))
+     (replace-regexp-in-string "[]()[]"
+			       (lambda (m)
+				 (propertize m
+					     'font-lock-face
+					     'gimp-red-face)) string))))
 
 (defun scheme-send-string (string &optional newline)
   "Send STRING to the scheme process.
@@ -677,6 +674,7 @@ When optional argument NEWLINE is non-nil, append a newline char."
              (when (and (eq major-mode 'inferior-gimp-mode)
                         (stringp input))
                (insert input)
+	       (gimp-set-comint-filter)
                (comint-send-input))))
           (gimp-command (message "No such command: %s" gimp-command))
           (t
@@ -692,6 +690,7 @@ When optional argument NEWLINE is non-nil, append a newline char."
 		     (scheme-send-string "(tracing 1)" t)
 		     (sit-for 0.1)
 		     (set 'gimp-output ""))
+		   (gimp-set-comint-filter)
 		   (call-interactively 'comint-send-input))
 	       (when (get 'gimp-trace 'trace-wanted)
 		 (scheme-send-string "(tracing 0)" t)
@@ -943,6 +942,7 @@ Deletes any previous stuff at that REPL"
                                         ;therefore read them from file
                           (setq buffer-read-only nil) ;make the buffer capable
                                                       ;of receiving user input etc.
+			  (gimp-set-comint-filter)
                           (unless gimp-inhibit-start-up-message
                             (gimp-shortcuts t))
                           (when (not (gimp-eval
@@ -1055,13 +1055,15 @@ Optional argument END-TEXT specifies the text appended to the message when TEST 
   "Return function symbol in current sexp."
   (let ((p (point)))
     (gimp-without-string
-     (gimp-beginning-of-sexp)
-     (prog1
-	 ;; Don't do anything if current word is inside a string.
-         (if (= (or (char-after (1- (point))) 0) ?\")
+     (if (looking-back ",[[:alnum:]- ]+")
+	 nil
+       (gimp-beginning-of-sexp)
+       (prog1
+	   ;; Don't do anything if current word is inside a string.
+	   (if (= (or (char-after (1- (point))) 0) ?\")
              nil
-           (gimp-current-symbol))
-       (goto-char p)))))
+	     (gimp-current-symbol))
+	 (goto-char p))))))
 
 (defun gimp-position ()
   "Return position of point in current lambda form."
@@ -1556,9 +1558,9 @@ Optional argument PROC is a string identifying a procedure."
   (read
    (gimp-eval-to-string
     (apply 'format
-           "(let ((code (get-closure-code %s)))\
- (if code (cons '%s (cadr code)) 'nil)))"
-           (make-list 3 sym)))))
+	   "(let ((code (get-closure-code %s)))\
+ (if code (cons '%s (cadr code)) 'nil))"
+	   (make-list 3 sym)))))
 
 (defun gimp-procedure-description (sym)
   (let ((info (gimp-get-proc-description sym)))
@@ -2083,6 +2085,7 @@ argument at point is highlighted."
 	     (str (symbol-name sym))
 	     cache-resp
 	     (pos (gimp-position)))
+	
 	(cond ((gethash sym gimp-dump)
 	       ;; Get it
 	       (setq cache-resp
@@ -2110,7 +2113,7 @@ argument at point is highlighted."
 
 	(when cache-resp
 	  (setq cache-resp
-		(mapcar (lambda (item) (format "%s" item))
+ 		(mapcar (lambda (item) (format "%s" item))
 			(dotted-to-list cache-resp)))
 	  (setf (car cache-resp)
 		(propertize str 'face 'font-lock-keyword-face))
@@ -2175,7 +2178,10 @@ Needs the variable `gimp-src-dir' to be set."
                   (shell-quote-wildcard-pattern (concat (gimp-src-dir) "/libgimp*/"))))))
 
 (gimp-defcommand gimp-code-search (&optional proc)
-  "Scavenge source for a procedure."
+  "Scavenge source for a procedure.
+
+This admittedly is a poor implementation, and you should delve
+into etags and find-tag."
   (interactive)
   (let ((proc 
          (or proc 
