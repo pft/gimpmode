@@ -37,6 +37,9 @@ Interaction mode for the GIMP.
 TAB-completion like in Slime: the whole tiny-fu oblist is available and
 vars/functions that are defined during a session are added to completion. 
 
+(Note: this happens only when issued with the usual define construct, and only
+at toplevel, not if you e.g. wrap define in another macro).
+
 Completion on arguments is done via a system of rules, based on
 regexp-matching/custom commands that work on the documentation. This might have
 to be improved and extended upon (see variable `gimp-completion-rules').
@@ -57,7 +60,8 @@ Shortcuts for various stuff. Type ,shortcuts at the REPL for an overview.
 Snippets are provided through snippet.el. A registration template is provided
 (reg SPACE), and handy templates for script-fu-register arguments (sf* SPACE).
 
-Type M-x gimp-list-snippets to show snippets.
+Type M-x gimp-list-snippets or ,list-snippets RET from the REPL to show
+snippets.
 
 ==Beyond script-fu==
 
@@ -83,7 +87,8 @@ problem. However, it is a pain in the ass to get this to work stabily. (lost
 connections, problems with the reader, having to wrap a (write ...) around
 everything...). Ain't gonna do it. 
 
-2. I have not written many script-fu files to test this mode on.
+2. I have not written many script-fu files to test this mode on, two wit: two,
+one of which is emacs-interaction.scm
 
 3. There is no way currently to recover from non-returning forms, such an infinite
 loop, save for killing the process altogether.  I'd love to find a way to deal
@@ -113,6 +118,10 @@ documentation of the Gimp.
 - Find a way to get to python/C stuff REGISTERED on procedure arguments.
   (such as: lower and upper bounds, step, precision, default values...)
   (this has already been done for script-fu)
+- Check default paths in win32 and OSX for custom variables.
+- Add completion on script-fu-register, script-fu-menu-register.
+- Add function for constructing a basic script-fu-register form from a define form.
+- xEmbed?
 - And of course I am open to suggestions
 
 ==Known Bugs==
@@ -138,19 +147,23 @@ Q. Why don't you simply use the script-fu console from within the Gimp?
 
 A. Have you tried it?
 
-Q. What about menu information?
+Q. I want to find a script or plug-in whose place in the menu I know, but whose
+name I do not know.
 
-A. I have not yet found out how to get there with fu.
+A. Use C-cm to browse the menu structure. This gives you the Gimp Help page on
+that script or plug-in. Note that the submenus shown on top of that Help page
+are clickable too.
 
 Q. Stuff does not work correctly when I turn on tracing via (tracing 1)
 
-A. Use the wrapper gimp-trace / gimp-untrace for that; at the REPL: ,trace
-ENTER and ,untrace ENTER. NOTE that this tracing feature is only provided at
-the REPL, not from .scm files.
+A. Use the wrapper gimp-trace / gimp-untrace for that; at the REPL: ,trace ENTER
+and ,untrace ENTER. NOTE that this tracing feature is only on at the REPL, not from
+.scm files.
 
 Q. Why didn't you name it gimp.el?
 
-A. There is already a gimp.el in the nxhtml distribution. And GimpMode is nicer
+A. There is already a gimp.el in the nxhtml distribution (which actually does
+nothing more than open an image (and then only on win32)). And GimpMode is nicer
 for wiki pages anyway. So gimp-mode.el it shall be. Just harder to interpret it
 as a recursive acronym: gimp interaction mode for programmers mildly... gimp
 interaction mode performed mostly on... Yes, it is hard.
