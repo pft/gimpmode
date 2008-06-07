@@ -18,7 +18,10 @@
   "Mode for editing script-fu and interacting with an inferior gimp process" t)
 
 (autoload 'gimp-help "gimp-mode" 
-  "Help for the Gimp" t)    
+  "Help for the Gimp" t)
+
+(autoload 'gimp-cl-connect "gimp-mode" 
+  "Gimp client mode" t)    
 
 (autoload 'gimp-selector "gimp-mode" 
   "Gimp buffer switcher similar to `slime-selector." t)    
