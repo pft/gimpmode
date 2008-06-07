@@ -1,14 +1,26 @@
-;; -*- mode: Gimp; -*-
+;; -*- mode: Gimp; -*-ecom
 ;; Stuff needed for interaction with the emacs-modes `gimp-mode'
 ;; `inferior-gimp-mode' and `gimp-help-mode'.
 
-;; Set the following to #f if you want acces to all (so also uninterned) symbols
-;; returned by (oblist); this can be handy to have access to local variables in
-;; completion, but also confusing, as nothing is bound, and of course slower,
-;; because of the huge list generated (2933 versus 1781 symbols in my case).
+;; Set the following to #f if you want acces to all (so also
+;; uninterned) symbols returned by (oblist); this can be handy to have
+;; access to local variables in completion, but also confusing, as a
+;; load of symbols will be unbound, and of course slower, because of
+;; the huge list generated (2933 versus 1781 symbols in my case).
 (define emacs-interaction-possible? #t)
 
 (define emacs-only-bound-symbols? TRUE)
+
+(define emacs-dir 
+  (string-append gimp-dir "/emacs/"))
+
+(define (make-emacs-file file)
+  (string-append emacs-dir file))
+
+(define-macro (with-output-to-emacs-file  file . form)
+  `(with-output-to-file 
+       ,(make-emacs-file file)
+     (lambda () ,@form)))
 
 (if (not (symbol-bound? 'emacs-first-time?))
     (define emacs-first-time? #t))
@@ -30,48 +42,41 @@
 
 (define (script-fu-dump-for-emacs only-bound? menu? fonts? brushes? patterns? gradients? palettes?)
   (when (= menu? TRUE)
-    (with-output-to-file
-      (string-append gimp-dir "/emacs-gimp-menu") ;menu entries for plugins
-   (lambda ()
-     (let ((all (gimp-plugins-query "")))
-       (write (mapcar (lambda (menu plugin)
-                        (list plugin menu))
-                      (nth 1 all)
-                      (nth 11 all)))))))
+        (with-output-to-emacs-file
+         "emacs-gimp-menu" ;menu entries for plugins
+         (let ((all (gimp-plugins-query "")))
+           (write (mapcar (lambda (menu plugin)
+                            (list plugin menu))
+                          (nth 1 all)
+                          (nth 11 all))))))
   (when (= fonts? TRUE)
-    (with-output-to-file                  ;dump fonts list
-      (string-append gimp-dir "/emacs-gimp-fonts-cache")
-    (lambda ()
-      (write (cadr (gimp-fonts-get-list ""))))))
+        (with-output-to-emacs-file                  ;dump fonts list
+         "emacs-gimp-fonts-cache"
+         (write (cadr (gimp-fonts-get-list "")))))
   (when (= brushes? TRUE)
-    (with-output-to-file                  ;dump brushes list
-      (string-append gimp-dir "/emacs-gimp-brushes-cache")
-    (lambda ()
-      (write (cadr (gimp-brushes-get-list ""))))))
+        (with-output-to-emacs-file                  ;dump brushes list
+         "emacs-gimp-brushes-cache"
+         (write (cadr (gimp-brushes-get-list "")))))
   (when (= patterns? TRUE)
-    (with-output-to-file                  ;dump patterns list
-      (string-append gimp-dir "/emacs-gimp-patterns-cache")
-    (lambda ()
-      (write (cadr (gimp-patterns-get-list ""))))))
+        (with-output-to-emacs-file                  ;dump patterns list
+         "emacs-gimp-patterns-cache"
+         (write (cadr (gimp-patterns-get-list "")))))
   (when (= gradients? TRUE)
-    (with-output-to-file                  ;dump gradients list
-      (string-append gimp-dir "/emacs-gimp-gradients-cache")
-    (lambda ()
-      (write (cadr (gimp-gradients-get-list ""))))))
+        (with-output-to-emacs-file                  ;dump gradients list
+         "emacs-gimp-gradients-cache"
+         (write (cadr (gimp-gradients-get-list "")))))
   (when (= palettes? TRUE)
-    (with-output-to-file                  ;dump patterns list
-      (string-append gimp-dir "/emacs-gimp-palettes-cache")
-    (lambda ()
-      (write (cadr (gimp-palettes-get-list ""))))))
-  (with-output-to-file                  ;dump oblist
-      (string-append gimp-dir "/emacs-gimp-oblist-cache")
-    (lambda ()
-      (write (if (= only-bound? TRUE)
-		 (emacs-flatten-and-filter-bound (oblist))
-		 (emacs-flatten (oblist))))))
+        (with-output-to-emacs-file                  ;dump patterns list
+         "emacs-gimp-palettes-cache"
+         (write (cadr (gimp-palettes-get-list "")))))
+  (with-output-to-emacs-file                  ;dump oblist
+   "emacs-gimp-oblist-cache"
+   (write (if (= only-bound? TRUE)
+              (emacs-flatten-and-filter-bound (oblist))
+              (emacs-flatten (oblist)))))
   (gimp-procedural-db-dump              ;dump the dump
    (string-append gimp-dir "/dump.db")))
- 
+
 (script-fu-register "script-fu-dump-for-emacs"
                     _"<Toolbox>/Xtns/Languages/Script-Fu/Dump internals for Emacs' Gimp Mode..."
 
@@ -105,17 +110,41 @@ debugging)."
 		    SF-TOGGLE	_"Dump gradients?"	TRUE
 		    SF-TOGGLE	_"Dump palettes"	TRUE)
                                                              
+;; Fix error hook; ToDo: file bug-report (original has (apply (pop-handler)) 
+;; instead of (apply (pop-handler) x))
+(define *error-hook* (lambda x (if (more-handlers?) (apply (pop-handler) x) (apply error x))))
 
-;; (script-fu-menu-register "script-fu-dump-for-emacs"
-;;                          _"<Toolbox>/Xtns/Languages/Script-Fu")
+(define *emacs-cl-output* nil)
+;; Evals once, loads evaluated expression into image, writes output of
+;; evaluation back, overwrites *error-hook*. Does not solve (or:
+;; introduces) write, display and read problems. 
+(define-macro (emacs-cl-output . body)
+    (let ((input-file "emacs-input.scm")
+          (output-file "emacs-output.scm"))
+      (unless (memq gimp-cl-handler *handlers*)
+              (push-handler gimp-cl-handler))
+      `(begin 
+         (with-output-to-emacs-file ,input-file
+             (write 
+              '(set! *emacs-cl-output*  ,@body))
+             (display "\n")
+             (write '(with-output-to-emacs-file
+                         ,output-file
+                         (write *emacs-cl-output*)))
+
+             (display "\n"))
+         (load ,(make-emacs-file input-file)))))
+
+(define gimp-cl-handler 
+  (lambda x
+    (with-output-to-emacs-file
+        "emacs-output.scm"
+        (apply error x)
+        (display "\n"))
+    (*error-hook* x)))
 
 (if emacs-first-time?
     (begin
       (script-fu-dump-for-emacs emacs-only-bound-symbols? TRUE TRUE TRUE TRUE TRUE TRUE)
       (set! emacs-first-time? #f)))
 
-(define-macro (emacs-output . body)
-  `(with-output-to-file 
-       (string-append gimp-dir "/ecom")
-     (lambda ()
-       (write ,@body))))
