@@ -1,4 +1,4 @@
-;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.24 2008-06-05 07:19:36 sharik Exp $
+;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.25 2008-06-07 15:50:24 sharik Exp $
 ;; Copyright (C) 2008  Niels Giesen <(rot13 "avryf.tvrfra@tznvy.pbz")>
 
 
@@ -55,6 +55,8 @@
 (require 'cmuscheme)
 (require 'outline)
 (require 'cl)
+(require 'eldoc)
+(require 'thingatpt)
 (eval-when-compile (load "gimp-init.el"))
 (eval-when (compile load)
   (require 'ring)
@@ -169,9 +171,12 @@ another.  Now best left at the non-nil value.")
 		(list 
 		 (when gimp-complete-fuzzy-p 
 		   "fuzzy")
-		 (when (get 'gimp-trace 'trace-wanted) "tracing"))))
+		 (when (get 'gimp-trace 'trace-wanted) "tracing")
+                 (and gimp-cl-host (concat gimp-cl-host ":"  (number-to-string gimp-cl-port))))))
     "]")
 "State of various Gimp Mode options.")
+(defvar gimp-cl-proc nil
+  "Gimp Client Process Object")
 (defvar gimp-output nil
   "Contains output from inferior gimp process.")
 ;; (Bases of following caches) generated on GIMP startup (by
@@ -210,11 +215,11 @@ Define such command with `gimp-defcommand' to be automatically included.")
   "Directories where the GIMP finds its sources"
   :group 'gimp)
 
-(defcustom gimp-src-dir (expand-file-name "~/src/gimp-2.4/")
+(defcustom gimp-src-dir (expand-file-name "~/src/gimp-2.4.2/")
   "Source directory for the GIMP.
 
 On Debian(-derivatives), get the source for your distribution with apt-get
-source gimp"
+source gimp. You will most probably have to change this value."
   :group 'gimp-directories
   :type 'string)
 
@@ -298,6 +303,14 @@ script-fu console."
 
 (defcustom gimp-just-one-space nil
   "When issuing `gimp-space', act as `just-one-space'?"
+  :group 'gimp
+  :type 'boolean)
+
+(defcustom gimp-insert-quotes-for-strings-p t
+  "Insert quotes when the current argument is a string?
+
+With its value set to nil, gimp-mode will still offer contextual
+completion (when possible) when point is in a string."
   :group 'gimp
   :type 'boolean)
 
@@ -543,7 +556,7 @@ Optional argument EVENT is a mouse event."
           (if gimp-just-one-space
 	      (just-one-space n)
 	    (self-insert-command n))
-	  (indent-for-tab-command)
+;	  (indent-for-tab-command)
           (gimp-echo))))
  ;; Set up the modes
 (define-derived-mode gimp-mode scheme-mode "GIMP mode" 
@@ -552,6 +565,7 @@ Optional argument EVENT is a mouse event."
   (abbrev-mode 1)
   (setq local-abbrev-table gimp-mode-abbrev-table)
   (add-to-list 'mode-line-process gimp-mode-line-format t)
+  (setq indent-line-function 'lisp-indent-line)
   (if (null gimp-oblist-cache)
       (gimp-restore-caches))) 
 
@@ -562,14 +576,17 @@ Optional argument EVENT is a mouse event."
   (setq comint-input-filter-functions 
 	'(gimp-add-define-to-oblist))
   (add-to-list 'mode-line-process gimp-mode-line-format t))
+
  ;; Versioning
 (gimp-defcommand gimp-gimp-mode-version ()
   "Version of this mode."
   (interactive)
   (destructuring-bind (version major minor) 
       (gimp-string-match "\\([0-9]+\\)\.\\([0-9]+\\)"
-                         "$Id: gimp-mode.el,v 1.24 2008-06-05 07:19:36 sharik Exp $" )
-      (if (interactive-p) (message "GIMP mode version: %s.%s" major minor)
+                         "$Id: gimp-mode.el,v 1.25 2008-06-07 15:50:24 sharik Exp $" )
+      (if (interactive-p) 
+          (prog1 nil 
+            (message "GIMP mode version: %s.%s" major minor))
         (format "%s.%s" major minor))))
 
 (defalias 'gimp-mode-version 'gimp-gimp-mode-version)
@@ -604,9 +621,7 @@ make a vector in SCHEME with `in-gimp'.
 ;; Core inferior interaction functions
 (defun gimp-proc ()
   (or (scheme-get-process)
-      (prog1
-	  nil
-	  (message "Inferior GIMP not running, type M-x run-gimp to start a new session."))))
+      gimp-cl-proc))
 
 (defun gimp-filter (proc string)
   "Filter for inferior gimp-process."
@@ -620,6 +635,7 @@ make a vector in SCHEME with `in-gimp'.
 
 (defun gimp-comint-filter (proc string)
   (gimp-filter proc string)
+  
   (comint-output-filter
    proc
    (let ((string (replace-regexp-in-string
@@ -659,44 +675,44 @@ When optional argument NEWLINE is non-nil, append a newline char."
     (when (and insert (not (string-equal result "")))
       (insert (substring result 0 -1)))))
 
-(defun gimp-send-input ()
-  "Send current input to the GIMP."
-  (interactive)
-  (let ((gimp-command 
-         (cadr (gimp-string-match "^\,\\([[:alpha:]-]+\\)" 
-                                  (comint-get-old-input-default)))))
-    (if gimp-command 
-        (set 'gimp-command (intern-soft (concat "gimp-" gimp-command))))
-    (cond ((and gimp-command
-                (commandp gimp-command))
-           (comint-delete-input)
-           (let ((input (call-interactively gimp-command)))
-             (when (and (eq major-mode 'inferior-gimp-mode)
-                        (stringp input))
-               (insert input)
-	       (gimp-set-comint-filter)
-               (comint-send-input))))
-          (gimp-command (message "No such command: %s" gimp-command))
-          (t
-	   (let ((undo-list (if (listp buffer-undo-list)
-				buffer-undo-list
-			      nil)))
-	     (setq buffer-undo-list t) ;Do not record the very
-					;verbose tracing in the undo list.
+;; (defun gimp-send-input ()
+;;   "Send current input to the GIMP."
+;;   (interactive)
+;;   (let ((gimp-command 
+;;          (cadr (gimp-string-match "^\,\\([[:alpha:]-]+\\)" 
+;;                                   (comint-get-old-input-default)))))
+;;     (if gimp-command 
+;;         (set 'gimp-command (intern-soft (concat "gimp-" gimp-command))))
+;;     (cond ((and gimp-command
+;;                 (commandp gimp-command))
+;;            (comint-delete-input)
+;;            (let ((input (call-interactively gimp-command)))
+;;              (when (and (eq major-mode 'inferior-gimp-mode)
+;;                         (stringp input))
+;;                (insert input)
+;; 	       (gimp-set-comint-filter)
+;;                (comint-send-input))))
+;;           (gimp-command (message "No such command: %s" gimp-command))
+;;           (t
+;; 	   (let ((undo-list (if (listp buffer-undo-list)
+;; 				buffer-undo-list
+;; 			      nil)))
+;; 	     (setq buffer-undo-list t) ;Do not record the very
+;; 					;verbose tracing in the undo list.
 	     
-	     (unwind-protect 
-		 (progn 
-		   (when (get 'gimp-trace 'trace-wanted)
-		     (scheme-send-string "(tracing 1)" t)
-		     (sit-for 0.1)
-		     (set 'gimp-output ""))
-		   (gimp-set-comint-filter)
-		   (call-interactively 'comint-send-input))
-	       (when (get 'gimp-trace 'trace-wanted)
-		 (scheme-send-string "(tracing 0)" t)
-		 (sit-for 0.1)
-		 (set 'gimp-output ""))
-	       (setq buffer-undo-list undo-list)))))))
+;; 	     (unwind-protect 
+;; 		 (progn 
+;; 		   (when (get 'gimp-trace 'trace-wanted)
+;; 		     (scheme-send-string "(tracing 1)" t)
+;; 		     (sit-for 0.1)
+;; 		     (set 'gimp-output ""))
+;; 		   (gimp-set-comint-filter)
+;; 		   (call-interactively 'comint-send-input))
+;; 	       (when (get 'gimp-trace 'trace-wanted)
+;; 		 (scheme-send-string "(tracing 0)" t)
+;; 		 (sit-for 0.1)
+;; 		 (set 'gimp-output ""))
+;; 	       (setq buffer-undo-list undo-list)))))))
 
 (defun gimp-eval (string)
   "Eval STRING, and return it read, somewhat, though not fully, elispified.
@@ -711,15 +727,18 @@ Lisp world."
       (read output))))
 
 (defun gimp-eval-to-string (string &optional discard)
-  (if (not (gimp-interactive-p))
-      "nil"
-  (setq gimp-output "")
-  (set-process-filter (gimp-proc) 'gimp-filter)
-  (scheme-send-string string t)
-  (unless discard
-    (while (not (string-match "^> $" gimp-output)) ;prompt has not yet returned
-      (sit-for .01))				   ;keep polling
-    (substring gimp-output 0 -2))))                 ;strip prompt
+  (cond
+   ((gimp-interactive-p)
+    (setq gimp-output "")
+    (set-process-filter (gimp-proc) 'gimp-filter)
+    (scheme-send-string string t)
+    (unless discard
+      (while (not (string-match "^> $" gimp-output)) ;prompt has not yet returned
+        (sit-for .01))				   ;keep polling
+      (substring gimp-output 0 -2)))
+   ((eq (process-status gimp-cl-proc)
+        'open) (gimp-cl-eval-to-string string discard))
+   (t "nil")))                 ;strip prompt
 
 (defun gimp-insert-input (event)
   "Insert input field at point after prompt.
@@ -772,7 +791,7 @@ Turn DL (of the form (\"a\" \"b\" . \"c\")) into a list of the form (\"a\"
       ;; Insert the string 
       (insert string)
       ;; Send it
-      (comint-send-input))))
+      (gimp-send-input))))
 
  ;; Help
 (defvar gimp-help-visited-pages nil
@@ -920,50 +939,67 @@ Deletes any previous stuff at that REPL"
 (defun gimp-help-refresh ()
   (eval (nth 0 gimp-help-ring)))
  ;; Stuff pertaining to running 'n' quitting
+
 ;;;###autoload
 (defun run-gimp ()
   "Start the GIMP and its REPL."
   (interactive)
-  (if (buffer-live-p (get-buffer "*GIMP*"))
-      (if (gimp-buffer-window "*GIMP*")
-	  (select-window (gimp-buffer-window "*GIMP*"))
-	(switch-to-buffer-other-window "*GIMP*"))
-    (run-scheme gimp-program-command-line)
-    (setq buffer-read-only t)           ;make sure the test in the timer yields only
-                                        ;true when the GIMP outputs a message.
-    (lexical-let ((buffer (current-buffer))
-                  (timer-object))
-      (labels ((timer ()
-                      (with-current-buffer buffer
-                        (when (> (point-max) (point-min))
-                          (cancel-timer timer-object)
-                          (setq scheme-buffer (rename-buffer "*GIMP*"))
-                          (inferior-gimp-mode)
-                                        ;therefore read them from file
-                          (setq buffer-read-only nil) ;make the buffer capable
-                                                      ;of receiving user input etc.
-			  (gimp-set-comint-filter)
-                          (unless gimp-inhibit-start-up-message
-                            (gimp-shortcuts t))
-                          (when (not (gimp-eval
-                                      "(symbol-bound? 'emacs-interaction-possible?)"))
-                            (let ((lnk (concat (gimp-dir) "/scripts/"
-                                               "99emacs-interaction.scm"))
-                                  (emacs-interaction.scm
-                                   (concat gimp-mode-dir "emacs-interaction.scm")))
-                              (message "Creating symlink to emacs-interaction.scm...")
-                              (make-symbolic-link emacs-interaction.scm lnk t)
-                              (gimp-load-script lnk))
-                            (gimp-progress (concat (current-message)
-                                                   "and loading it ")
-                                           (lambda ()
-                                             (not (string-match "> $"  gimp-output)))
-                                           " done!"))
-                          (gimp-restore-caches)
-                          (gimp-restore-input-ring)
-                          (message "%s The GIMP is loaded. Have FU." (current-message))
-                          (scheme-get-process)))))
-        (setq timer-object (run-with-timer 4 .1  (function timer)))))))
+  (if (buffer-live-p (gimp-buffer))
+      (if (gimp-buffer-window (gimp-buffer))
+	  (select-window (gimp-buffer-window (gimp-buffer)))
+	(switch-to-buffer-other-window (gimp-buffer)))
+    (run-scheme gimp-program-command-line) 
+    (set-process-sentinel 
+     (gimp-proc)
+     (lambda (p s)
+       (if (string-match "finished" s)
+           (error "Probably the GIMP is already running.
+
+Either close that instance, add the -e switch to `gimp-program-command-line',
+or run command `gimp-cl-connect'.")
+         (message s))))
+    (save-window-excursion 
+      (switch-to-buffer (gimp-buffer))
+      (setq buffer-read-only t))
+    (set-process-filter
+     (gimp-proc)
+     'gimp-first-run-action)))
+
+(defun gimp-first-run-action (proc string)
+  (set-process-sentinel 
+   (gimp-proc)
+   (lambda (p s)
+     (ignore)))
+  (switch-to-buffer (gimp-buffer))
+  (let  (buffer-read-only)              ;make the buffer capable
+                                        ;of receiving user input etc.
+    (insert string)
+    (unless (string= (buffer-name)
+                     "*GIMP*")
+      (rename-buffer "*GIMP*"))
+    (setq scheme-buffer (current-buffer))
+    (inferior-gimp-mode)
+    (gimp-set-comint-filter)   ;set comint filter for subsequent input
+    (unless gimp-inhibit-start-up-message
+      (gimp-shortcuts t))
+    (when (not (gimp-eval
+                "(symbol-bound? 'emacs-interaction-possible?)"))
+      (let ((lnk (concat (gimp-dir) "/scripts/"
+                         "99emacs-interaction.scm"))
+            (emacs-interaction.scm
+             (concat gimp-mode-dir "emacs-interaction.scm")))
+        (message "Creating symlink to emacs-interaction.scm...")
+        (make-symbolic-link emacs-interaction.scm lnk t)
+        (gimp-load-script lnk))
+      (gimp-progress (concat (current-message)
+                             "and loading it ")
+                     (lambda ()
+                       (not (string-match "> $"  gimp-output)))
+                     " done!"))
+    (gimp-restore-caches)
+    (gimp-restore-input-ring)
+    (message "%s The GIMP is loaded. Have FU." (or (current-message) "")))
+  (setq buffer-read-only nil))
 
 (defun gimp-progress (message test &optional end-text)
   "Show MESSAGE with rotating thing at end while TEST yields a non-nil value.
@@ -990,10 +1026,18 @@ Optional argument END-TEXT specifies the text appended to the message when TEST 
   (interactive)
   (gimp-save-input-ring)
   (gimp-eval-to-string "(gimp-quit 0)" t)
-  (kill-buffer "*GIMP*")
+  (kill-buffer (gimp-buffer))
   (message "GIMP process ended."))
 
  ;; Utility functions
+(defun gimp-make-gimp-file (file)
+  (concat gimp-dir "/emacs/" file))
+
+(defun gimp-buffer ()
+  (let ((proc (gimp-proc)))
+    (when proc
+      (process-buffer (gimp-proc)))))
+
 (defun gimp-dir ()
   (if (not (gimp-interactive-p))
       gimp-dir
@@ -1057,7 +1101,16 @@ Optional argument END-TEXT specifies the text appended to the message when TEST 
     (gimp-without-string
      (if (looking-back ",[[:alnum:]- ]+")
 	 nil
-       (gimp-beginning-of-sexp)
+;        (gimp-beginning-of-sexp)
+       (with-syntax-table scheme-mode-syntax-table
+          (while 
+              (or (memq (char-syntax (char-before)) '(?w ?_ 32 ?- ?\" ?>))
+                  (when (memq (char-syntax (char-before)) '(?\)))
+                    (backward-sexp 1)
+                    t))
+            (forward-char -1))
+          ;(point)
+          )
        (prog1
 	   ;; Don't do anything if current word is inside a string.
 	   (if (= (or (char-after (1- (point))) 0) ?\")
@@ -1111,7 +1164,7 @@ Optional argument END-TEXT specifies the text appended to the message when TEST 
 Argument CACHE is the cache to restore.
 Optional argument TO-HASH means convert the list to a hash.
 Optional argument PREFIX specifies a prefix for the filename."
-  (let* ((prefix (or prefix "emacs-"))
+  (let* ((prefix (or prefix "/emacs/emacs-"))
          (file (format "%s/%s%s" (gimp-dir) prefix cache)))
     (with-temp-buffer
       (when (file-exists-p file)
@@ -1172,12 +1225,12 @@ screwed up.  It is wise then to preceed it with a call to
 (defun gimp-save-input-ring ()
   "Save the input ring for subsequent sessions."
   (let ((r
-         (with-current-buffer "*GIMP*" comint-input-ring)))
+         (with-current-buffer (gimp-buffer) comint-input-ring)))
     (with-temp-file (format "%s/emacs-%s" (gimp-dir) "comint-input-ring")
       (insert (format "%S" r)))))
 
 (defun gimp-restore-input-ring ()
-  (with-current-buffer (get-buffer "*GIMP*")
+  (with-current-buffer (gimp-buffer)
     (gimp-restore-cache 'comint-input-ring)
     (if (null comint-input-ring)
         (set 'comint-input-ring (make-ring 65)))))
@@ -1249,6 +1302,8 @@ screwed up.  It is wise then to preceed it with a call to
 
 Only for REPL input."
   (interactive)
+  (when (gimp-cl-p)
+    (error "Tracing in client mode unimplemented"))
   (message "Tracing turned on")
   (put 'gimp-trace 'trace-wanted t))
 
@@ -1257,6 +1312,8 @@ Only for REPL input."
 
 Only for REPL input."
   (interactive)
+  (when (gimp-cl-p)
+    (error "Tracing in client mode unimplemented"))
   (gimp-eval "(tracing 0)\n")
   (message "Tracing turned off")
   (put 'gimp-trace 'trace-wanted nil))
@@ -1634,8 +1691,9 @@ Its state is indicated in the mode-line."
        (and (not (gimp-in-string-p))
             (string-match "STRING" type)))
      . (lambda (&rest ignore)
-         (insert "\"\"")
-         (forward-char -1)
+         (when gimp-insert-quotes-for-strings-p 
+           (insert "\"\"")
+           (forward-char -1))
          (gimp-make-completion (list desc name type))))
 
     ((lambda (desc name type)
@@ -1935,13 +1993,15 @@ Optional argument LST specifies a list of completion candidates."
           (gimp-complete-savvy list))
          (t (let ((answer (read-from-minibuffer
                            question
-                          (case
-                              (read (cadr desc))
-                            (GIMP_PDB_FLOAT (number-to-string (cadar scraped-arg)))
-                            (GIMP_PDB_COLOR (if (numberp (car scraped-arg))
-                                                (format "'%S" scraped-arg)
-                                              (car scraped-arg)))
-                            (t (format "%S" (car scraped-arg)))))))
+                           (if scraped-arg
+                               (case
+                                   (read (cadr desc))
+                                 (GIMP_PDB_FLOAT (number-to-string (cadar scraped-arg)))
+                                 (GIMP_PDB_COLOR (if (numberp (car scraped-arg))
+                                                     (format "'%S" scraped-arg)
+                                                   (car scraped-arg)))
+                                 (t (format "%S" (car scraped-arg))))
+                             nil))))
               (insert (replace-regexp-in-string "\\(^\"\\|\"$\\)" "" answer)))))))
      (t
       (gimp-complete-savvy gimp-oblist-cache)))))
@@ -2111,7 +2171,10 @@ argument at point is highlighted."
 		 (when (not (consp cache-resp))
 		   (setq cache-resp nil)))))
 
-	(when cache-resp
+	(when (and cache-resp 
+                   (not (eq 'gimp-error (car cache-resp)))) ;this may be 
+                                                     ;an error
+                                                     ;in gimp-cl
 	  (setq cache-resp
  		(mapcar (lambda (item) (format "%s" item))
 			(dotted-to-list cache-resp)))
@@ -2163,7 +2226,7 @@ argument at point is highlighted."
   "Search for a plug-in file containing plug-in PROC.
 Needs the variable `gimp-src-dir' to be set."
   (grep
-   (format "grep -nHri \"#define .*\\\"%s\\\"\" %s*"
+   (format "grep -nHri \"\\\"%s\\\"\" %s*"
            proc
            (shell-quote-wildcard-pattern (concat (gimp-src-dir) "/plug-ins/")))))
 
@@ -2294,7 +2357,7 @@ into etags and find-tag."
 (gimp-defcommand gimp-selector (char)
   "GIMP buffer switcher similar to `slime-selector.
 Argument CHAR is used to choose between buffers.'."
-  (interactive "cSwitch to gimp buffer [rldh?]: ")
+  (interactive "cSwitch to gimp buffer [rldhc?]: ")
   (case char
     (?l (let ((buffer (car
 		       (member-if
@@ -2307,6 +2370,9 @@ Argument CHAR is used to choose between buffers.'."
             (error "No living gimp-mode buffers to switch to"))))
     (?h (gimp-help))
     (?r (call-interactively 'run-gimp))
+    (?c (if (eq (process-status gimp-cl-proc) 'open)
+            (switch-to-buffer gimp-cl-buffer-name)
+          (gimp-cl-connect)))
     (?d (call-interactively 'gimp-documentation))
     (?? (message "i = inferior gimp buffer; l: last lisp buffer; d: online documentation; h: help.")
         (sit-for 3)
@@ -2389,23 +2455,236 @@ If GIMP is not running as an inferior process, open image(s) with gimp-remote."
 	   (t (read-file-name "File: ")))))
     (if (null img) (error "No image at point"))
     (flet ((open (image)
-		   (if (not (gimp-interactive-p))
-		       (if (= 0 (shell-command "gimp-remote -q"))
-			   (shell-command (format "gimp-remote %s" image))
-			 (error "Error: this command requires a running GIMP session."))
-		     (let ((command (format
+		   (cond 
+                    ((or (gimp-interactive-p) (gimp-cl-p))
+                     (let ((command (format
 				     "(let  ((image (car (gimp-file-load RUN-INTERACTIVE\n\t%S\n\t%S))))\n\t(car (gimp-display-new image)))\n"
 				     (expand-file-name image)
 				     (expand-file-name image))))
-		       (gimp-insert-and-send-string command)))))
-      
+                       (gimp-insert-and-send-string command)
+                       nil))
+                    (t 
+                     (if (= 0 (shell-command "gimp-remote -q"))
+                         (shell-command (format "gimp-remote %s" image))
+                       (error "Error: this command requires a running GIMP session."))
+		     ))))
       (if (listp img)
 	  (mapc 'open img)
 	(open img)))))
 
+;; Client Mode
+(defvar *gimp-output-file* (gimp-make-gimp-file "emacs-output.scm"))
+(defvar *gimp-input-file* (gimp-make-gimp-file "emacs-input.scm"))
+(defvar gimp-cl-buffer-name "*Gimp-Client*")
+(defvar gimp-cl-output "")
+(defvar gimp-cl-port nil)
+(make-variable-buffer-local 'gimp-cl-port)
+(defvar gimp-cl-host nil)
+(make-variable-buffer-local 'gimp-cl-host)
+
+(defmacro gimp-with-open-file (filename direction &rest body)
+  (declare (indent defun))
+  `(with-temp-buffer 
+     (case ,direction
+       (:input 
+        (insert-file-contents-literally ,filename)
+       ,@body)
+       (:output
+        ,@body
+        (write-file ,filename nil))
+       (:rw
+        (insert-file-contents-literally ,filename)
+        (prog1 
+            (progn ,@body)
+          (write-file ,filename nil))))))
+
+(defun gimp-cl-connect ()
+  "Connect to the Script-Fu server.
+
+The Script-Fu server is started in the GIMP via Xtns > Script FU
+> Start Server."
+  (interactive)
+  (let ((host (read-from-minibuffer "Host: " "127.0.0.1"))
+        (port (read-number "Port: " 10008)))
+    (set-process-filter
+     (setq gimp-cl-proc
+           (open-network-stream "gimp-client"
+                                gimp-cl-buffer-name
+                                host 
+                                port))
+     'gimp-cl-process-filter)
+    (switch-to-buffer gimp-cl-buffer-name)
+    (inferior-gimp-mode)
+    (setq gimp-cl-port port
+          gimp-cl-host host)
+    (insert "Client mode for the GIMP script-fu server\n"
+            (make-string 42 61)
+            "\n")
+    (gimp-restore-caches)
+    (gimp-shortcuts)
+    (set-marker (process-mark gimp-cl-proc) (point))))
+
+(eval-when (compile load)
+  (defun gimp-cl-process-filter (p s)
+    (setq gimp-cl-output
+          (gimp-with-open-file *gimp-output-file* :input
+          (replace-regexp-in-string 
+           " +Error: .*$" ;ignore some nonsensical errors (until I
+                           ;found out their raison d'être)
+           ""
+           (buffer-substring-no-properties (point-min)
+                                          (point-max)))))))
+
+(defun gimp-cl-send-string (string &optional discard)
+  (when (eq (process-status gimp-cl-proc)
+            'open)
+    (gimp-cl-new-output-p)              ;flush any previous output
+    (let* ((string (if discard 
+                       string
+                     (format "(emacs-cl-output %s)" string)))
+           (pre "G")
+           (len (length string))
+           (high (/ len 256))
+           (low (mod len 256)))
+      (if (> len 65535)
+          (error "GIMP send-string: String to long: %d" len))
+      (if (> low 0)
+          ;; arghh Problems with multibyte and send string. Assert low length of 0
+          (setq string (concat string (make-string (- 256 low) ? )) 
+                low 0
+                high (1+ high)))
+      (setq pre (concat pre 
+                        (char-to-string high) 
+                        (char-to-string low)))
+      (if (fboundp 'string-as-unibyte)
+          (setq pre (string-as-unibyte pre)))
+      (process-send-string gimp-cl-proc pre)
+      (process-send-string gimp-cl-proc string))))
+
+(defun gimp-cl-eval-to-string (string &optional discard)
+  (gimp-cl-send-string string discard)
+  (while (not (gimp-cl-new-output-p))
+    (sit-for .1))
+  (unless discard
+    (if (string-match "^(gimp-error " gimp-cl-output)
+        (prog1 (gimp-cl-error gimp-cl-output)
+          (gimp-cl-send-string "" nil)) ;flush
+      gimp-cl-output)))
+
+(defmacro gimp-cl-error (err)
+  err)
+
+(defun gimp-cl-eval (string)
+  "Eval STRING, and return it read, somewhat, though not fully, elispified.
+
+Best is to craft STRING so that script-fu returns something universal to the
+Lisp world."
+  (let ((output (gimp-cl-eval-to-string string)))
+    (if (string-match "^#" output)	;unreadable by the lisp reader
+        (if (string= "#f\n> " gimp-output) ;gimp returned #f
+            nil
+          (read (substring output 1)))	;so strip
+      (read output))))
+
+(define-derived-mode inferior-cl-gimp-mode inferior-scheme-mode
+  "Inferior GIMP"
+  "Mode for interaction with inferior gimp process."
+  (use-local-map inferior-gimp-mode-map)
+  (setq comint-input-filter-functions 
+	'(gimp-add-define-to-oblist))
+  (add-to-list 'mode-line-process gimp-mode-line-format t))
+
+(defun gimp-send-input ()               
+  "Send current input to the GIMP."
+  (interactive)
+  (let ((gimp-command 
+          (cadr (gimp-string-match "^\,\\([[:alpha:]-]+\\)" 
+                                  (save-excursion 
+                                    (comint-get-old-input-default))))))
+    (if gimp-command 
+        (set 'gimp-command (intern-soft (concat "gimp-" gimp-command))))
+    (cond ((and gimp-command
+                (commandp gimp-command))
+           (comint-delete-input)
+           (let ((input (call-interactively gimp-command)))
+             (when (and (eq major-mode 'inferior-gimp-mode)
+                        (stringp input))
+               (insert input)
+               (if (gimp-cl-p)
+                   (progn 
+                     (insert 
+                      (gimp-cl-eval-to-string 
+                       (buffer-substring-no-properties
+                        (process-mark gimp-cl-proc)
+                        (point-max)))
+                      (gimp-cl-mkprompt))
+                     (set-marker (process-mark gimp-cl-proc) (point)))
+                 (gimp-set-comint-filter)
+                 (comint-send-input)))))
+          (gimp-command (message "No such command: %s" gimp-command))
+          (t
+	   (let ((undo-list (if (listp buffer-undo-list)
+				buffer-undo-list
+			      nil)))
+	     (setq buffer-undo-list t)  ;Do not record the very
+					;verbose tracing in the undo list.
+	     (unwind-protect 
+		 (progn 
+		   (when (get 'gimp-trace 'trace-wanted)
+                     (if (gimp-cl-p) 
+                         nil            ;tracing does not work in gimp-cl
+                       (scheme-send-string "(tracing 1)" t))
+		     (sit-for 0.1)
+		     (set 'gimp-output ""))
+                   (goto-char (point-max))
+                   (if (gimp-cl-p)
+                       (let ((cl-input (buffer-substring-no-properties
+                                     (process-mark gimp-cl-proc)
+                                     (point-max))))
+                         (insert 
+                          "\n"
+                          (gimp-cl-eval-to-string 
+                           cl-input)
+                          (gimp-cl-mkprompt))
+                         (set-marker (process-mark gimp-cl-proc) (point))
+                         (ring-insert comint-input-ring cl-input))
+                     (gimp-set-comint-filter)
+                     (comint-send-input)))
+               (when (get 'gimp-trace 'trace-wanted)
+                 (if (gimp-cl-p)  nil ;tracing does not work in gimp-cl
+                   (scheme-send-string "(tracing 0)" t))
+		 (sit-for 0.1)
+		 (set 'gimp-output ""))
+	       (setq buffer-undo-list undo-list)))))))
+
+(defun gimp-cl-mkprompt ()
+  (propertize "\n> "
+              'font-lock-face 'comint-highlight-prompt
+              'field 'output
+              'inhibit-line-move-field-capture t
+              'rear-nonsticky t))
+
+(defun gimp-cl-get-output-time ()
+  (nth 5 (file-attributes *gimp-output-file*)))
+
+(eval-when (compile load)               ;silence the compiler
+  (defun gimp-cl-new-output-p ()))
+
+(lexical-let ((old-time (gimp-cl-get-output-time)))
+  (defun gimp-cl-new-output-p ()
+    (let ((new-time (gimp-cl-get-output-time)))
+      (if (not (equal old-time
+                      new-time))
+          (setq old-time new-time)
+        nil))))
+
+(defun gimp-cl-p ()
+  "Are we hooked into the GIMP as a client?"
+  (string= (buffer-name)
+           "*Gimp-Client*"))
+
 (provide 'gimp-mode)
 ;;; gimp-mode.el ends here
-
 
 
 
