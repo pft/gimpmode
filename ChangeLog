@@ -1,3 +1,45 @@
+2008-06-07  niels giesen  <sharik@matroshka>
+
+	* gimp-mode.el: save and restore input ring also in client mode.
+
+	* README: changed everything to reflect the new client mode.
+
+	* emacs-interaction.scm (emacs-dir, make-emacs-file,
+	with-output-to-emacs-file): added.
+	(script-fu-dump-for-emacs): shortened (by using
+	with-output-to-emacs-file)
+	(*emacs-cl-output*): nil)
+	
+	(*error-hook*): fix GIMP bug
+	(emacs-cl-output): temp var
+	(gimp-cl-handler): error handler to handle errors in client calls
+	gracefully
+	
+	* gimp-init.el: add autoload for `gimp-cl-connect'
+
+	* gimp-mode.el (eldoc): added load-time requirement
+	(thingatpt): added load-time requirement
+	(gimp-cl-proc): added client process
+	(gimp-insert-quotes-for-strings-p): added option for automatic
+	quote insertion (as this might be annoying when in fact you want a
+	sexp)
+	(gimp-mode): added value 'lisp-indent-line for
+	`indent-line-function' so indent-region does the right thing (TM).
+	(gimp-gimp-mode-version): return nil (not a string), so that when
+	invoked from interactive buffer, DTRT (TM)
+	(gimp-proc): offer gimp-cl-proc as a fallback
+	(gimp-eval-to-string): branch to defer evaluation to
+	`gimp-cl-eval-to-string' when needed.
+	(gimp-fnsym-in-current-sexp): use syntax-table to find current fnsym
+	(gimp-restore-cache): restore caches from $GIMP_DIR/emacs/
+	(gimp-trace): decline to trace for client (only as inferior mode)
+	(gimp-completion-rules): added option for automatic
+	quote insertion (as this might be annoying when in fact you want a
+	sexp)
+	(gimp-complete): fixed bug for non-s-f-procedures
+	(gimp-selector): add client buffer selector (c)
+	(gimp-open-image): adapt for client process
+
 2008-05-25  Niels Giesen  <niels.giesen@gmail.com>
 
 	* gimp-mode.el (gimp-defcommand): added type checking and doc.
@@ -9,7 +51,7 @@
 2008-05-22  Niels Giesen  <niels.giesen@gmail.com>
 
 	* gimp-mode.el (gimp-arg-from-scraped-registration): add
-	registered args, plus faces for traces.
+	registered args, plus faces for traces).
 
 2008-05-19  Niels Giesen  <sharik@reetkevert.sshunet.nl>
 
