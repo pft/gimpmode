@@ -1,4 +1,4 @@
-;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.25 2008-06-07 15:50:24 sharik Exp $
+;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.26 2008-06-07 19:07:47 sharik Exp $
 ;; Copyright (C) 2008  Niels Giesen <(rot13 "avryf.tvrfra@tznvy.pbz")>
 
 
@@ -583,7 +583,7 @@ Optional argument EVENT is a mouse event."
   (interactive)
   (destructuring-bind (version major minor) 
       (gimp-string-match "\\([0-9]+\\)\.\\([0-9]+\\)"
-                         "$Id: gimp-mode.el,v 1.25 2008-06-07 15:50:24 sharik Exp $" )
+                         "$Id: gimp-mode.el,v 1.26 2008-06-07 19:07:47 sharik Exp $" )
       (if (interactive-p) 
           (prog1 nil 
             (message "GIMP mode version: %s.%s" major minor))
@@ -1226,7 +1226,7 @@ screwed up.  It is wise then to preceed it with a call to
   "Save the input ring for subsequent sessions."
   (let ((r
          (with-current-buffer (gimp-buffer) comint-input-ring)))
-    (with-temp-file (format "%s/emacs-%s" (gimp-dir) "comint-input-ring")
+    (with-temp-file (format "%s/emacs/emacs-%s" (gimp-dir) "comint-input-ring")
       (insert (format "%S" r)))))
 
 (defun gimp-restore-input-ring ()
@@ -2521,6 +2521,7 @@ The Script-Fu server is started in the GIMP via Xtns > Script FU
             (make-string 42 61)
             "\n")
     (gimp-restore-caches)
+    (gimp-restore-input-ring)
     (gimp-shortcuts)
     (set-marker (process-mark gimp-cl-proc) (point))))
 
@@ -2641,7 +2642,17 @@ Lisp world."
                        (let ((cl-input (buffer-substring-no-properties
                                      (process-mark gimp-cl-proc)
                                      (point-max))))
-                         (insert 
+                       (mapc (lambda (pv)
+                               (apply 'put-text-property
+                                      (process-mark gimp-cl-proc)
+                                      (point-max)
+                                      pv))
+                             '((field input)
+                               (font-lock-face comint-highlight-input)
+                               (front-sticky t)
+                               (help-echo "mouse-2: insert after prompt as new input")
+                               (mouse-face highlight)))
+                       (insert 
                           "\n"
                           (gimp-cl-eval-to-string 
                            cl-input)
