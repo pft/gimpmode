@@ -11,21 +11,14 @@
   (add-to-list 'load-path gimp-mode-dir)
   (add-to-list 'load-path related-dir))
 
-(autoload 'run-gimp "gimp-mode" 
-  "Inferior Gimp Interaction Mode" t)
-
-(autoload 'gimp-mode "gimp-mode" 
-  "Mode for editing script-fu and interacting with an inferior gimp process" t)
-
-(autoload 'gimp-help "gimp-mode" 
-  "Help for the Gimp" t)
-
-(autoload 'gimp-cl-connect "gimp-mode" 
-  "Gimp client mode" t)    
-
-(autoload 'gimp-selector "gimp-mode" 
-  "Gimp buffer switcher similar to `slime-selector." t)    
-
+(mapc (lambda (command)
+	(autoload command "gimp-mode" "" t))
+      '(run-gimp
+	gimp-mode
+	gimp-help
+	gimp-selector
+	gimp-open-image
+	gimp-cl-connect))    
 ;; Uncomment the following line to have a nice selector:
 ;(global-set-key "\C-cg" 'gimp-selector)
 
