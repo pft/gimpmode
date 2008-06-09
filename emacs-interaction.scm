@@ -1,4 +1,4 @@
-;; -*- mode: Gimp; -*-ecom
+;; -*- mode: Gimp; -*-
 ;; Stuff needed for interaction with the emacs-modes `gimp-mode'
 ;; `inferior-gimp-mode' and `gimp-help-mode'.
 
@@ -41,6 +41,7 @@
         (else ())))
 
 (define (script-fu-dump-for-emacs only-bound? menu? fonts? brushes? patterns? gradients? palettes?)
+  
   (when (= menu? TRUE)
         (with-output-to-emacs-file
          "emacs-gimp-menu" ;menu entries for plugins
@@ -146,5 +147,5 @@ debugging)."
 (if emacs-first-time?
     (begin
       (script-fu-dump-for-emacs emacs-only-bound-symbols? TRUE TRUE TRUE TRUE TRUE TRUE)
-      (set! emacs-first-time? #f)))
+       (set! emacs-first-time? #f)))
 

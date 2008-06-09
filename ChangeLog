@@ -1,3 +1,9 @@
+2008-06-08  Niels Giesen  <sharik@reetkevert.sshunet.nl>
+
+	* gimp-mode.el (gimp-fnsym-in-current-sexp): fixed bug for when
+	string before has comma, and made a backout for when meeting the
+	process-mark.
+
 2008-06-07  niels giesen  <sharik@matroshka>
 
 	* gimp-mode.el: save and restore input ring also in client mode.

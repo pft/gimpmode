@@ -1,4 +1,4 @@
-;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.26 2008-06-07 19:07:47 sharik Exp $
+;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.27 2008-06-09 06:32:18 sharik Exp $
 ;; Copyright (C) 2008  Niels Giesen <(rot13 "avryf.tvrfra@tznvy.pbz")>
 
 
@@ -177,6 +177,8 @@ another.  Now best left at the non-nil value.")
 "State of various Gimp Mode options.")
 (defvar gimp-cl-proc nil
   "Gimp Client Process Object")
+(defvar gimp-cl-buffer-name "*Gimp-Client*"
+  "Name of Gimp client buffer.")
 (defvar gimp-output nil
   "Contains output from inferior gimp process.")
 ;; (Bases of following caches) generated on GIMP startup (by
@@ -210,6 +212,7 @@ Define such command with `gimp-defcommand' to be automatically included.")
 (setf (get 'gimp-help-ring 'gimp-help-positions)
       (make-vector 100 1))
 (put 'gimp-help-ring 'index 0)
+
  ;; Customization
 (defgroup gimp-directories nil
   "Directories where the GIMP finds its sources"
@@ -583,7 +586,7 @@ Optional argument EVENT is a mouse event."
   (interactive)
   (destructuring-bind (version major minor) 
       (gimp-string-match "\\([0-9]+\\)\.\\([0-9]+\\)"
-                         "$Id: gimp-mode.el,v 1.26 2008-06-07 19:07:47 sharik Exp $" )
+                         "$Id: gimp-mode.el,v 1.27 2008-06-09 06:32:18 sharik Exp $" )
       (if (interactive-p) 
           (prog1 nil 
             (message "GIMP mode version: %s.%s" major minor))
@@ -1030,9 +1033,6 @@ Optional argument END-TEXT specifies the text appended to the message when TEST 
   (message "GIMP process ended."))
 
  ;; Utility functions
-(defun gimp-make-gimp-file (file)
-  (concat gimp-dir "/emacs/" file))
-
 (defun gimp-buffer ()
   (let ((proc (gimp-proc)))
     (when proc
@@ -1099,22 +1099,29 @@ Optional argument END-TEXT specifies the text appended to the message when TEST 
   "Return function symbol in current sexp."
   (let ((p (point)))
     (gimp-without-string
-     (if (looking-back ",[[:alnum:]- ]+")
-	 nil
-;        (gimp-beginning-of-sexp)
+     (when  (not (looking-back ",[[:alnum:]- ]+"))
        (with-syntax-table scheme-mode-syntax-table
-          (while 
-              (or (memq (char-syntax (char-before)) '(?w ?_ 32 ?- ?\" ?>))
-                  (when (memq (char-syntax (char-before)) '(?\)))
-                    (backward-sexp 1)
-                    t))
-            (forward-char -1))
-          ;(point)
-          )
+	 (while 
+	     (and (let ((m (process-mark (gimp-proc))))
+		    (if 
+			(eq (marker-buffer m)
+			    (current-buffer))
+			(not (= (point)
+				(marker-position m)))
+		      t))		;no rules for other types of buffers.
+		  (or 
+		   (when (eq (char-syntax (char-before)) ?\")
+		     (backward-sexp 1)
+		     t)
+		   (memq (char-syntax (char-before)) '(?w ?_ 32 ?- ?\" ?> ?'))
+		   (when (memq (char-syntax (char-before)) '(?\)))
+		     (backward-sexp 1)
+		     t)))
+	   (forward-char -1)))
        (prog1
 	   ;; Don't do anything if current word is inside a string.
 	   (if (= (or (char-after (1- (point))) 0) ?\")
-             nil
+	       nil
 	     (gimp-current-symbol))
 	 (goto-char p))))))
 
@@ -1181,6 +1188,10 @@ Normally this function needn't be run interactively, lest a cache has been
 screwed up.  It is wise then to preceed it with a call to
 `gimp-delete-caches'."
   (interactive)
+  (when (or (not (file-exists-p (concat (gimp-dir) "/emacs/")))
+	    (not (file-directory-p (concat (gimp-dir) "/emacs/"))))
+      (make-directory (concat (gimp-dir) "/emacs/"))
+      (gimp-dump-for-emacs))
   (message "Reading in caches... ")
   (mapc 'gimp-restore-cache
         '(gimp-menu
@@ -1280,7 +1291,7 @@ screwed up.  It is wise then to preceed it with a call to
 (defun gimp-dump-for-emacs ()
   "Dump stuff for emacs."
   (interactive)
-  (let ((command "(car (script-fu-dump-for-emacs TRUE TRUE TRUE TRUE TRUE TRUE))"))
+  (let ((command "(car (script-fu-dump-for-emacs TRUE TRUE TRUE TRUE TRUE TRUE TRUE))"))
     (if (eq this-command 'gimp-send-input)
         command
       (message "Dumping stuff...")
@@ -1713,7 +1724,8 @@ Its state is indicated in the mode-line."
          (in-gimp (cadr (gimp-context-list-paint-methods)))))
 
     ((lambda (desc name type)
-       (string-match "font" name))
+       (or (string-match "font" name)
+	   (string= "The name of the font" desc)))
      . (lambda (&rest ignore)
          gimp-fonts-cache))
 
@@ -2473,9 +2485,12 @@ If GIMP is not running as an inferior process, open image(s) with gimp-remote."
 	(open img)))))
 
 ;; Client Mode
+;; Client mode global vars
+(defun gimp-make-gimp-file (file)
+  (concat gimp-dir "/emacs/" file))
+
 (defvar *gimp-output-file* (gimp-make-gimp-file "emacs-output.scm"))
 (defvar *gimp-input-file* (gimp-make-gimp-file "emacs-input.scm"))
-(defvar gimp-cl-buffer-name "*Gimp-Client*")
 (defvar gimp-cl-output "")
 (defvar gimp-cl-port nil)
 (make-variable-buffer-local 'gimp-cl-port)
@@ -2539,7 +2554,7 @@ The Script-Fu server is started in the GIMP via Xtns > Script FU
 (defun gimp-cl-send-string (string &optional discard)
   (when (eq (process-status gimp-cl-proc)
             'open)
-    (gimp-cl-new-output-p)              ;flush any previous output
+    (with-no-warnings (gimp-cl-new-output-p))              ;flush any previous output
     (let* ((string (if discard 
                        string
                      (format "(emacs-cl-output %s)" string)))
@@ -2564,7 +2579,7 @@ The Script-Fu server is started in the GIMP via Xtns > Script FU
 
 (defun gimp-cl-eval-to-string (string &optional discard)
   (gimp-cl-send-string string discard)
-  (while (not (gimp-cl-new-output-p))
+  (while (not (with-no-warnings (gimp-cl-new-output-p)))
     (sit-for .1))
   (unless discard
     (if (string-match "^(gimp-error " gimp-cl-output)
@@ -2678,16 +2693,17 @@ Lisp world."
 (defun gimp-cl-get-output-time ()
   (nth 5 (file-attributes *gimp-output-file*)))
 
-(eval-when (compile load)               ;silence the compiler
+(eval-when-compile 
   (defun gimp-cl-new-output-p ()))
 
-(lexical-let ((old-time (gimp-cl-get-output-time)))
-  (defun gimp-cl-new-output-p ()
-    (let ((new-time (gimp-cl-get-output-time)))
-      (if (not (equal old-time
-                      new-time))
-          (setq old-time new-time)
-        nil))))
+(eval-when (load run)
+  (lexical-let ((old-time (gimp-cl-get-output-time)))
+    (defun gimp-cl-new-output-p ()
+      (let ((new-time (gimp-cl-get-output-time)))
+	(if (not (equal old-time
+			new-time))
+	    (setq old-time new-time)
+	  nil)))))
 
 (defun gimp-cl-p ()
   "Are we hooked into the GIMP as a client?"
@@ -2696,7 +2712,6 @@ Lisp world."
 
 (provide 'gimp-mode)
 ;;; gimp-mode.el ends here
-
 
 
 
