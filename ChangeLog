@@ -1,3 +1,13 @@
+2008-06-11    <ngiesen@NIELS>
+
+	* gimp-mode.el (gimp-insert-sexp-at-repl): (use function
+	gimp-buffer)
+	(gimp-first-run-action): make copy instead of symbolic link when
+	last is impossible
+	(gimp-read-dump): mapcar -> mapc
+	(gimp-complete-oblist): stand-alone functino, to be pushed into
+	hippie-expand-try-functions-list. Needs further refinement (?)
+ 
 2008-06-08  Niels Giesen  <sharik@reetkevert.sshunet.nl>
 
 	* gimp-mode.el (gimp-fnsym-in-current-sexp): fixed bug for when

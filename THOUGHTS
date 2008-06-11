@@ -1,0 +1,10 @@
+
+
+* This is actually the first time I realised how a mixin might be what I need: 
+
+  You have an interactive, console-like buffer, and multiple source
+  buffers in which to edit text. There is a plethora of commands,
+  functions and variables that you'd like to make available in both
+  modes.  Say we want some keys to perform certain actions in both
+  modes, but the console mode is derived from - say - comint-mode and
+  the text buffer mode is derived from lisp-mode.  
