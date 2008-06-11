@@ -1,4 +1,4 @@
-;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.27 2008-06-09 06:32:18 sharik Exp $
+;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.28 2008-06-11 15:52:15 sharik Exp $
 ;; Copyright (C) 2008  Niels Giesen <(rot13 "avryf.tvrfra@tznvy.pbz")>
 
 
@@ -586,7 +586,7 @@ Optional argument EVENT is a mouse event."
   (interactive)
   (destructuring-bind (version major minor) 
       (gimp-string-match "\\([0-9]+\\)\.\\([0-9]+\\)"
-                         "$Id: gimp-mode.el,v 1.27 2008-06-09 06:32:18 sharik Exp $" )
+                         "$Id: gimp-mode.el,v 1.28 2008-06-11 15:52:15 sharik Exp $" )
       (if (interactive-p) 
           (prog1 nil 
             (message "GIMP mode version: %s.%s" major minor))
@@ -923,12 +923,9 @@ Optional argument SUBMENU defines the default content of the minibuffer."
 
 Deletes any previous stuff at that REPL"
   (interactive)
-  (if (not (gimp-interactive-p))
-      (error
-       "Inferior GIMP not running, type M-x run-gimp to start a new session."))
   (let ((sexp (thing-at-point 'sexp)))
     (when sexp
-      (switch-to-buffer-other-window "*GIMP*")
+      (switch-to-buffer-other-window (gimp-buffer))
       (goto-char (point-max))
       ;; First delete any old unsent input at the end
       (delete-region
@@ -992,7 +989,9 @@ or run command `gimp-cl-connect'.")
             (emacs-interaction.scm
              (concat gimp-mode-dir "emacs-interaction.scm")))
         (message "Creating symlink to emacs-interaction.scm...")
-        (make-symbolic-link emacs-interaction.scm lnk t)
+        (if (fboundp 'make-symbolic-link)
+	    (make-symbolic-link emacs-interaction.scm lnk t)
+	  (copy-file emacs-interaction.scm lnk))
         (gimp-load-script lnk))
       (gimp-progress (concat (current-message)
                              "and loading it ")
@@ -1216,7 +1215,7 @@ screwed up.  It is wise then to preceed it with a call to
         (ht (make-hash-table :test 'eql)))
     (with-temp-buffer
       (insert-file-contents file)
-      (mapcar (lambda (i)
+      (mapc (lambda (i)
 		(puthash (intern (cadr i))
 			 (cddr i)
 			 ht))
@@ -1946,8 +1945,20 @@ Optional argument LST specifies a list of completion candidates."
 			 (delete-region beg end)
 			 (insert (car lst2))))))
 		 (unless minibuf-is-in-use
-		   (message "Making completion list...%s" "done"))))))))))
+		   (message "Making completion list...%s" "done")
+		   )))))))))
 
+(defun gimp-complete-oblist (&optional discard)
+  "Function that always just uses the oblist to complete the symbol at point.
+
+Pushed into `hippie-expand-try-functions-list'."
+  (interactive)
+  (case major-mode
+    ((gimp-mode inferior-gimp-mode)
+     (gimp-complete-savvy  
+      gimp-oblist-cache))))
+
+(push 'gimp-complete-oblist hippie-expand-try-functions-list)
 
 (defun gimp-highlight-matches (pattern buffer)
   "Propertize PATTERN in the BUFFER."
