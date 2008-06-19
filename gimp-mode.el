@@ -1,4 +1,4 @@
-;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.28 2008-06-11 15:52:15 sharik Exp $
+;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.29 2008-06-19 12:56:02 sharik Exp $
 ;; Copyright (C) 2008  Niels Giesen <(rot13 "avryf.tvrfra@tznvy.pbz")>
 
 
@@ -586,7 +586,7 @@ Optional argument EVENT is a mouse event."
   (interactive)
   (destructuring-bind (version major minor) 
       (gimp-string-match "\\([0-9]+\\)\.\\([0-9]+\\)"
-                         "$Id: gimp-mode.el,v 1.28 2008-06-11 15:52:15 sharik Exp $" )
+                         "$Id: gimp-mode.el,v 1.29 2008-06-19 12:56:02 sharik Exp $" )
       (if (interactive-p) 
           (prog1 nil 
             (message "GIMP mode version: %s.%s" major minor))
@@ -677,45 +677,6 @@ When optional argument NEWLINE is non-nil, append a newline char."
     (message "%s" result)
     (when (and insert (not (string-equal result "")))
       (insert (substring result 0 -1)))))
-
-;; (defun gimp-send-input ()
-;;   "Send current input to the GIMP."
-;;   (interactive)
-;;   (let ((gimp-command 
-;;          (cadr (gimp-string-match "^\,\\([[:alpha:]-]+\\)" 
-;;                                   (comint-get-old-input-default)))))
-;;     (if gimp-command 
-;;         (set 'gimp-command (intern-soft (concat "gimp-" gimp-command))))
-;;     (cond ((and gimp-command
-;;                 (commandp gimp-command))
-;;            (comint-delete-input)
-;;            (let ((input (call-interactively gimp-command)))
-;;              (when (and (eq major-mode 'inferior-gimp-mode)
-;;                         (stringp input))
-;;                (insert input)
-;; 	       (gimp-set-comint-filter)
-;;                (comint-send-input))))
-;;           (gimp-command (message "No such command: %s" gimp-command))
-;;           (t
-;; 	   (let ((undo-list (if (listp buffer-undo-list)
-;; 				buffer-undo-list
-;; 			      nil)))
-;; 	     (setq buffer-undo-list t) ;Do not record the very
-;; 					;verbose tracing in the undo list.
-	     
-;; 	     (unwind-protect 
-;; 		 (progn 
-;; 		   (when (get 'gimp-trace 'trace-wanted)
-;; 		     (scheme-send-string "(tracing 1)" t)
-;; 		     (sit-for 0.1)
-;; 		     (set 'gimp-output ""))
-;; 		   (gimp-set-comint-filter)
-;; 		   (call-interactively 'comint-send-input))
-;; 	       (when (get 'gimp-trace 'trace-wanted)
-;; 		 (scheme-send-string "(tracing 0)" t)
-;; 		 (sit-for 0.1)
-;; 		 (set 'gimp-output ""))
-;; 	       (setq buffer-undo-list undo-list)))))))
 
 (defun gimp-eval (string)
   "Eval STRING, and return it read, somewhat, though not fully, elispified.
@@ -2474,7 +2435,11 @@ If GIMP is not running as an inferior process, open image(s) with gimp-remote."
 	     (point) 
 	     'original-file-name))
 	   (dired-mode
-	    (dired-get-marked-files))
+	    (with-no-warnings (dired-get-marked-files)))
+					; silence compiler, as
+					; `dired-get-marked-files' is
+					; always present when
+					; dired-mode is on
 	   (t (read-file-name "File: ")))))
     (if (null img) (error "No image at point"))
     (flet ((open (image)
