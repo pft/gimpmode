@@ -1,8 +1,10 @@
-;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.30 2008-06-22 08:42:09 sharik Exp $
-;; Copyright (C) 2008  Niels Giesen <(rot13 "avryf.tvrfra@tznvy.pbz")>
+;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.31 2008-06-22 14:20:07 sharik Exp $
+;; Copyright (C) 2008 Niels Giesen <nielsforkgiesen@gmailspooncom, but
+;; please replace the kitchen utensils with a dot before hitting
+;; "Send">
 
-
-;; Author: Niels Giesen <(rot13 "avryf.tvrfra@tznvy.pbz")>
+;; Author: Niels Giesen <nielsforkgiesen@gmailspooncom, but please
+;; replace the kitchen utensils with a dot before hitting "Send">
 ;; Keywords: processes, multimedia, extensions, tools, gimp, scheme
 
 ;; This program is free software; you can redistribute it and/or
@@ -179,7 +181,7 @@ another.  Now best left at the non-nil value.")
   "Gimp Client Process Object")
 (defvar gimp-cl-buffer-name "*Gimp-Client*"
   "Name of Gimp client buffer.")
-(defvar gimp-output nil
+(defvar gimp-output ""
   "Contains output from inferior gimp process.")
 ;; (Bases of following caches) generated on GIMP startup (by
 ;; emacs-interaction.scm)
@@ -586,7 +588,7 @@ Optional argument EVENT is a mouse event."
   (interactive)
   (destructuring-bind (version major minor) 
       (gimp-string-match "\\([0-9]+\\)\.\\([0-9]+\\)"
-                         "$Id: gimp-mode.el,v 1.30 2008-06-22 08:42:09 sharik Exp $" )
+                         "$Id: gimp-mode.el,v 1.31 2008-06-22 14:20:07 sharik Exp $" )
       (if (interactive-p) 
           (prog1 nil 
             (message "GIMP mode version: %s.%s" major minor))
@@ -932,7 +934,7 @@ or run command `gimp-cl-connect'.")
    (lambda (p s)
      (ignore)))
   (switch-to-buffer (gimp-buffer))
-  (let (buffer-read-only)              ;make the buffer capable
+  (let (buffer-read-only)		;make the buffer capable
                                         ;of receiving user input etc.
     (insert string)
     (unless (string= (buffer-name)
@@ -940,14 +942,16 @@ or run command `gimp-cl-connect'.")
       (rename-buffer "*GIMP*"))
     (setq scheme-buffer (current-buffer))
     (inferior-gimp-mode)
-    (gimp-set-comint-filter)
-    (while (not (string-match "> $" gimp-output)) 
-      (sleep-for .1))
+    (gimp-set-comint-filter)   ;set comint filter for subsequent input
+    (gimp-progress (concat (current-message) "...waiting to finish...")
+		     (lambda ()
+		       (not (string-match "> $"  gimp-output)))
+		     "done!")
     (gimp-restore-caches)
     (gimp-restore-input-ring)
     (unless gimp-inhibit-start-up-message
       (gimp-shortcuts t))
-    (message "%s The GIMP is loaded. Have FU." (or (current-message) "")))   ;set comint filter for subsequent input)
+    (message "%s The GIMP is loaded. Have FU." (or (current-message) ""))) ;set comint filter for subsequent input)
   (setq buffer-read-only nil))
 
 (defun gimp-progress (message test &optional end-text)

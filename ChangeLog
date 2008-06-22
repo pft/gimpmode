@@ -1,3 +1,10 @@
+2008-06-22  Niels Giesen  <sharik@reetkevert.sshunet.nl>
+
+	* gimp-mode.el (gimp-first-run-action): removed automatic
+	configuration, since this is moved to gimp-install.el
+	(gimp-apropos): made gimp-apropos a real apropos instead of simple
+	name-matching
+
 2008-06-11    <ngiesen@NIELS>
 
 	* gimp-mode.el (gimp-insert-sexp-at-repl): (use function
