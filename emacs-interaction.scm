@@ -83,7 +83,7 @@
 
                     _"Dump (part of) the oblist, fonts, the menu structure and
 the procedural database more for use with Emacs' Gimp Mode which you can find at
-http://niels.kicks-ass.org/GimpMode.
+http://niels.kicks-ass.org/public/GimpMode/index.html.
 
 After you have run this script, you should run M-x gimp-restore-caches from
 within Emacs, for the changes to take effect.

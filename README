@@ -30,7 +30,7 @@ Argument echoing whereby current argument is highlighted. For the interested: Gi
 
 More in-depth documentation echoing: both for argument at point and for the entire function.
 
-A complete hypertextual rework of the Procedure Browser implemented in Emacs Lisp, with history, `(lame) apropos (just uses name matching)', menu-driven look-up of plug-ins, nice faces etc.
+A complete hypertextual rework of the Procedure Browser implemented in Emacs Lisp, with history, apropos function, menu-driven look-up of plug-ins, nice faces etc.
 
 Some 'Bookmarks' to Gimp/Fu/Scheme resources on the 'net.
 
@@ -76,7 +76,7 @@ From a shell:
 
 Follow these instructions
 
-untar the tarball (tar xzvf gimp-mode.tar.gz)
+untar the tarball (tar xjvf gimp-mode-v***.tar.gz)
 
 either run install.sh or, in Emacs, issue M-x load-file /path/to/gimp-install.el RET 
 
@@ -84,7 +84,7 @@ And put the following in your load file:
 
 (load "/path/to/gimp-mode/gimp-init.el")
 
-Either evaluate that last form (type: C-x C-e with the cursor just after the last paren) or restart Emacs.
+Either evaluate that last form (type: C-x C-e with the cursor just after the last parenthesis) or restart Emacs.
 
 Now run M-x run-gimp to start the GIMP and its REPL within Emacs. This takes a little while (just a little longer than the graphical start-up phase - the Gimp is told by emacs-interaction.scm to set up some caches in your local gimp directory), so just be patient. In any event, do not type anything while the message "Reading in chaches..." is displayed -- for some *very* odd reason, this causes emacs to hang. Visiting other buffers in the mean time is no problem however. See the customization for `gimp-program-command-line' to tweak GIMPs incantation to your needs.
 
@@ -126,29 +126,28 @@ The interactive client mode suffers from a strange lag, combined with returning 
 
 ==FAQ==
 
-Q. What was you incentive to write this?
+Q. What was your incentive to write this?
 
-A. When writing a script for the GIMP, I found the discoverability very low, existing interaction mechanisms clunky and, well, I simply have the habit of writing an emacs-mode whenever I embarge on any new project that can be handled by emacs and has not been handled be emacs yet -- or insufficiently. I have to admit that often this stops me from engaging in the project itself, becoming too absorbed in its interaction with emacs.p
+A. When writing a script for the GIMP, I found the discoverability to be quite low, existing interaction mechanisms clunky and, well, to be honest, I simply have the habit of writing an emacs-mode whenever I embark on any new project that can be handled by emacs and has not been handled be emacs yet -- or insufficiently. I have to admit that often this stops me from engaging in the project itself, becoming too absorbed in its interaction with emacs.
 
 Q: Why do you offer both an inferior mode and a client mode for the script-fu server?
 
-A: It is way easier to start the GIMP as a subprocess, defining gimp-inferior mode as a derived mode from inferior-scheme-mode than hacking up (write (convert-form-to-emacs-readable FORM)) stuff, and so I naturally started with that. In order to be universally attractive (i.e. also on windows machines), gimp-mode asked me to be adapted to a client-mode operation.
+A: It is way easier to start the GIMP as a subprocess, defining gimp-inferior mode as a derived mode from inferior-scheme-mode than hacking up (write (convert-form-to-emacs-readable FORM)) stuff, and so I naturally started with that. In order to be universally attractive (read: also on those pesky windows machines), gimp-mode asked me to be adapted to a client-mode operation. I had no option but to obey.
 
 Q: What about a Python interface?
 
 A: 1. Like the script-fu server, the Python batch-interpreter doesn't talk back (except on error). Therefore, this would require quite some tweaking. 
    2. I like Lisp.
-   3. I do not know Python that well
+   3. I do not know Python that well.
    4. Furthermore, the python console provided with the Gimp is pretty good.
 
 Q. Why don't you simply use the script-fu console that is shipped with the Gimp?
 
-A. Have you tried it?
+A. I wanted dynamic completion, interaction with source buffers, instant eval.
 
-Q. I want to find a script or plug-in whose place in the menu I know, but whose
-name I do not know.
+Q. I want to find a script or plug-in whose place in the menu I know, but whose name I do not know.
 
-A. Use C-cm to browse the menu structure. This gives you the Gimp Help page on that script or plug-in. Note that the submenus shown on top of that Help page are clickable too.
+A. C-cm to browse the menu structure to the rescue. This gives you the Gimp Help page on that script or plug-in. Note that the submenus shown on top of that Help page are clickable too.
 
 Q. Stuff does not work correctly when I turn on tracing via (tracing 1)
 

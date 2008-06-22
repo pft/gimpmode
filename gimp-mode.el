@@ -1,4 +1,4 @@
-;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.29 2008-06-19 12:56:02 sharik Exp $
+;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.30 2008-06-22 08:42:09 sharik Exp $
 ;; Copyright (C) 2008  Niels Giesen <(rot13 "avryf.tvrfra@tznvy.pbz")>
 
 
@@ -586,7 +586,7 @@ Optional argument EVENT is a mouse event."
   (interactive)
   (destructuring-bind (version major minor) 
       (gimp-string-match "\\([0-9]+\\)\.\\([0-9]+\\)"
-                         "$Id: gimp-mode.el,v 1.29 2008-06-19 12:56:02 sharik Exp $" )
+                         "$Id: gimp-mode.el,v 1.30 2008-06-22 08:42:09 sharik Exp $" )
       (if (interactive-p) 
           (prog1 nil 
             (message "GIMP mode version: %s.%s" major minor))
@@ -932,7 +932,7 @@ or run command `gimp-cl-connect'.")
    (lambda (p s)
      (ignore)))
   (switch-to-buffer (gimp-buffer))
-  (let  (buffer-read-only)              ;make the buffer capable
+  (let (buffer-read-only)              ;make the buffer capable
                                         ;of receiving user input etc.
     (insert string)
     (unless (string= (buffer-name)
@@ -940,28 +940,14 @@ or run command `gimp-cl-connect'.")
       (rename-buffer "*GIMP*"))
     (setq scheme-buffer (current-buffer))
     (inferior-gimp-mode)
-    (gimp-set-comint-filter)   ;set comint filter for subsequent input
-    (unless gimp-inhibit-start-up-message
-      (gimp-shortcuts t))
-    (when (not (gimp-eval
-                "(symbol-bound? 'emacs-interaction-possible?)"))
-      (let ((lnk (concat (gimp-dir) "/scripts/"
-                         "99emacs-interaction.scm"))
-            (emacs-interaction.scm
-             (concat gimp-mode-dir "emacs-interaction.scm")))
-        (message "Creating symlink to emacs-interaction.scm...")
-        (if (fboundp 'make-symbolic-link)
-	    (make-symbolic-link emacs-interaction.scm lnk t)
-	  (copy-file emacs-interaction.scm lnk))
-        (gimp-load-script lnk))
-      (gimp-progress (concat (current-message)
-                             "and loading it ")
-                     (lambda ()
-                       (not (string-match "> $"  gimp-output)))
-                     " done!"))
+    (gimp-set-comint-filter)
+    (while (not (string-match "> $" gimp-output)) 
+      (sleep-for .1))
     (gimp-restore-caches)
     (gimp-restore-input-ring)
-    (message "%s The GIMP is loaded. Have FU." (or (current-message) "")))
+    (unless gimp-inhibit-start-up-message
+      (gimp-shortcuts t))
+    (message "%s The GIMP is loaded. Have FU." (or (current-message) "")))   ;set comint filter for subsequent input)
   (setq buffer-read-only nil))
 
 (defun gimp-progress (message test &optional end-text)
@@ -1305,17 +1291,38 @@ See variable `gimp-docs-alist'"
   (let ((doc (completing-read "Documentation: " gimp-docs-alist nil t)))
     (browse-url (cdr (assoc doc gimp-docs-alist)))))
 
-(defun gimp-apropos-list (input)
-  (loop for i in (sort (mapcar (lambda (l)
-                                 (symbol-name (car l)))
-                               (gimp-hash-to-list gimp-dump)) 'string<) 
-        when (string-match input i) 
-        collect i))
+;; (defun gimp-apropos-list (input)
+;;   (loop for i in (sort (mapcar (lambda (l)
+;;                                  (symbol-name (car l)))
+;;                                (gimp-hash-to-list gimp-dump)) 'string<) 
+;;         when (string-match input i) 
+;;         collect i))
+
+;; (defun gimp-apropos-list-by-key (key value)
+;;   (let* ((lookup '(short long author copyright date type))
+;; 	 (pos (- 6 (length (member key lookup))))
+;; 	 result)
+;;     (maphash (lambda (k v)
+;; 	       (if (string-match value (nth pos v))
+;; 		   (push (symbol-name k) result)))
+;; 	     gimp-dump)
+;;     (sort result 'string<)))
+
+(defun gimp-real-apropos (value)
+  (let (result)
+    (maphash (lambda (k v)
+	       (if (or (member-if (lambda (thing)
+				    (and (stringp thing)
+					 (string-match (concat "\\<" value "\\>") thing))) v)
+		       (string-match value (symbol-name k)))
+		   (push (symbol-name k) result)))
+	     gimp-dump)
+    (sort result 'string<)))
 
 (gimp-defcommand gimp-apropos (&optional query)
   "Search pdb for submatch of QUERY."
   (interactive)
-  (let* ((query (or query (read-from-minibuffer "Apropos procedure: " )))
+  (let* ((query (or query (read-from-minibuffer "Apropos query: " )))
 	 (new-contents
           (mapconcat
            (lambda (proc)
@@ -1333,12 +1340,12 @@ See variable `gimp-docs-alist'"
 				      gimp-help-visited-pages)
 			      'gimp-visited-procedure-face
                            'default))))
-           (gimp-apropos-list query) "\n")))
+           (gimp-real-apropos query) "\n")))
     (if (> (length new-contents) 0)
 	(gimp-help-wrapper
          `(gimp-apropos ,query)
 	 (insert
-          (propertize (format "GIMP procedures matching %S\n"
+          (propertize (format "GIMP procedures apropos %S\n"
                               (if (string= "" query)
                                   'anything
                                 query))
