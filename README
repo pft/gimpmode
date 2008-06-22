@@ -1,6 +1,6 @@
- -*- mode: longlines -*-
+Gimp Mode
 
-gimpmode
+    [gnus-got-f]
 
 Short description
 Features
@@ -18,68 +18,139 @@ Related
 
 Short description
 
-    * Emacs mode1 for developing scheme scripts for the GIMP Image Manipulation Program2 (script-fu).
-    * Interaction with the GIMP as subprocess or as a client.
-    * Smart and fuzzy code completion .
-    * Documentation echoing.
-    * Hypertext help system with history.
+  • Emacs mode^1 for developing scheme scripts for the GIMP Image Manipulation
+    Program^2 (script-fu).
+  • Interaction with the GIMP as subprocess or as a client.
+  • Smart and fuzzy code completion .
+  • Documentation echoing.
+  • Hypertext help system with history.
 
 Features
 
 Interaction:
 
-Gimp Mode can either run the Gimp as subprocess in Emacs, or connect as a client to the script-fu-server. The latter is less stable and has less features, but is sometimes better than nothing, see below. Interaction with the Gimp script-fu engine is possible directly from the code that is being edited and/or from a special REPL (read-eval-print-loop) buffer.
+Gimp Mode can either run the Gimp as subprocess in Emacs, or connect as a
+client to the script-fu-server. The latter is less stable and has less
+features, but is sometimes better than nothing, see below. Interaction with the
+Gimp script-fu engine is possible directly from the code that is being edited
+and/or from a special REPL (read-eval-print-loop) buffer.
 
-Smart 'n' fuzzy TAB-completion similar to that of Slime: the entire tiny-fu oblist is available and variables, functions and macros that are defined during a session are added to completion 3. As you can see, the fuzziness accepts the first letters of a part of a hyphenated string to as input as a kind of abbreviation, so you can for instance write s-f-u-m and have it expand to script-fu-unsharp-mask. If for some reason you do not like this fuzzy factor, you can switch it off anytime by pressing C-cr or by customising the variable gimp-complete-fuzzy-p.
-Fuzzy completion
-Fuzzy completion
+Smart 'n' fuzzy TAB-completion similar to that of Slime: the entire tiny-fu
+oblist is available and variables, functions and macros that are defined during
+a session are added to completion ^3. As you can see, the fuzziness accepts the
+first letters of a part of a hyphenated string to as input as a kind of
+abbreviation, so you can for instance write s-f-u-m and have it expand to
+script-fu-unsharp-mask. If for some reason you do not like this fuzzy factor,
+you can switch it off anytime by pressing C-cr or by customising the variable
+gimp-complete-fuzzy-p.
 
-Completion on arguments is done via a system of rules, based on regexp-matching/custom commands that work on the registration of the functions. It means you've got completion available for stuff like fonts, palettes, brushes, images, choices of booleans etc.
+                               Fuzzy completion
+                               Fuzzy completion
 
-The completion system is open to be improved and extended upon (see variable gimp-completion-rules). For script-fu registered functions, default arguments are offered as completion.
+Completion on arguments is done via a system of rules, based on regexp-matching
+/custom commands that work on the registration of the functions. It means
+you've got completion available for stuff like fonts, palettes, brushes,
+images, choices of booleans etc.
 
-Argument echoing whereby current argument is highlighted.4
+The completion system is open to be improved and extended upon (see variable
+gimp-completion-rules). For script-fu registered functions, default arguments
+are offered as completion.
 
-More in-depth documentation echoing: both for argument at point and for the entire function.
+Argument echoing whereby current argument is highlighted.^4
 
-A complete hyper-textual rework of the Procedure Browser implemented in Emacs Lisp, with history, apropos function, menu-driven look-up of plug-ins, nice faces (if I may say so) etc.
-The Gimp Mode Help Browser
-The Gimp Mode Help Browser
+More in-depth documentation echoing: both for argument at point and for the
+entire function.
+
+A complete hyper-textual rework of the Procedure Browser implemented in Emacs
+Lisp, with history, apropos function, menu-driven look-up of plug-ins, nice
+faces (if I may say so) etc.
+
+                          The Gimp Mode Help Browser
+                          The Gimp Mode Help Browser
 
 Some 'Bookmarks' to Gimp/Fu/Scheme resources on the 'net.
 
-Handy shortcuts for various stuff oft needed when developing. Type ,shortcuts at the REPL for an overview.
+Handy shortcuts for various stuff oft needed when developing. Type ,shortcuts
+at the REPL for an overview.
 
-One of these shortcuts is ,trace and ,untrace, that toggle, well, tracing. Output from tracing is not put into Emacs' undo list, as GIMP's tracing can be very extensive. Do not use (tracing 1) yourself, as this can hamper behind-the-scenes interaction with the GIMP.
+One of these shortcuts is ,trace and ,untrace, that toggle, well, tracing.
+Output from tracing is not put into Emacs' undo list, as GIMP's tracing can be
+very extensive. Do not use (tracing 1) yourself, as this can hamper
+behind-the-scenes interaction with the GIMP.
 
-Some snippets are provided through the library snippet.el (included) by Pete Kazmier. A registration template is provided (type reg SPACE), and handy templates for script-fu-register arguments (type sf* SPACE). Type M-x gimp-list-snippets or ,list-snippets RET from the REPL to show snippets.
-Snippet to set up the framework of a script-fu script
-Snippet to set up the framework of a script-fu script
+Some snippets are provided through the library snippet.el (included) by Pete
+Kazmier. A registration template is provided (type reg SPACE), and handy
+templates for script-fu-register arguments (type sf* SPACE). Type M-x
+gimp-list-snippets or ,list-snippets RET from the REPL to show snippets.
+
+             Snippet to set up the framework of a script-fu script
+             Snippet to set up the framework of a script-fu script
 
 Input history (which is saved on ,quit).
 
 Basic code lookup (using grep).
+
 Caveats
 
-1. The main mode is developed on and for a GNU/Linux environment, on Emacs22 and Emacs from CVS. I only have had very little time to test this on a win32 machine. The problem on that 'system' is that somehow the GIMP opens a second 'console', so it does not return anything useful to the calling program. I do not know about the behaviour on OSX. Not tested on BSD either. If you have any results (or a spare MacBook), please let me know.
+1. The main mode is developed on and for a GNU/Linux environment, on Emacs22
+and Emacs from CVS. I only have had very little time to test this on a win32
+machine. The problem on that 'system' is that somehow the GIMP opens a second
+'console', so it does not return anything useful to the calling program. I do
+not know about the behaviour on OSX. Not tested on BSD either. If you have any
+results (or a spare MacBook), please let me know.
 
-To overcome the problem of not being able to interact with the GIMP as a subprocess, Gimp Mode comes with another, similar, mode that hooks into the script-fu server provided by the GIMP as a client. You can start this mode with M-x gimp-cl-connect (after having started the server from within the GIMP). It was a PITA to get this to work well. The mode lacks some features of the `normal' inferior-gimp-mode and has some idiosyncrasies due to the behaviour of the server: the GIMP script-fu server produces a new call frame each time around, making it unable (or possibly: quite hard) to define variables, functions and macros and saving their new values without hacking the gimp source. The way around this is the macro emacs-cl-output in emacs-interaction.scm, that writes the form (wrapped in another (with-output-to-file ...) ) to evaluate to a temporary file, and subsequently loads that file, so that the new definition will be part of any new call frame. I'd love to be able to work something out using continuations, but I have not yet found out whether that is at all possible technically.
+To overcome the problem of not being able to interact with the GIMP as a
+subprocess, Gimp Mode comes with another, similar, mode that hooks into the
+script-fu server provided by the GIMP as a client. You can start this mode with
+M-x gimp-cl-connect (after having started the server from within the GIMP). It
+was a PITA to get this to work well. The mode lacks some features of the
+`normal' inferior-gimp-mode and has some idiosyncrasies due to the behaviour of
+the server: the GIMP script-fu server produces a new call frame each time
+around, making it unable (or possibly: quite hard) to define variables,
+functions and macros and saving their new values without hacking the gimp
+source. The way around this is the macro emacs-cl-output in
+emacs-interaction.scm, that writes the form (wrapped in another
+(with-output-to-file ...) ) to evaluate to a temporary file, and subsequently
+loads that file, so that the new definition will be part of any new call frame.
+I'd love to be able to work something out using continuations, but I have not
+yet found out whether that is at all possible technically.
 
-The features the client mode (as opposed to the truly inferior mode) currently lacks are:
+The features the client mode (as opposed to the truly inferior mode) currently
+lacks are:
 
-    * tracing.
-    * scheme functions display, write and any derivatives do not work.
+  • tracing.
+  • scheme functions display, write and any derivatives do not work.
 
-Note: behaviour when using both modes together is unspecified (what a lovely fall-back that word is...) and unsupported (although I do use it when developing the client mode the trick is to first run M-x run-gimp, start the server, and then run M-x gimp-cl-connect).
+Note: behaviour when using both modes together is unspecified (what a lovely
+fall-back that word is...) and unsupported (although I do use it when
+developing the client mode the trick is to first run M-x run-gimp, start the
+server, and then run M-x gimp-cl-connect).
 
-Note that on any system gimp-mode is perfectly capable of performing quite well `off-line', as it reads in most data through the use of caches. Stuff it cannot do unconnected (i.e. evaluation, and some echoing and completion that are dependent on evaluation) it will simply ignore. If not, that is a bug and should be filed as such (M-x gimp-report-bug).
+Note that on any system gimp-mode is perfectly capable of performing quite well
+`off-line', as it reads in most data through the use of caches. Stuff it cannot
+do unconnected (i.e. evaluation, and some echoing and completion that are
+dependent on evaluation) it will simply ignore. If not, that is a bug and
+should be filed as such (M-x gimp-report-bug).
 
-2. I have not written many script-fu files to test this mode on, two wit: two, one of which is emacs-interaction.scm that comes with Gimp Mode (for the curious: the other one makes a selection of sun rays).
+2. I have not written many script-fu files to test this mode on, two wit: two,
+one of which is emacs-interaction.scm that comes with Gimp Mode (for the
+curious: the other one makes a selection of sun rays).
 
-3. There is no way currently to recover from non-returning forms, such an infinite loop, save for killing the process altogether. I'd love to find a way to deal with this. In this regard, the client mode is the better choice, as you are able to spawn several servers and just re-connect from emacs.
+3. There is no way currently to recover from non-returning forms, such an
+infinite loop, save for killing the process altogether. I'd love to find a way
+to deal with this. In this regard, the client mode is the better choice, as you
+are able to spawn several servers and just re-connect from emacs.
+
 Comparison with other modes
 
-Gimp Mode differs from gimp-shell.el in that the main objective is to run the GIMP as a subprocess instead of hooking into the script-fu server as a client. For the client mode, I have adopted code from gimp-shell.el (see gimp-cl-send-string), and am very grateful for it (I could not have come up with these awkward but apparently necessary byte-sequences myself - sooo low-level...). Oh, and then there is gimp.el (included with nxhtml-mode), which does nothing more than open an image in the GIMP (and then only on windows).
+Gimp Mode differs from gimp-shell.el in that the main objective is to run the
+GIMP as a subprocess instead of hooking into the script-fu server as a client.
+For the client mode, I have adopted code from gimp-shell.el (see
+gimp-cl-send-string), and am very grateful for it (I could not have come up
+with these awkward but apparently necessary byte-sequences myself - sooo
+low-level...). Oh, and then there is gimp.el (included with nxhtml-mode), which
+does nothing more than open an image in the GIMP (and then only on windows).
+
 Getting started/Download
 
 First uncompress and unpack the files:
@@ -107,96 +178,159 @@ And put the following in your load file:
 
 (load "/path/to/gimp-mode/gimp-init.el")
 
-Either evaluate that last form (type C-x C-e with the cursor just after the last parenthesis) or restart Emacs.
+Either evaluate that last form (type C-x C-e with the cursor just after the
+last parenthesis) or restart Emacs.
+
 Now run the gimp inferiorly...
 
 (Note for Windows users: skip this section and move on to here)
 
-Now run M-x run-gimp to start the GIMP and its REPL within Emacs. This takes a little while (just a little longer than the graphical start-up phase - the Gimp is told by emacs-interaction.scm to set up some caches in your local gimp directory), so just be patient. In any event, do not type anything while the message "Reading in caches..." is displayed — for some very odd reason, this causes Emacs to hang. We don't want that now do we? Visiting other buffers in the mean time is no problem however. See the customization for gimp-program-command-line to tweak GIMP's incantation to your needs. Once you see this, you can let the fun begin:
-First encounter with the REPL
-First encounter with the REPL
+Now run M-x run-gimp to start the GIMP and its REPL within Emacs. This takes a
+little while (just a little longer than the graphical start-up phase - the Gimp
+is told by emacs-interaction.scm to set up some caches in your local gimp
+directory), so just be patient. In any event, do not type anything while the
+message "Reading in caches..." is displayed — for some very odd reason, this
+causes Emacs to hang. We don't want that now do we? Visiting other buffers in
+the mean time is no problem however. See the customization for
+gimp-program-command-line to tweak GIMP's incantation to your needs. Once you
+see this, you can let the fun begin:
+
+                         First encounter with the REPL
+                         First encounter with the REPL
+
 ...or attach to the script-fu server as a client
 
-If you want to hook into a running GIMP session as a client (this is the only means of interaction on a windows system) use M-x gimp-cl-connect after having started the script-fu server from the GIMP.
-Start up the server from the Gimp
-Start up the server from the Gimp
-Note that Gimp Mode does not set up .scm buffers to automatically use gimp-mode. You'll have to do that yourself. My favourite way to do this is to put
+If you want to hook into a running GIMP session as a client (this is the only
+means of interaction on a windows system) use M-x gimp-cl-connect after having
+started the script-fu server from the GIMP.
+
+                       Start up the server from the Gimp
+                       Start up the server from the Gimp
+
+Note that Gimp Mode does not set up .scm buffers to automatically use
+gimp-mode. You'll have to do that yourself. My favourite way to do this is to
+put
 
 ;; -*- mode: Gimp; -*-
 
-in the first line of a script-fu file, so that other scheme files simply use whatever you or emacs have set up for them to use.
+in the first line of a script-fu file, so that other scheme files simply use
+whatever you or emacs have set up for them to use.
+
 To Do (?)
 
-    * A debugger.
-    * Better debugging/recovering from non-returning functions.
-    * Find a way to get to python/C stuff REGISTERED on procedure arguments. (such as: lower and upper bounds, step, precision, default values...) (this has already been done for script-fu)
-    * Check default paths in win32 and OSX for custom variables.
-    * Add completion on script-fu-register, script-fu-menu-register.
-    * Add function for constructing a basic script-fu-register form from a define form.
-    * xEmbed?
-    * And of course I am open to suggestions
+  • A debugger.
+  • Better debugging/recovering from non-returning functions.
+  • Find a way to get to python/C stuff REGISTERED on procedure arguments.
+    (such as: lower and upper bounds, step, precision, default values...) (this
+    has already been done for script-fu)
+  • Check default paths in win32 and OSX for custom variables.
+  • Add completion on script-fu-register, script-fu-menu-register.
+  • Add function for constructing a basic script-fu-register form from a define
+    form.
+  • xEmbed?
+  • And of course I am open to suggestions
 
 Known Bugs
 
-The interactive client mode suffers from a strange lag, combined with returning the last value multiple times, especially with errors, and more especially on windows. I haven't been able to pin down its cause yet. The inferior mode does not suffer from this problem.
+The interactive client mode suffers from a strange lag, combined with returning
+the last value multiple times, especially with errors, and more especially on
+windows. I haven't been able to pin down its cause yet. The inferior mode does
+not suffer from this problem.
 
 Please file any bugs you might find via M-x gimp-report-bug RET.
+
 Possibly Asked Questions
 
 Q. What was your incentive to write this?
 
-A. When writing a script for the GIMP, I found the discoverability to be quite low, existing interaction mechanisms clunky and, well, to be honest, I simply have the habit of writing an Emacs mode whenever I embark on any new project that can be handled by emacs and has not been handled be emacs yet — or insufficiently. I have to admit that often this stops me from engaging in the project itself, becoming too absorbed in its interaction with emacs.
+A. When writing a script for the GIMP, I found the discoverability to be quite
+low, existing interaction mechanisms clunky and, well, to be honest, I simply
+have the habit of writing an Emacs mode whenever I embark on any new project
+that can be handled by emacs and has not been handled be emacs yet — or
+insufficiently. I have to admit that often this stops me from engaging in the
+project itself, becoming too absorbed in its interaction with emacs.
 
-Q: Why do you offer both an inferior mode and a client mode for the script-fu server?
+Q: Why do you offer both an inferior mode and a client mode for the script-fu
+server?
 
-A: It is way easier to start the GIMP as a subprocess, defining gimp-inferior mode as a derived mode from inferior-scheme-mode than hacking up (write (convert-form-to-emacs-readable FORM)) stuff, and so I naturally started with that. In order to be universally attractive (read: also on those pesky windows machines), gimp-mode asked me to be adapted to a client-mode operation. I had no option but to obey.
+A: It is way easier to start the GIMP as a subprocess, defining gimp-inferior
+mode as a derived mode from inferior-scheme-mode than hacking up (write
+(convert-form-to-emacs-readable FORM)) stuff, and so I naturally started with
+that. In order to be universally attractive (read: also on those pesky windows
+machines), gimp-mode asked me to be adapted to a client-mode operation. I had
+no option but to obey.
 
 Q: What about a Python interface?
 
 A:
 
-    * Just like the script-fu server, the Python batch-interpreter doesn't talk back (except on error). Therefore, this would require quite some tweaking.
-    * I like Lisp.
-    * I do not know Python that well.
-    * Furthermore, the python console provided with the Gimp is pretty good.
+  • Just like the script-fu server, the Python batch-interpreter doesn't talk
+    back (except on error). Therefore, this would require quite some tweaking.
+  • I like Lisp.
+  • I do not know Python that well.
+  • Furthermore, the python console provided with the Gimp is pretty good.
 
-Q. Why don't you simply use the script-fu console that is shipped with the Gimp?
+Q. Why don't you simply use the script-fu console that is shipped with the
+Gimp?
 
-A. I wanted dynamic completion, interaction with source buffers, instant evaluation. The script-fu console does not have those.
+A. I wanted dynamic completion, interaction with source buffers, instant
+evaluation. The script-fu console does not have those.
 
-Q. I want to find a script or plug-in whose place in the menu I know, but whose name I do not know.
+Q. I want to find a script or plug-in whose place in the menu I know, but whose
+name I do not know.
 
-A. C-cm to browse the menu structure to the rescue. This gives you the Gimp Mode Help page on that script or plug-in. Note that the sub-menus shown on top of that Help page are clickable too.
+A. C-cm to browse the menu structure to the rescue. This gives you the Gimp
+Mode Help page on that script or plug-in. Note that the sub-menus shown on top
+of that Help page are clickable too.
 
 Q. Stuff does not work correctly when I turn on tracing via (tracing 1)
 
-A. Use the wrapper functions gimp-trace / gimp-untrace for that; at the REPL: ,trace ENTER and ,untrace ENTER. NOTE that this tracing feature is only on at the REPL, not from .scm files (and not in client mode).
+A. Use the wrapper functions gimp-trace / gimp-untrace for that; at the REPL:
+,trace ENTER and ,untrace ENTER. NOTE that this tracing feature is only on at
+the REPL, not from .scm files (and not in client mode).
 
 Q. Why didn't you name it gimp.el?
 
-A. There is already a gimp.el in the nxhtml distribution (which actually does nothing more than open an image (and then only on win32)). And Gimp Mode is nicer for wiki pages anyway. So gimp-mode.el it shall be. Just harder to interpret it as a recursive acronym: gimp interaction mode for programmers mildly... gimp interaction mode performed mostly on... (and gimpel would rhyme so lovely with 'met vlag en wimpel...') Yes, life can be hard sometimes.
+A. There is already a gimp.el in the nxhtml distribution (which actually does
+nothing more than open an image (and then only on win32)). And Gimp Mode is
+nicer for wiki pages anyway. So gimp-mode.el it shall be. Just harder to
+interpret it as a recursive acronym: gimp interaction mode for programmers
+mildly... gimp interaction mode performed mostly on... (and gimpel would rhyme
+so lovely with 'met vlag en wimpel...') Yes, life can be hard sometimes.
+
 Related
 
 TIP on using emacs-w3m to browse gimp documentation:
 
-To use emacs-w3m as the browser for help files from within the Gimp, put the following in your .gimprc:
+To use emacs-w3m as the browser for help files from within the Gimp, put the
+following in your .gimprc:
 
 (help-browser web-browser)
 (web-browser "emacsclient -e '(w3m-browse-url \"%s\")'")
 
 and (server-start) in your .emacs
 
-Browsing the help with emacs-w3m is very nice, esp. since you can make use of the nice w3m-scroll-down-or-previous-url, w3m-scroll-up-or-next-url (SPACE) and w3m-scroll-down-or-previous-url (b), as relative links are provided by the HTML documentation of the Gimp.
+Browsing the help with emacs-w3m is very nice, esp. since you can make use of
+the nice w3m-scroll-down-or-previous-url, w3m-scroll-up-or-next-url (SPACE) and
+w3m-scroll-down-or-previous-url (b), as relative links are provided by the HTML
+documentation of the Gimp.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 1. http://www.gnu.org/software/emacs
 
 2. http://gimp.org
 
-3. This happens only when issued with the usual define/define-macro construct, and only at top-level, not if you e.g. wrap define in another macro.
+3. This happens only when issued with the usual define/define-macro construct,
+and only at top-level, not if you e.g. wrap define in another macro.
 
-4. For the interested: Gimp Mode gets its information in this regard from the following sources: the procedural database, the TinyScheme-function get-closure-code and lastly from scheme-complete.el (included) by Alex Shinn. In the echoing for script-fu functions the arguments as registered in the procedural database alternate with the arguments derived from the closure itself - if any.
+4. For the interested: Gimp Mode gets its information in this regard from the
+following sources: the procedural database, the TinyScheme-function
+get-closure-code and lastly from scheme-complete.el (included) by Alex Shinn.
+In the echoing for script-fu functions the arguments as registered in the
+procedural database alternate with the arguments derived from the closure
+itself - if any.
 
 © Niels Giesen 2008.
-Contact: nielsforkgiesen@gmailspooncom, but please replace the kitchen utensils with a dot before hitting "Send"
-
-
+Contact: nielsforkgiesen@gmailspooncom, but please replace the kitchen utensils
+with a dot before hitting "Send"
