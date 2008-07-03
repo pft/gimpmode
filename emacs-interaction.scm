@@ -32,7 +32,7 @@
         (else (list l))))
 
 (define (emacs-flatten-and-filter-bound l)
-  (cond ((null? l) ())
+ (cond ((null? l) ())
         ((list? l)
          (append (emacs-flatten-and-filter-bound (car l))
                  (emacs-flatten-and-filter-bound (cdr l))))
