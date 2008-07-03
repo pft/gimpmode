@@ -1,5 +1,12 @@
 2008-07-03  Niels Giesen  <sharik@reetkevert.sshunet.nl>
 
+	* gimp-mode.el (gimp-try-and-get-closure-code-p): new custom
+	variable that defines whether or not to get a function/macros
+	closure code for doc echoing (to speed up interactive use, mainly
+	in slow client mode).
+	(gimp-get-closure-code): first check whether symbol is bound
+	before trying to get the closure code to avoid error.
+
 	* gimp-init.el: load gimp-vars.el to read in install-time variables.
 
 	* gimp-install.el: simplified script for shell invocation

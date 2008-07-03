@@ -1,4 +1,4 @@
-;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.32 2008-07-03 07:24:03 sharik Exp $
+;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.33 2008-07-03 07:29:44 sharik Exp $
 ;; Copyright (C) 2008 Niels Giesen <nielsforkgiesen@gmailspooncom, but
 ;; please replace the kitchen utensils with a dot before hitting
 ;; "Send">
@@ -300,6 +300,13 @@ script-fu console."
   :group 'gimp
   :type 'boolean)
 
+(defcustom gimp-try-and-get-closure-code-p t
+  "When this variable has a non-nil value, try to get closure
+code for echoing. Otherwise, don't.  When running in client mode,
+this can really  make a difference in responsiveness."
+  :group 'gimp
+  :type 'boolean)
+
 (defcustom gimp-insert-quotes-for-strings-p t
   "Insert quotes when the current argument is a string?
 
@@ -577,7 +584,7 @@ Optional argument EVENT is a mouse event."
   (interactive)
   (destructuring-bind (version major minor) 
       (gimp-string-match "\\([0-9]+\\)\.\\([0-9]+\\)"
-                         "$Id: gimp-mode.el,v 1.32 2008-07-03 07:24:03 sharik Exp $" )
+                         "$Id: gimp-mode.el,v 1.33 2008-07-03 07:29:44 sharik Exp $" )
       (if (interactive-p) 
           (prog1 nil 
             (message "GIMP mode version: %s.%s" major minor))
@@ -1591,9 +1598,10 @@ Optional argument PROC is a string identifying a procedure."
   (read
    (gimp-eval-to-string
     (apply 'format
-	   "(let ((code (get-closure-code %s)))\
+	   "(let* ((bound? (symbol-bound? '%s))\
+ (code (if bound? (get-closure-code %s) #f)))\
  (if code (cons '%s (cadr code)) 'nil))"
-	   (make-list 3 sym)))))
+	   (make-list 4 sym)))))				
 
 (defun gimp-procedure-description (sym)
   (let ((info (gimp-get-proc-description sym)))
@@ -2113,7 +2121,8 @@ Optional argument TERSE means only show that I am there to help you."
        (eq this-command last-command))
       (progn 
         (setq this-command 'other-command)
-        (gimp-get-closure-code sym))
+        (if gimp-try-and-get-closure-code-p
+	    (gimp-get-closure-code sym)))
     (cons sym 
 	  (mapcar (lambda (arg)
 		    (list (read (car arg))
@@ -2156,7 +2165,8 @@ argument at point is highlighted."
 	       ;; Get it (unless we have it already)
 	       (unless cache-resp
 		 (setq cache-resp
-		       (gimp-get-closure-code sym))
+		       (if gimp-try-and-get-closure-code-p
+			   (gimp-get-closure-code sym)))
 		 (when (not (consp cache-resp))
 		   (setq cache-resp nil)))))
 
