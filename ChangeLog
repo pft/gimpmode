@@ -1,3 +1,16 @@
+2008-07-03  Niels Giesen  <sharik@reetkevert.sshunet.nl>
+
+	* gimp-init.el: load gimp-vars.el to read in install-time variables.
+
+	* gimp-install.el: simplified script for shell invocation
+
+	* build.sh: add emacs invocation of build.el
+
+	* gimp-mode.el (gimp-src-dir): moved to gimp-vars.el (which is written at
+	install-time)
+	(gimp-describe-procedure): adjusted argument option parsing for dump.db
+	(gimp-get-proc-arg-descriptive-name): adjusted argument option parsing for dump.db
+
 2008-06-22  Niels Giesen  <sharik@reetkevert.sshunet.nl>
 
 	* gimp-mode.el (gimp-first-run-action): removed automatic

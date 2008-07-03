@@ -5,6 +5,8 @@
   (file-name-directory
 		  (or load-file-name buffer-file-name)))
 
+(load (concat gimp-mode-dir "gimp-vars.el"))
+
 (let* ((related-dir (file-name-as-directory
 		     (expand-file-name "related"
 				       gimp-mode-dir))))

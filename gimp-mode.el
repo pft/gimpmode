@@ -1,4 +1,4 @@
-;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.31 2008-06-22 14:20:07 sharik Exp $
+;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.32 2008-07-03 07:24:03 sharik Exp $
 ;; Copyright (C) 2008 Niels Giesen <nielsforkgiesen@gmailspooncom, but
 ;; please replace the kitchen utensils with a dot before hitting
 ;; "Send">
@@ -228,17 +228,6 @@ source gimp. You will most probably have to change this value."
   :group 'gimp-directories
   :type 'string)
 
-(defcustom gimp-dir (expand-file-name "~/.gimp-2.4")
-  "Fall-back user directory for the GIMP.
-
-Setting this variable is only necessary for non-interactive use,
-such as on windhoos.
-
-The GIMP puts its caches here.  Retrieve it by evaluating the variable
-`gimp-dir' in GIMP script-fu console."
-  :group 'gimp-directories
-  :type 'string)
-
 (defcustom gimp-data-dir "/usr/share/gimp/2.0/"
   "Fall-back data dir of the GIMP.
 
@@ -272,7 +261,7 @@ script-fu console."
   :group 'gimp
   :type '(alist :key-type string :value-type string))
 
-(defcustom gimp-program-command-line "gimp -c --batch-interpreter=plug-in-script-fu-eval -b -"
+(defcustom gimp-program-command-line "/home/sharik/src/Gimp/gimp-2.5.0/app/.libs/gimp-2.5 --batch-interpreter=plug-in-script-fu-eval -b -"
   "Arguments to give to the GIMP. 
 
   -v, --version                  Show version information and exit
@@ -588,7 +577,7 @@ Optional argument EVENT is a mouse event."
   (interactive)
   (destructuring-bind (version major minor) 
       (gimp-string-match "\\([0-9]+\\)\.\\([0-9]+\\)"
-                         "$Id: gimp-mode.el,v 1.31 2008-06-22 14:20:07 sharik Exp $" )
+                         "$Id: gimp-mode.el,v 1.32 2008-07-03 07:24:03 sharik Exp $" )
       (if (interactive-p) 
           (prog1 nil 
             (message "GIMP mode version: %s.%s" major minor))
@@ -1519,11 +1508,11 @@ Optional argument PROC is a string identifying a procedure."
 				     (lambda
 				       (argument)
 				       (let ((desc2 (car (cddr argument))))
-					 (when (string-match "{.*}" desc2)
+					 (when (string-match "@{.*@}" desc2)
 					   (setq desc2
-						 (replace-regexp-in-string " { " ":\n\n" desc2))
+						 (replace-regexp-in-string " @{ " ":\n\n" desc2))
 					   (setq desc2
-						 (replace-regexp-in-string "}" "" desc2))
+						 (replace-regexp-in-string "@}" "" desc2))
 					   (setq desc2
 						 (mapconcat
 						  (lambda (item)
@@ -1582,7 +1571,12 @@ Optional argument PROC is a string identifying a procedure."
       all-args)))
 
 (defun gimp-get-proc-arg-descriptive-name (sym pos)
-  (caddr (gimp-get-proc-arg sym pos)))
+  (let ((desc (caddr (gimp-get-proc-arg sym pos))))
+    (replace-regexp-in-string 
+     "@{\\(.*\\)@}" 
+     (lambda (m)
+       (concat ":" (match-string 1 m)))
+     desc)))
 
 (defun gimp-get-proc-type (sym)
   (let ((type (nth 5 (gimp-get-proc-description sym))))
