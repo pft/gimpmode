@@ -2,6 +2,7 @@
 
 VERSION=`head -1 gimp-mode.el|awk -F " " '{print $6}'`
 
+emacs --batch --script build.el
 mkdir gimp-mode-v$VERSION
 cp -R emacs-interaction.scm gimp-mode.el install.sh gimp-install.el gimp-init.el gimpmode.pdf INSTALL related gimp-mode-v$VERSION
 find gimp-mode-v$VERSION -regex ".*\/\(CVS\|.cvsignore\|.*~\)"|xargs rm -R
