@@ -1,4 +1,4 @@
-;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.33 2008-07-03 07:29:44 sharik Exp $
+;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.34 2008-07-04 06:13:19 sharik Exp $
 ;; Copyright (C) 2008 Niels Giesen <nielsforkgiesen@gmailspooncom, but
 ;; please replace the kitchen utensils with a dot before hitting
 ;; "Send">
@@ -584,7 +584,7 @@ Optional argument EVENT is a mouse event."
   (interactive)
   (destructuring-bind (version major minor) 
       (gimp-string-match "\\([0-9]+\\)\.\\([0-9]+\\)"
-                         "$Id: gimp-mode.el,v 1.33 2008-07-03 07:29:44 sharik Exp $" )
+                         "$Id: gimp-mode.el,v 1.34 2008-07-04 06:13:19 sharik Exp $" )
       (if (interactive-p) 
           (prog1 nil 
             (message "GIMP mode version: %s.%s" major minor))
@@ -1827,13 +1827,15 @@ its buffer positions and PATTERN is the argument itself."
                      (point))
                     ((gimp-in-string-p)
                      (while 
-                         (memq (char-syntax (following-char)) '(?w ?_ ?\ ))
-                       (forward-char 1))
+                       (and (not (eobp))
+                            (memq (char-syntax (following-char)) '(?w ?_ ?\ ))
+                            (forward-char 1)))
                      (point))
                     ((memq (char-syntax (char-after (point))) '(?) ?\" ?( ? ))
                      (point))
                     (t (while 
-                           (memq (char-syntax (following-char)) '(?w ?_))
+                           (and (not (eobp))
+                                (memq (char-syntax (following-char)) '(?w ?_)))
                          (forward-char 1))
                        (point)))))
            (beg
