@@ -4,7 +4,7 @@
 #style html
 
 
- [[gnus-got-fu.jpg]]
+
 
 <contents>
 * Short description 
@@ -120,7 +120,7 @@ Now run =M-x run-gimp= to start the GIMP and its REPL within Emacs. This takes a
 
 [[screenshots/first-encounter-with-the-REPL.png][First encounter with the REPL]]
 
-** ...or attach to the script-fu server as a client 
+** ...or attach as a client 
 #client
 If you want to hook into a running GIMP session as a client (this is the only means of interaction on a windows system) use =M-x gimp-cl-connect= after having started the script-fu server from the GIMP. 
 
@@ -209,9 +209,26 @@ Footnotes:
 
 [4]  For the interested: Gimp Mode gets its information in this regard from the following sources: the procedural database, the TinyScheme-function =get-closure-code= and lastly from =scheme-complete.el= (included) by Alex Shinn. In the echoing for script-fu functions the arguments as registered in the procedural database alternate with the arguments derived from the closure itself - if any.
 
+
+* Older versions
+<lisp>
+(let* ((site "http://niels.kicks-ass.org/public/GimpMode/")
+	      (contents (shell-command-to-string (format "curl %s"
+site)))
+	      all-tarballs)
+	 (with-temp-buffer
+	     (insert contents)
+	     (goto-char (point-min))
+	     (while (re-search-forward
+"gimp-mode-v[1-9]\.[0-9]\\{1,3\\}\.\\(tar\.bz2\\|zip\\)" nil t)
+	       (push (match-string 0) all-tarballs)))
+	 (concat " - [[" (mapconcat 'identity all-tarballs
+                     "]]\n - [[") "]]"))
+</lisp>
 * Contact
 
 Please use M-x gimp-report-bug from Emacs.  This is OK too for feature suggestions.
 
 If that should fail for some reason, you can contact me at nielsforkgiesen@gmailknifecom, but please replace the kitchen utensils with a dot before hitting "Send", lest anyone get hurt in the process.
+
 

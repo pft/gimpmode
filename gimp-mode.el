@@ -1,4 +1,4 @@
-;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.34 2008-07-04 06:13:19 sharik Exp $
+;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.35 2008-07-04 20:01:53 sharik Exp $
 ;; Copyright (C) 2008 Niels Giesen <nielsforkgiesen@gmailspooncom, but
 ;; please replace the kitchen utensils with a dot before hitting
 ;; "Send">
@@ -584,7 +584,7 @@ Optional argument EVENT is a mouse event."
   (interactive)
   (destructuring-bind (version major minor) 
       (gimp-string-match "\\([0-9]+\\)\.\\([0-9]+\\)"
-                         "$Id: gimp-mode.el,v 1.34 2008-07-04 06:13:19 sharik Exp $" )
+                         "$Id: gimp-mode.el,v 1.35 2008-07-04 20:01:53 sharik Exp $" )
       (if (interactive-p) 
           (prog1 nil 
             (message "GIMP mode version: %s.%s" major minor))
@@ -941,7 +941,7 @@ or run command `gimp-cl-connect'.")
     (gimp-set-comint-filter)   ;set comint filter for subsequent input
     (gimp-progress (concat (current-message) "...waiting to finish...")
 		     (lambda ()
-		       (not (string-match "> $"  gimp-output)))
+		       (not (string-match "^> $"  gimp-output)))
 		     "done!")
     (gimp-restore-caches)
     (gimp-restore-input-ring)
@@ -963,9 +963,13 @@ Optional argument END-TEXT specifies the text appended to the message when TEST 
              (last-char (string-to-char
                          (substring mess (1- (length mess))
                                     (length mess)))))
-        (message "%s%c" (substring mess 0 (1- (length mess))) (ring-next r last-char))
+	(if (not (ring-member r last-char))
+	    (setq last-char 45))
+        (message "%s%c" (substring mess 0 (1- (length mess))) 
+		 (ring-next r last-char))
         (sit-for .15)))
     (if end-text (message "%s%s" (current-message) end-text))))
+
 
 (defalias 'gimp-start 'run-gimp 
   "Alias so people gimp-TABbing can find `run-gimp'")
