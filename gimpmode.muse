@@ -21,7 +21,7 @@ Interaction:
 
 Gimp Mode can either run the Gimp as subprocess in Emacs, or connect as a client to the script-fu-server. The latter is less stable and has less features, but is sometimes better than nothing, see below. Interaction with the Gimp script-fu engine is possible directly from the code that is being edited and/or from a special REPL (read-eval-print-loop) buffer.
 
-Smart 'n' fuzzy TAB-completion similar to that of Slime: the entire tiny-fu oblist is available and variables, functions and macros that are defined during a session are added to completion [3]. As you can see, the fuzziness accepts the first letters of a part of a hyphenated string to as input as a kind of abbreviation, so you can for instance write s-f-u-m and have it expand to script-fu-unsharp-mask. If for some reason you do not like this fuzzy factor, you can switch it off anytime by pressing C-cr or by customising the variable =gimp-complete-fuzzy-p=.
+Smart 'n' fuzzy TAB-completion similar (but not equal) to that of Slime: the entire tiny-fu oblist is available and variables, functions and macros that are defined during a session are added to completion [3]. As you can see, the fuzziness accepts the first letters of a part of a hyphenated string to as input as a kind of abbreviation, so you can for instance write s-f-u-m and have it expand to script-fu-unsharp-mask. If for some reason you do not like this fuzzy factor, you can switch it off anytime by pressing C-cr or by customising the variable =gimp-complete-fuzzy-p=.
 
 [[screenshots/fuzzy-completion.png][Fuzzy completion]]
 
@@ -92,31 +92,29 @@ or
   unzip gimp-mode.zip
 </example>
 
-Now run the installation script, either from a shell:
-<example>
-cd gimp-mode-v**
-./install.sh
-</example>
-
-... or from Emacs:		
+Now run the installation script from Emacs:		
 
 <example>
 M-x load-file /path/to/gimp-install.el RET
 </example>
 
-And put the following in your load file: 
+And follow the directions given there.
+
+(It will direct you to put something like the following in your load file and evaluate it: 
 
 <example>
 (load "/path/to/gimp-mode/gimp-init.el")
 </example>
 
-Either evaluate that last form (type =C-x C-e= with the cursor just after the last parenthesis) or restart Emacs.
+...that file basically sets up everything so that stuff is only loaded when needed.)
 
 ** Now run  the gimp inferiorly...
 
-(Note for Windows users: skip this section and move on to [[#client][here]])
+(Note for Windows users: skip this section and [[#client][move on]])
 
-Now run =M-x run-gimp= to start the GIMP and its REPL within Emacs. This takes a little while (just a little longer than the graphical start-up phase - the Gimp is told by =emacs-interaction.scm= to set up some caches in your local gimp directory), so just be patient. In any event, do not type anything while the message "Reading in caches..." is displayed -- for some *very* odd reason, this causes Emacs to hang. We don't want that now do we? Visiting other buffers in the mean time is no problem however. See the customization for =gimp-program-command-line= to tweak GIMP's incantation to your needs. Once you see this, you can let the fun begin:
+Now run =M-x run-gimp= to start the GIMP and its REPL within Emacs. This takes a little while (just a little longer than the graphical start-up phase - the Gimp is told by =emacs-interaction.scm= to set up some caches in your local gimp directory), so just be patient. In any event, do not type anything while the message "Reading in caches..." is displayed -- for some reason I have not been able to track down yet this causes the reading in of caches to go on forever. We don't want that now do we? Visiting other buffers in the mean time is no problem however (if you *do* happen to have typed something at that moment, just quit with =C-g=, and issue =M-x restore-caches= -- most will be well). See the customization for variables =gimp-program=  and =gimp-command-line-args= to tweak GIMP's incantation to your needs. 
+
+Anyway, where were we. Yes. Once you see this, you can let the fun begin:
 
 [[screenshots/first-encounter-with-the-REPL.png][First encounter with the REPL]]
 
@@ -136,10 +134,10 @@ in the first line of a script-fu file, so that other scheme files simply use wha
 
 * To Do (?)
 
- - A debugger.
- - Better debugging/recovering from non-returning functions.
+ - A debugger (inferior only).
  - Find a way to get to python/C stuff REGISTERED on procedure arguments. (such as: lower and upper bounds, step, precision, default values...)   (this has already been done for script-fu)
- - Check default paths/program names in win32 and OSX for custom variables.
+ - Spend a day behind someone elses win32 box to fix as much as possible and add sane defaults for custom variables (yuk!).
+ - Test on milady's OSX box (interesting).
  - Add completion on =script-fu-register=, =script-fu-menu-register=.
  - Add function for constructing a basic =script-fu-register= form from a define form.
  - xEmbed?
@@ -185,6 +183,10 @@ Q. Why didn't you name it =gimp.el=?
 
 A. There is already a =gimp.el= in the nxhtml distribution (which actually does nothing more than open an image (and then only on win32)). And Gimp Mode is nicer for wiki pages anyway. So =gimp-mode.el= it shall be. Just harder to interpret it as a recursive acronym: gimp interaction mode for programmers mildly... gimp interaction mode performed mostly on... (and gimpel would rhyme so lovely with 'met vlag en wimpel...') Yes, life can be hard sometimes.
 
+Q. Where can I get that shirt the Gnu is wearing?
+
+A. ...
+
 * Related
 
 TIP on using =emacs-w3m= to browse gimp documentation:
@@ -199,15 +201,6 @@ To use =emacs-w3m= as the browser for help files from within the Gimp, put the f
 and =(server-start)= in your .emacs
 
 Browsing the help with =emacs-w3m= is very nice, esp. since you can make use of the nice =w3m-scroll-down-or-previous-url=, =w3m-scroll-up-or-next-url= (SPACE) and =w3m-scroll-down-or-previous-url= (b), as relative links are provided by the HTML documentation of the Gimp.
-
-Footnotes:  
-[1] http://www.gnu.org/software/emacs
-
-[2] http://gimp.org
-
-[3] This happens only when issued with the usual define/define-macro construct, and only at top-level, not if you e.g. wrap =define= in another macro.
-
-[4]  For the interested: Gimp Mode gets its information in this regard from the following sources: the procedural database, the TinyScheme-function =get-closure-code= and lastly from =scheme-complete.el= (included) by Alex Shinn. In the echoing for script-fu functions the arguments as registered in the procedural database alternate with the arguments derived from the closure itself - if any.
 
 
 * Older versions
@@ -225,10 +218,19 @@ site)))
 	 (concat " - [[" (mapconcat 'identity all-tarballs
                      "]]\n - [[") "]]"))
 </lisp>
+
 * Contact
 
 Please use M-x gimp-report-bug from Emacs.  This is OK too for feature suggestions.
 
 If that should fail for some reason, you can contact me at nielsforkgiesen@gmailknifecom, but please replace the kitchen utensils with a dot before hitting "Send", lest anyone get hurt in the process.
 
+Footnotes:  
+[1] http://www.gnu.org/software/emacs
+
+[2] http://gimp.org
+
+[3] This happens only when issued with the usual define/define-macro construct, and only at top-level, not if you e.g. wrap =define= in another macro.
+
+[4]  For the interested: Gimp Mode gets its information in this regard from the following sources: the procedural database, the TinyScheme-function =get-closure-code= and lastly from =scheme-complete.el= (included) by Alex Shinn. In the echoing for script-fu functions the arguments as registered in the procedural database alternate with the arguments derived from the closure itself - if any.
 

@@ -78,9 +78,11 @@
   (gimp-procedural-db-dump              ;dump the dump
    (string-append gimp-dir "/dump.db")))
 
-(script-fu-register "script-fu-dump-for-emacs"
-                    _"<Toolbox>/Xtns/Languages/Script-Fu/Dump internals for Emacs' Gimp Mode..."
 
+(script-fu-register "script-fu-dump-for-emacs"
+		    (if (string=? "2.5.0" (car (gimp-version)))
+			 "<Image>/Filters/Languages/Script-Fu/Dump internals for Emacs' Gimp Mode..."
+			 "<Toolbox>/Xtns/Languages/Script-Fu/Dump internals for Emacs' Gimp Mode...")
                     _"Dump (part of) the oblist, fonts, the menu structure and
 the procedural database more for use with Emacs' Gimp Mode which you can find at
 http://niels.kicks-ass.org/public/GimpMode/index.html.

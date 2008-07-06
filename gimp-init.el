@@ -1,11 +1,13 @@
 ;; This is gimp-init.el
-
+ ;; Check whether first time
 ;; Put this in your .emacs (load-file "~/.emacs.d/gimp/gimp-init.el")
 (defvar gimp-mode-dir 
   (file-name-directory
 		  (or load-file-name buffer-file-name)))
 
-(load (concat gimp-mode-dir "gimp-vars.el"))
+(condition-case err
+    (load (concat gimp-mode-dir "gimp-vars.el"))
+  (error (load-file (concat gimp-mode-dir "gimp-install.el"))))
 
 (let* ((related-dir (file-name-as-directory
 		     (expand-file-name "related"

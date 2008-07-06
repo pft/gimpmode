@@ -1,19 +1,16 @@
 Installation instructions
 =========================
 
-tar xjvf gimp-mode.tar.gz (or: unzip gimp-mode.zip)
+unpack gimpmode
 
-Once unpacked, from within Emacs issue M-x load-file /path/to/gimp-install.el RET)
+ tar xjvf gimp-mode.tar.gz (or: unzip gimp-mode.zip)
 
+open up Emacs 
 
-If you are not on a linux system, you might very well have to make sure the value of `gimp-program-command-line' corresponds to your gimp executable.
+load gimp-install.el:
 
-Now run M-x run-gimp to start the GIMP and its REPL within Emacs. This takes a little while (just a little longer than the graphical start-up phase - the Gimp is told by emacs-interaction.scm to set up some caches in your local gimp directory), so just be patient. In any event, do not type anything while the message "Reading in chaches..." is displayed -- for some *very* odd reason, this causes emacs to hang. Visiting other buffers in the mean time is no problem however. See the customization for `gimp-program-command-line' to tweak GIMPs incantation to your needs.
+ M-x load-file /path/to/gimp-install.el RET
 
-If you want to  hook into a running GIMP session as a client use `M-x gimp-cl-connect'.
-
-If you put (something like) this in your .emacs file, you'll have a nice global selector to switch between the REPL, Gimp Mode buffers and the Gimp Help buffer:
-
-(global-set-key "\C-cg" 'gimp-selector)
+follow the directions
 
 See the file gimpmode.pdf in this directory for more information.

@@ -1,9 +1,7 @@
-<<<<<<< ChangeLog
-2008-06-10  Niels Giesen  <niels.giesen@gmail.com>
+2008-07-04  Niels Giesen  <niels.giesen@gmail.com>
 
 	* gimp-mode.el (gimp-current-arg): fixed eob error
 
-=======
 2008-07-03  Niels Giesen  <sharik@reetkevert.sshunet.nl>
 
 	* gimp-mode.el (gimp-try-and-get-closure-code-p): new custom
@@ -41,7 +39,6 @@
 	(gimp-complete-oblist): stand-alone functino, to be pushed into
 	hippie-expand-try-functions-list. Needs further refinement (?)
  
->>>>>>> 1.17
 2008-06-08  Niels Giesen  <sharik@reetkevert.sshunet.nl>
 
 	* gimp-mode.el (gimp-fnsym-in-current-sexp): fixed bug for when

@@ -1,4 +1,4 @@
-;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.35 2008-07-04 20:01:53 sharik Exp $
+;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.36 2008-07-06 09:02:14 sharik Exp $
 ;; Copyright (C) 2008 Niels Giesen <nielsforkgiesen@gmailspooncom, but
 ;; please replace the kitchen utensils with a dot before hitting
 ;; "Send">
@@ -261,7 +261,14 @@ script-fu console."
   :group 'gimp
   :type '(alist :key-type string :value-type string))
 
-(defcustom gimp-program-command-line "/home/sharik/src/Gimp/gimp-2.5.0/app/.libs/gimp-2.5 --batch-interpreter=plug-in-script-fu-eval -b -"
+(defcustom gimp-program (if (eq window-system 'nt)
+                            "gimp-win.exe" ;I think...
+                            "gimp")
+  "Name of Gimp executable"
+  :group 'gimp
+  :type '(string))
+
+(defcustom gimp-command-line-args "--batch-interpreter=plug-in-script-fu-eval -b -"
   "Arguments to give to the GIMP. 
 
   -v, --version                  Show version information and exit
@@ -584,7 +591,7 @@ Optional argument EVENT is a mouse event."
   (interactive)
   (destructuring-bind (version major minor) 
       (gimp-string-match "\\([0-9]+\\)\.\\([0-9]+\\)"
-                         "$Id: gimp-mode.el,v 1.35 2008-07-04 20:01:53 sharik Exp $" )
+                         "$Id: gimp-mode.el,v 1.36 2008-07-06 09:02:14 sharik Exp $" )
       (if (interactive-p) 
           (prog1 nil 
             (message "GIMP mode version: %s.%s" major minor))
@@ -808,7 +815,7 @@ Turn DL (of the form (\"a\" \"b\" . \"c\")) into a list of the form (\"a\"
 
 
 (gimp-defcommand gimp-help ()
-  "Generic GIMP help."
+  "Generic help for Gimp Mode."
   (interactive)
   (let ((window (get-window-with-predicate
 		 (lambda (w)
@@ -907,14 +914,14 @@ Deletes any previous stuff at that REPL"
       (if (gimp-buffer-window (gimp-buffer))
 	  (select-window (gimp-buffer-window (gimp-buffer)))
 	(switch-to-buffer-other-window (gimp-buffer)))
-    (run-scheme gimp-program-command-line) 
+    (run-scheme (concat gimp-program " " gimp-command-line-args)) 
     (set-process-sentinel 
      (gimp-proc)
      (lambda (p s)
        (if (string-match "finished" s)
            (error "Probably the GIMP is already running.
 
-Either close that instance, add the -e switch to `gimp-program-command-line',
+Either close that instance, add the -e switch to `gimp-command-line-args',
 or run command `gimp-cl-connect'.")
          (message s))))
     (save-window-excursion 
@@ -939,20 +946,23 @@ or run command `gimp-cl-connect'.")
     (setq scheme-buffer (current-buffer))
     (inferior-gimp-mode)
     (gimp-set-comint-filter)   ;set comint filter for subsequent input
-    (gimp-progress (concat (current-message) "...waiting to finish...")
+    (with-local-quit                    
+      (gimp-progress (concat (current-message)
+			     "...waiting to finish (C-g to quit) ...")
 		     (lambda ()
 		       (not (string-match "^> $"  gimp-output)))
 		     "done!")
-    (gimp-restore-caches)
-    (gimp-restore-input-ring)
-    (unless gimp-inhibit-start-up-message
-      (gimp-shortcuts t))
-    (message "%s The GIMP is loaded. Have FU." (or (current-message) ""))) ;set comint filter for subsequent input)
+      (gimp-restore-caches)
+      (gimp-restore-input-ring)
+      (unless gimp-inhibit-start-up-message
+        (gimp-shortcuts t))
+      (message "%s The GIMP is loaded. Have FU." (or (current-message) "")))) ;set comint filter for subsequent input)
   (setq buffer-read-only nil))
 
 (defun gimp-progress (message test &optional end-text)
   "Show MESSAGE with rotating thing at end while TEST yields a non-nil value.
 Optional argument END-TEXT specifies the text appended to the message when TEST fails."
+  (interactive)
   (let ((r (make-ring 4)))
     (mapc (lambda (i)
             (ring-insert r i))
@@ -1142,7 +1152,7 @@ screwed up.  It is wise then to preceed it with a call to
 	    (not (file-directory-p (concat (gimp-dir) "/emacs/"))))
       (make-directory (concat (gimp-dir) "/emacs/"))
       (gimp-dump-for-emacs))
-  (message "Reading in caches... ")
+  (message "Reading in caches... (C-g to quit)")
   (mapc 'gimp-restore-cache
         '(gimp-menu
           gimp-fonts-cache
@@ -2154,7 +2164,7 @@ argument at point is highlighted."
 	       ;; Get it
 	       (setq cache-resp
 		     (gimp-docstring (read str))))
-	      ((unless (string-match "define\\(?:-macro\\)?\\|let" str)
+	      ((unless nil;(string-match "define\\(?:-macro\\)?\\|let" str)
                                         ;`scheme-get-current-symbol-info'
                                         ;"fails" in these cases.
 		 (let
