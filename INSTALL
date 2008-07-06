@@ -1,21 +1,10 @@
 Installation instructions
 =========================
 
-From a shell:
-
 tar xjvf gimp-mode.tar.gz (or: unzip gimp-mode.zip)
-cd gimp-mode-v**
-./install.sh
 
-This will ask you where gimp's configuration directory is, defaulting to ~/.gimp-2.4/.
+Once unpacked, from within Emacs issue M-x load-file /path/to/gimp-install.el RET)
 
-(Alternatively, once unpacked, from within Emacs issue M-x load-file /path/to/gimp-install.el RET)
-
-Now put the following in your load file: 
-
-(load "/path/to/gimp-mode/gimp-init.el")
-
-Either evaluate that last form (type: C-x C-e with the cursor just after the last parenthesis) or restart Emacs.
 
 If you are not on a linux system, you might very well have to make sure the value of `gimp-program-command-line' corresponds to your gimp executable.
 
