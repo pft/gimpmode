@@ -1,0 +1,62 @@
+;; ooh, how convolved this is...
+;; First try: make sure define'd stuff is loaded into the image
+;; Major defect: double evaluation.
+(define-macro (emacs-cl-output . body)
+   `(begin
+     ;; first, give us some output
+     (with-output-to-file 
+         (string-append gimp-dir "/emacs-output.scm")
+       (lambda ()
+         (write ,@body)))
+     ;; then make sure stuff is loaded into the scheme image
+     (with-output-to-file 
+         (string-append gimp-dir "/emacs-input.scm")
+       (lambda ()
+         (write ',@body)))              ;note the quote!
+     (load (string-append gimp-dir "/emacs-input.scm")))) ;and load...
+
+;; 2nd try: attempt to break the side-effect of evalling twice (does
+;; not load the evalled stuff into the scheme image) :
+(define-macro (emacs-cl-output . body)
+  (let ((input-file (string-append gimp-dir "/emacs-input.scm"))
+        (output-file (string-append gimp-dir "/emacs-output.scm")))
+    `(begin 
+       (with-output-to-file ,input-file
+         (lambda ()
+           (write 
+            '(with-output-to-file
+                 ,output-file
+               (lambda ()
+                 (write ,@body))))
+           (write nil))) ;;needed for the scheme lisp reader (if the
+                         ;;last sexp is immediately followed by EOF,
+                         ;;it complains about unbalanced parentheses:1
+                         ;;...) later I found out (display "\n") does
+                         ;;a better job.
+       (load ,input-file))))
+
+;; Final solution: evals once, loads evaluated expression into image,
+;; writes output of evaluation back, and pushes a specially crafted
+;; handler to be called by *error-hook*. And by this time I had made a
+;; `with-output-to-emacs-file' macro that wraps the body in a lambda
+;; form.
+(define-macro (emacs-cl-output . body)
+    (let ((input-file "emacs-input.scm")
+          (output-file "emacs-output.scm"))
+      (unless (memq gimp-cl-handler *handlers*)
+              (push-handler gimp-cl-handler))
+      `(begin 
+         (with-output-to-emacs-file ,input-file
+             (write 
+              '(set! *emacs-cl-output*  ,@body))
+             (display "\n")             ;apparently, any sexp at
+                                        ;top-level needs some distance
+                                        ;for the reader
+             (write '(with-output-to-emacs-file
+                         ,output-file
+                         (write *emacs-cl-output*)))
+
+             (display "\n"))
+         (load ,(make-emacs-file input-file)))))
+
+;; Seeing how involved this process is,   
