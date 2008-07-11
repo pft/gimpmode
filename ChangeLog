@@ -1,3 +1,19 @@
+2008-07-11  Niels Giesen  <sharik@reetkevert.sshunet.nl>
+
+	* gimp-install.el (gmd): Better default directory for windows
+	users.
+
+	* gimp-mode.el (gimp-highlight, gimp-set-face, gimp-button): some
+	utility macros & functions to make propertised text. Refactored
+	most occurrences of `propertize'
+	(gimp-command-line-args): add note of version for doc.
+	(gimp-first-run-action): add message for windows users.
+	(gimp-describe-procedure): factored out parts into separate
+	functions `gimp-headline', `gimp-menu-bar', `gimp-summary' and
+	`gimp-argument-listing'.
+	Fix violation of 80 characters rule.
+
+
 2008-07-04  Niels Giesen  <niels.giesen@gmail.com>
 
 	* gimp-mode.el (gimp-current-arg): fixed eob error

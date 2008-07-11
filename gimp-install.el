@@ -33,9 +33,13 @@ For more information consult the file README."
 	     (or load-file-name buffer-file-name)))
        (gimp-dir
 	(expand-file-name 
-	 (read-file-name "Please enter config directory for the GIMP: "
-			 "~/.gimp-2.4/"
-			 "~/.gimp-2.4/")))
+	 (read-directory-name
+	  "Please enter config directory for the GIMP: "
+	  (if (eq window-system 'w32) 
+	      (format "C:/Documents and Settings/%s/%s"
+		      user-login-name
+		      ".gimp-2.4/")
+	    "~/.gimp-2.4/"))))
        (gimp-emacs-dir (expand-file-name (concat gimp-dir "/emacs/")))
        (emacs-interaction.scm "emacs-interaction.scm")
        (emacs-interaction.scm-target
