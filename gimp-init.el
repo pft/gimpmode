@@ -3,7 +3,7 @@
 ;; Put this in your .emacs (load-file "~/.emacs.d/gimp/gimp-init.el")
 (defvar gimp-mode-dir 
   (file-name-directory
-		  (or load-file-name buffer-file-name)))
+   (or load-file-name buffer-file-name)))
 
 (condition-case err
     (load (concat gimp-mode-dir "gimp-vars.el"))
