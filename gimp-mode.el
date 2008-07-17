@@ -1,4 +1,4 @@
-;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.38 2008-07-17 12:37:51 sharik Exp $
+;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.39 2008-07-17 12:42:19 sharik Exp $
 ;; Copyright (C) 2008 Niels Giesen <nielsforkgiesen@gmailspooncom, but
 ;; please replace the kitchen utensils with a dot before hitting
 ;; "Send">
@@ -630,7 +630,7 @@ Optional argument EVENT is a mouse event."
   (destructuring-bind (version major minor) 
       (gimp-string-match 
        "\\([0-9]+\\)\.\\([0-9]+\\)"
-       "$Id: gimp-mode.el,v 1.38 2008-07-17 12:37:51 sharik Exp $" )
+       "$Id: gimp-mode.el,v 1.39 2008-07-17 12:42:19 sharik Exp $" )
       (if (interactive-p) 
           (prog1 nil 
             (message "GIMP mode version: %s.%s" major minor))
@@ -1381,7 +1381,12 @@ See variable `gimp-docs-alist'"
     (sort result 'string<)))
 
 (gimp-defcommand gimp-apropos (&optional query)
-  "Search pdb for submatch of QUERY."
+  "Search pdb for submatch of QUERY.
+It will find any procedure whose name matches QUERY in any way.
+It will also find any procedure in the description of which QUERY
+matches a whole word.  
+If QUERY matches only a part of a word of that description, it
+will therefore not match."
   (interactive)
   (let* ((query (or query (read-from-minibuffer "Apropos query: " )))
 	 (new-contents

@@ -1,3 +1,7 @@
+2008-07-17  Niels Giesen  <sharik@localhost>
+
+	* gimp-mode.el (gimp-real-apropos): added doc
+
 2008-07-16  niels giesen  <sharik@matroshka>
 
 	* gimp-mode.el (gimp-defcommand): added debug instruction

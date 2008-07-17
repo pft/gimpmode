@@ -136,13 +136,12 @@ in the first line of a script-fu file, so that other scheme files simply use wha
 
 * To Do (?)
 
- - A debugger (inferior only).
+ - A debugger (inferior mode only - if any).
  - Find a way to get to python/C stuff REGISTERED on procedure arguments. (such as: lower and upper bounds, step, precision, default values...)   (this has already been done for script-fu)
  - Spend a day behind someone elses win32 box to fix as much as possible and add sane defaults for custom variables (yuk!).
- - Test on milady's OSX box (interesting).
+ - Test on an OSX box (interesting).
  - Add completion on =script-fu-register=, =script-fu-menu-register=.
  - Add function for constructing a basic =script-fu-register= form from a define form.
- - xEmbed?
  - And of course I am open to suggestions
 
 * Known Bugs
@@ -185,7 +184,7 @@ Q. Why didn't you name it =gimp.el=?
 
 A. There is already a =gimp.el= in the nxhtml distribution (which actually does nothing more than open an image (and then only on win32)). And Gimp Mode is nicer for wiki pages anyway. So =gimp-mode.el= it shall be. Just harder to interpret it as a recursive acronym: gimp interaction mode for programmers mildly... gimp interaction mode performed mostly on... (and gimpel would rhyme so lovely with 'met vlag en wimpel...') Yes, life can be hard sometimes.
 
-Q. Where can I get that shirt the Gnu is wearing?
+Q. Where can I get that shirt the Gnu on GimpMode's homepage is wearing?
 
 A. ...
 
