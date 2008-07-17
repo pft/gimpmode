@@ -1,3 +1,25 @@
+;;; gimp-install.el --- $Id: gimp-install.el,v 1.5 2008-07-17 12:59:50 sharik Exp $
+;; Copyright (C) 2008 Niels Giesen.
+
+;; Author: Niels Giesen <nielsforkgiesen@gmailspooncom, but please
+;; replace the kitchen utensils with a dot before hitting "Send">
+;; Keywords: processes, multimedia, extensions, tools, gimp, scheme
+;; Homepage: http://niels.kicks-ass.org/gimpmode
+
+;; This program is free software; you can redistribute it and/or
+;; modify it under the terms of the GNU General Public License
+;; as published by the Free Software Foundation; either version 2
+;; of the License, or (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program; if not, write to the Free Software
+;; Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+;; 02110-1301, USA.
 (defun gimp-install-message ()
   (switch-to-buffer
    "*GIMP Installation Help*")

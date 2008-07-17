@@ -4,7 +4,7 @@ VERSION=`head -1 gimp-mode.el|awk -F " " '{print $6}'`
 
 emacs --batch --script build.el
 mkdir gimp-mode-v$VERSION
-cp -R emacs-interaction.scm gimp-mode.el gimp-install.el gimp-init.el gimpmode.pdf related INSTALL gimp-mode-v$VERSION
+cp -R emacs-interaction.scm gimp-mode.el gimp-install.el gimp-init.el gimpmode.pdf related INSTALL COPYING gimp-mode-v$VERSION
 find gimp-mode-v$VERSION -regex ".*\/\(CVS\|.cvsignore\|.*\(~\|\.elc\)\)"|xargs rm -Rf
 echo "Building tar file..."
 tar -cf gimp-mode-v$VERSION.tar gimp-mode-v$VERSION

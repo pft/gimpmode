@@ -1,17 +1,15 @@
-;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.39 2008-07-17 12:42:19 sharik Exp $
-;; Copyright (C) 2008 Niels Giesen <nielsforkgiesen@gmailspooncom, but
-;; please replace the kitchen utensils with a dot before hitting
-;; "Send">
+;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.40 2008-07-17 12:59:50 sharik Exp $
+;; Copyright (C) 2008 Niels Giesen
 
 ;; Author: Niels Giesen <nielsforkgiesen@gmailspooncom, but please
 ;; replace the kitchen utensils with a dot before hitting "Send">
 ;; Keywords: processes, multimedia, extensions, tools, gimp, scheme
 ;; Homepage: http://niels.kicks-ass.org/gimpmode
 
-;; This program is free software; you can redistribute it and/or
-;; modify it under the terms of the GNU General Public License
-;; as published by the Free Software Foundation; either version 2
-;; of the License, or (at your option) any later version.
+;; This program is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
 
 ;; This program is distributed in the hope that it will be useful,
 ;; but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -19,9 +17,7 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with this program; if not, write to the Free Software
-;; Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-;; 02110-1301, USA.
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
 
@@ -630,7 +626,7 @@ Optional argument EVENT is a mouse event."
   (destructuring-bind (version major minor) 
       (gimp-string-match 
        "\\([0-9]+\\)\.\\([0-9]+\\)"
-       "$Id: gimp-mode.el,v 1.39 2008-07-17 12:42:19 sharik Exp $" )
+       "$Id: gimp-mode.el,v 1.40 2008-07-17 12:59:50 sharik Exp $" )
       (if (interactive-p) 
           (prog1 nil 
             (message "GIMP mode version: %s.%s" major minor))

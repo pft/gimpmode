@@ -184,6 +184,10 @@ Q. Why didn't you name it =gimp.el=?
 
 A. There is already a =gimp.el= in the nxhtml distribution (which actually does nothing more than open an image (and then only on win32)). And Gimp Mode is nicer for wiki pages anyway. So =gimp-mode.el= it shall be. Just harder to interpret it as a recursive acronym: gimp interaction mode for programmers mildly... gimp interaction mode performed mostly on... (and gimpel would rhyme so lovely with 'met vlag en wimpel...') Yes, life can be hard sometimes.
 
+Q. What's with the strange versioning numbers? 
+
+A. That's just the CVS revision number for the file =gimp-mode.el=. I found that easiest.
+
 Q. Where can I get that shirt the Gnu on GimpMode's homepage is wearing?
 
 A. ...
@@ -203,8 +207,12 @@ and =(server-start)= in your .emacs
 
 Browsing the help with =emacs-w3m= is very nice, esp. since you can make use of the nice =w3m-scroll-down-or-previous-url=, =w3m-scroll-up-or-next-url= (SPACE) and =w3m-scroll-down-or-previous-url= (b), as relative links are provided by the HTML documentation of the Gimp.
 
+* Licence
 
-* All versions
+Gimp Mode is licenced under the [[http://www.gnu.org/licenses/gpl.html][GPLv3]]. 
+
+
+* Earlier versions
 <lisp>
 (let* ((site "http://niels.kicks-ass.org/public/GimpMode/")
 	      (contents (shell-command-to-string (format "curl %s"
