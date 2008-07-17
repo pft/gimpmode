@@ -33,6 +33,8 @@ Argument echoing whereby current argument is highlighted.[4]
 
 More in-depth documentation echoing: both for argument at point and for the entire function.
 
+In both documentation (echoing) and completion, the *procedural* first argument =run-mode= (Interactive, non-interactive) is omitted for script-fu functions, as this argument has to be omitted from a call made by script-fu.
+
 A complete hyper-textual rework of the Procedure Browser implemented in Emacs Lisp, with history, apropos function, menu-driven look-up of plug-ins, nice faces (if I may say so) etc.
 
 [[screenshots/gimp-help-browser.png][The Gimp Mode Help Browser]]

@@ -1,4 +1,4 @@
-;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.37 2008-07-11 11:00:35 sharik Exp $
+;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.38 2008-07-17 12:37:51 sharik Exp $
 ;; Copyright (C) 2008 Niels Giesen <nielsforkgiesen@gmailspooncom, but
 ;; please replace the kitchen utensils with a dot before hitting
 ;; "Send">
@@ -6,6 +6,7 @@
 ;; Author: Niels Giesen <nielsforkgiesen@gmailspooncom, but please
 ;; replace the kitchen utensils with a dot before hitting "Send">
 ;; Keywords: processes, multimedia, extensions, tools, gimp, scheme
+;; Homepage: http://niels.kicks-ass.org/gimpmode
 
 ;; This program is free software; you can redistribute it and/or
 ;; modify it under the terms of the GNU General Public License
@@ -27,35 +28,10 @@
 ;; Interaction/editing mode for the GIMP
 ;; see README for full description and usage.
 
-;; TOC:
- ;; Requirements
- ;; Structure
- ;; Faces
- ;; Globals
- ;; Customization
- ;; General purpose functions and macros
- ;; Keybindings
- ;; Set up the modes
- ;; Versioning
- ;; Evaluation
- ;; Help
- ;; Stuff pertaining to running 'n' quitting
- ;; Utility functions
- ;; Caches: saving, deleting, restoring
- ;; Tracing
- ;; Modes
- ;; Internal information retrieval
- ;; Completion
- ;; Shortcuts
- ;; Doc echoing
- ;; Source look-up
- ;; Snippets
- ;; Misc interactive commands
-;; Client mode global vars
 
 ;;; Code:
 (provide 'gimp-mode)
- ;; Requirements
+ ;;;; Requirements
 (require 'cmuscheme)
 (require 'outline)
 (require 'cl)
@@ -66,7 +42,7 @@
   (require 'ring)
   (require 'snippet)
   (require 'scheme-complete))
- ;; Structure
+ ;;;; Structure
 (defgroup gimp nil "Customization group for GIMP (script-fu) programming."
   :group 'shell
   :group 'scheme
@@ -76,7 +52,7 @@
   nil
   "Customization group for GIMP Mode faces"
   :group 'gimp)
- ;; Faces
+ ;;;; Faces
 ;; text properties
 (defun gimp-highlight (str)
   (propertize str 'mouse-face 'highlight))
@@ -198,7 +174,7 @@ HINT is the help-echo, and face the gimp-FACE-face."
   "Gimp Mode face used to highlight variable names."
   :group 'gimp-faces)
 
- ;; Globals
+ ;;;; Globals
 (defconst gimp-email-regexp
   "\\b[A-Z0-9._%+-]+@[A-Z0-9.-]+.[A-Z]\\{2,4\\}\\b")
 (defconst gimp-url-regexp
@@ -264,7 +240,7 @@ Define such command with `gimp-defcommand' to be automatically included.")
       (make-vector 100 1))
 (put 'gimp-help-ring 'index 0)
 
- ;; Customization
+ ;;;; Customization
 (defgroup gimp-directories nil
   "Directories where the GIMP finds its sources"
   :group 'gimp)
@@ -306,6 +282,7 @@ script-fu console."
     ("registry.gimp.org" . "http://registry.gimp.org/")
     ("local help" . "file:///usr/share/gimp/2.0/help/en/index.html")
     ("gimp talk" . "http://www.gimptalk.com/forum/")
+    ("gimp-mode page" . "http://niels.kicks-ass.org/gimpmode")
     ("grokking the gimp" .
      "http://www.linuxtopia.org/online_books/graphics_tools\
 /gimp_advanced_guide/index.html"))
@@ -380,14 +357,15 @@ completion (when possible) when point is in a string."
   :group 'gimp
   :type 'boolean)
 
- ;; General purpose functions and macros
+ ;;;; General purpose functions and macros
 (defmacro gimp-defcommand (name arglist docstring &rest body)
 "Define NAME as a function.
 Put its name without the gimp-prefix in variable `gimp-shortcuts'.
 
 The definition is (lambda ARGLIST DOCSTRING BODY...).
 If no `interactive' form is used in BODY, an error is signalled."
-  (declare (indent defun))
+  (declare (indent defun)
+           (debug defun))
   (when (not (stringp docstring))
     (error "Error defining %S: docstring seems to be missing" name))
   `(progn
@@ -448,6 +426,7 @@ Comparison is done via `equal'.  The index is 0-based."
 	(dotimes (ind (ring-length ring) nil)
 	  (when (equal item (ring-ref ring ind))
 	    (throw 'found ind)))))))
+
 (eval-when (compile load)
   (when (not (fboundp 'ring-next))
     (defun ring-next (ring item)
@@ -489,7 +468,7 @@ Raise error if ITEM is not in the RING."
    (lambda (w)
      (eq (window-buffer w)
 	 (get-buffer buffer)))))
- ;; Keybindings
+ ;;;; Keybindings
 (defvar inferior-gimp-mode-map
   (let ((m (copy-keymap inferior-scheme-mode-map)))
     (define-key m "\t" 'gimp-indent-and-complete)
@@ -625,7 +604,7 @@ Optional argument EVENT is a mouse event."
 	    (self-insert-command n))
 ;	  (indent-for-tab-command)
           (gimp-echo))))
- ;; Set up the modes
+ ;;;; Set up the modes
 (define-derived-mode gimp-mode scheme-mode "GIMP mode" 
   "Mode for editing script-fu and interacting with an inferior gimp process."
   (use-local-map gimp-mode-map)
@@ -644,14 +623,14 @@ Optional argument EVENT is a mouse event."
 	'(gimp-add-define-to-oblist))
   (add-to-list 'mode-line-process gimp-mode-line-format t))
 
- ;; Versioning
+ ;;;; Versioning
 (gimp-defcommand gimp-gimp-mode-version ()
   "Version of this mode."
   (interactive)
   (destructuring-bind (version major minor) 
       (gimp-string-match 
        "\\([0-9]+\\)\.\\([0-9]+\\)"
-       "$Id: gimp-mode.el,v 1.37 2008-07-11 11:00:35 sharik Exp $" )
+       "$Id: gimp-mode.el,v 1.38 2008-07-17 12:37:51 sharik Exp $" )
       (if (interactive-p) 
           (prog1 nil 
             (message "GIMP mode version: %s.%s" major minor))
@@ -669,7 +648,7 @@ Optional argument EVENT is a mouse event."
     (when (interactive-p)
       (message "GIMP version: %s" version))
     (list version major minor rev)))
- ;; Evaluation
+ ;;;; Evaluation
 (defmacro in-gimp (body)
   "Evaluate fu sexps without having to quote them. Syntactic sugar.
 
@@ -827,7 +806,7 @@ Turn DL (of the form (\"a\" \"b\" . \"c\")) into a list of the form (\"a\"
       ;; Send it
       (gimp-send-input))))
 
- ;; Help
+ ;;;; Help
 (defvar gimp-help-visited-pages nil
   "List of visited pages.")
 (defmacro gimp-help-wrapper (form &rest body)
@@ -883,8 +862,7 @@ Turn DL (of the form (\"a\" \"b\" . \"c\")) into a list of the form (\"a\"
       (switch-to-buffer
        "*GIMP Help*")
       (gimp-help-mode)
-      (if (= (point-min)
-             (point-max))
+      (if (= (buffer-size) 0)
           (let (buffer-read-only)
             (insert
 	     (gimp-set-face "GIMP Help\n" level1)
@@ -959,7 +937,7 @@ Deletes any previous stuff at that REPL"
 
 (defun gimp-help-refresh ()
   (eval (nth 0 gimp-help-ring)))
- ;; Stuff pertaining to running 'n' quitting
+ ;;;; Stuff pertaining to running 'n' quitting
 
 ;;;###autoload
 (defun run-gimp ()
@@ -1049,7 +1027,7 @@ Optional argument END-TEXT is the text appended to the message when TEST fails."
   (kill-buffer (gimp-buffer))
   (message "GIMP process ended."))
 
- ;; Utility functions
+ ;;;; Utility functions
 (defun gimp-buffer ()
   (let ((proc (gimp-proc)))
     (when proc
@@ -1085,7 +1063,7 @@ Optional argument END-TEXT is the text appended to the message when TEST fails."
         (while (progn
                  (forward-sexp -1)
                  (or (= (char-before) ?\")
-                     (> (point) (point-min)))))
+                     (not (bobp)))))
       (error nil))))
 
 (defun gimp-interactive-p ()
@@ -1119,7 +1097,9 @@ Optional argument END-TEXT is the text appended to the message when TEST fails."
      (when  (not (looking-back ",[[:alnum:]- ]+"))
        (with-syntax-table scheme-mode-syntax-table
 	 (while 
-	     (and (let ((m (process-mark (gimp-proc))))
+	     (and
+              (not (bobp))
+              (let ((m (process-mark (gimp-proc))))
 		    (if 
 			(eq (marker-buffer m)
 			    (current-buffer))
@@ -1136,8 +1116,11 @@ Optional argument END-TEXT is the text appended to the message when TEST fails."
 		     t)))
 	   (forward-char -1)))
        (prog1
-	   ;; Don't do anything if current word is inside a string.
-	   (if (= (or (char-after (1- (point))) 0) ?\")
+	   ;; Return nil if current word is inside a string.
+	   (if
+               (or 
+                (= (or (char-after (1- (point))) 0) ?\")
+                (bobp)) ;or at beginning of buffer
 	       nil
 	     (gimp-current-symbol))
 	 (goto-char p))))))
@@ -1176,7 +1159,7 @@ Optional argument END-TEXT is the text appended to the message when TEST fails."
       (let ((parses (parse-partial-sexp (point) orig)))
         (nth 4 parses)))))
 
- ;; Caches: saving, deleting, restoring
+ ;;;; Caches: saving, deleting, restoring
 (defun gimp-save-cache (cache)
   (with-temp-file (format "%s/emacs-%s" (gimp-dir) cache)
     (let ((cache (symbol-value cache)))
@@ -1328,7 +1311,7 @@ screwed up.  It is wise then to preceed it with a call to
     (switch-to-buffer
      (get-buffer "*GIMP Help*")
      (gimp-help-refresh))))
- ;; Tracing
+ ;;;; Tracing
 (gimp-defcommand gimp-trace ()
   "Start tracing FU.
 
@@ -1349,7 +1332,7 @@ Only for REPL input."
   (gimp-eval "(tracing 0)\n")
   (message "Tracing turned off")
   (put 'gimp-trace 'trace-wanted nil))
- ;; Modes
+ ;;;; Modes
 (define-derived-mode gimp-help-mode outline-mode "GIMP Help"
   "Help mode for the GIMP."
   (use-local-map gimp-help-mode-map)
@@ -1636,7 +1619,7 @@ s : search source code for symbol"
      (gimp-get-proc-args procedure)
      "\n\n")))
 
- ;; Internal information retrieval
+ ;;;; Internal information retrieval
 (defun gimp-get-proc-arg (proc arg)
   (nth arg (gimp-get-proc-args proc)))
 
@@ -1700,7 +1683,7 @@ s : search source code for symbol"
             ", "
             (nth 4 info))))
 
- ;; Completion
+ ;;;; Completion
 (defcustom gimp-complete-fuzzy-p t
   "Perform fuzzy completion?
 
@@ -2137,7 +2120,7 @@ See variable `gimp-complete-fuzzy-p' for a bit more detailed information."
   (let* ((max-lisp-eval-depth 30000)
 	 (completions (gimp-all-fuzzy-completion-data pattern list)))
     (if (null completions) 
-	(error "No completions")
+	(error "[Can't find completion for %S]" pattern)
       (if (fboundp 'icicle-expanded-common-match)
 	  (icicle-expanded-common-match 
 	   (gimp-make-fuzzy-match-re pattern)
@@ -2154,7 +2137,7 @@ See variable `gimp-complete-fuzzy-p' for a bit more detailed information."
 		  (try-completion (nth 4 (car completions))
 				  (mapcar 'car completions))))
 	  nil)))))
- ;; Shortcuts
+ ;;;; Shortcuts
 (gimp-defcommand gimp-shortcuts (&optional terse)
   "Show interactive commands in the REPL.
 Optional argument TERSE means only show that I am there to help you."
@@ -2190,7 +2173,7 @@ Optional argument TERSE means only show that I am there to help you."
 		 (intern-soft
 		  (format "gimp-%s" arg))) 1)
 	       link))
- ;; Doc echoing
+ ;;;; Doc echoing
 (defun gimp-docstring (sym)
   (if (and 
        (eq (gimp-get-proc-type sym) 
@@ -2292,7 +2275,7 @@ argument at point is highlighted."
                      "")))
       (message "%S: No information available" sym))))
 
- ;; Source look-up
+ ;;;; Source look-up
 (defun gimp-code-search-fu (proc)
   "Search for definition of script-fu procedure PROC."
   (grep (format
@@ -2344,7 +2327,7 @@ into etags and find-tag."
       (fu (gimp-code-search-fu proc))
       (t (error "Look up-for %s unimplemented" proc)))))
 
- ;; Snippets
+ ;;;; Snippets
 (snippet-with-abbrev-table
  'gimp-mode-abbrev-table
  ("reg" . (format 
@@ -2434,7 +2417,7 @@ Type the abbreviations on the left in a GIMP Mode buffer, and hit ENTER
      gimp-snippets "\n"))
    (goto-char (point-min))))
 
- ;; Misc interactive commands
+ ;;;; Misc interactive commands
 (gimp-defcommand gimp-selector (char)
   "GIMP buffer switcher similar to `slime-selector.
 Argument CHAR is used to choose between buffers.'."

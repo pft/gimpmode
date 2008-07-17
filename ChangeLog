@@ -1,3 +1,8 @@
+2008-07-16  niels giesen  <sharik@matroshka>
+
+	* gimp-mode.el (gimp-defcommand): added debug instruction
+	(gimp-fnsym-in-current-sexp): fix for point-min bug
+
 2008-07-11  Niels Giesen  <sharik@reetkevert.sshunet.nl>
 
 	* gimp-install.el (gmd): Better default directory for windows
