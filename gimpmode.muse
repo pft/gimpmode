@@ -74,7 +74,7 @@ Note that on any system gimp-mode is perfectly capable of performing quite well 
 
 * Comparison with other modes
 
-Gimp Mode differs from =gimp-shell.el= in that the main objective is to run the GIMP as a subprocess instead of hooking into the script-fu server as a client.  For the client mode, I have adopted code from =gimp-shell.el= (see =gimp-cl-send-string=), and am very grateful for it (I could not have come up with these awkward but apparently necessary byte-sequences myself - sooo low-level...). Oh, and then there is =gimp.el= (included with =nxhtml-mode=), which does nothing more than open an image in the GIMP (and then only on windows).
+Gimp Mode differs from =gimp-shell.el= in that the main objective of Gimp Mode is to run the GIMP as a subprocess instead of hooking into the script-fu server as a client.  For the client mode, I have adopted code from =gimp-shell.el= (see =gimp-cl-send-string=), and am very grateful for it (I could not have come up with these awkward but apparently necessary byte-sequences myself - sooo low-level...). Further, Gimp Mode simply has a lot more. Oh, and then there is =gimp.el= (included with =nxhtml-mode=), which does nothing more than open an image in the GIMP (and then only on windows). Both of these other libraries do not seem to conflict with Gimp Mode; however, they are probably unnecessary as their features are implemented in Gimp Mode too.
 
 * Getting started/Download
 
