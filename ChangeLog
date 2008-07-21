@@ -1,7 +1,5 @@
 2008-07-21  Niels Giesen  <sharik@localhost>
 
-	* gimpmode.muse: deleted footnotes in favour of inline links.
-
 	* gimp-mode.el (gimp-data-dir): fixed typo
 	(gimp-open-image): enhanced the code.
 
