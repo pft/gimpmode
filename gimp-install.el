@@ -1,4 +1,4 @@
-;;; gimp-install.el --- $Id: gimp-install.el,v 1.5 2008-07-17 12:59:50 sharik Exp $
+;;; gimp-install.el --- $Id: gimp-install.el,v 1.6 2008-07-21 17:36:28 sharik Exp $
 ;; Copyright (C) 2008 Niels Giesen.
 
 ;; Author: Niels Giesen <nielsforkgiesen@gmailspooncom, but please
@@ -77,14 +77,22 @@ For more information consult the file README."
 	     gimp-emacs-dir
 	     (make-directory gimp-emacs-dir)))
   (message "Installing %s..." emacs-interaction.scm-target)
-  (apply
-   (if (fboundp 'make-symbolic-link)
-       'make-symbolic-link
-     'copy-file)
-   (list 
-    (expand-file-name (concat gmd emacs-interaction.scm))
-    emacs-interaction.scm-target
-    t))
+  (let (done
+        (funs (if (fboundp 'make-symbolic-link)
+                  '(make-symbolic-link copy-file)
+                '(copy-file))))
+    (dolist (fun '(make-symbolic-link copy-file))
+      (unless done
+        (condition-case err
+            (progn
+              (apply fun
+                     (list
+                      (expand-file-name
+                       (concat gmd emacs-interaction.scm))
+                      emacs-interaction.scm-target
+                      t))
+              (setq done t))
+          (error (message "%s" (error-message-string err)))))))
   (progn
     (find-file-literally (concat gmd "gimp-vars.el"))
     (erase-buffer)

@@ -1,5 +1,5 @@
 ;; -*- mode: Gimp; -*-
-;;; emacs-interaction.scm --- $Id: emacs-interaction.scm,v 1.19 2008-07-17 12:59:50 sharik Exp $
+;;; emacs-interaction.scm --- $Id: emacs-interaction.scm,v 1.20 2008-07-21 17:36:28 sharik Exp $
 ;; Copyright (C) 2008 Niels Giesen.
 
 ;; Author: Niels Giesen <nielsforkgiesen@gmailspooncom, but please
@@ -172,5 +172,5 @@ debugging)."
 (if emacs-first-time?
     (begin
       (script-fu-dump-for-emacs emacs-only-bound-symbols? TRUE TRUE TRUE TRUE TRUE TRUE)
-       (set! emacs-first-time? #f)))
+      (set! emacs-first-time? #f)))
 

@@ -1,3 +1,8 @@
+2008-07-21  Niels Giesen  <sharik@localhost>
+
+	* gimp-install.el: patch by Lennart Borgmann to deal with
+	Emacs23+windows boundness of `make-symbolic-link'.
+
 2008-07-17  Niels Giesen  <sharik@localhost>
 
 	* gimp-mode.el (gimp-real-apropos): added doc
