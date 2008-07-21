@@ -3,13 +3,10 @@
 #desc Home Page of Gimp Mode
 #style html
 
-
-
-
 <contents>
 * Short description 
 
- - Emacs mode[1] for developing scheme scripts for the GIMP Image Manipulation Program[2] (script-fu).
+ - [[http://www.gnu.org/software/emacs][Emacs]] for developing scheme (script-fu) scripts for the [[http://gimp.org][GIMP]].
  - Interaction with the GIMP as subprocess or as a client.
  - Smart and fuzzy code completion . 
  - Documentation echoing.
@@ -21,7 +18,7 @@ Interaction:
 
 Gimp Mode can either run the Gimp as subprocess in Emacs, or connect as a client to the script-fu-server. The latter is less stable and has less features, but is sometimes better than nothing, see below. Interaction with the Gimp script-fu engine is possible directly from the code that is being edited and/or from a special REPL (read-eval-print-loop) buffer.
 
-Smart 'n' fuzzy TAB-completion similar (but not equal) to that of Slime: the entire tiny-fu oblist is available and variables, functions and macros that are defined during a session are added to completion [3]. As you can see, the fuzziness accepts the first letters of a part of a hyphenated string to as input as a kind of abbreviation, so you can for instance write s-f-u-m and have it expand to script-fu-unsharp-mask. If for some reason you do not like this fuzzy factor, you can switch it off anytime by pressing C-cr or by customising the variable =gimp-complete-fuzzy-p=.
+Smart 'n' fuzzy TAB-completion similar (but not equal) to that of Slime: the entire tiny-fu oblist is available and variables, functions and macros that are defined during a session are added to completion [1]. As you can see, the fuzziness accepts the first letters of a part of a hyphenated string to as input as a kind of abbreviation, so you can for instance write s-f-u-m and have it expand to script-fu-unsharp-mask. If for some reason you do not like this fuzzy factor, you can switch it off anytime by pressing C-cr or by customising the variable =gimp-complete-fuzzy-p=.
 
 [[screenshots/fuzzy-completion.png][Fuzzy completion]]
 
@@ -29,7 +26,7 @@ Completion on arguments is done via a system of rules, based on regexp-matching/
 
 The completion system is open to be improved and extended upon (see variable =gimp-completion-rules=). For script-fu registered functions, default arguments are offered as completion.
 
-Argument echoing whereby current argument is highlighted.[4]
+Argument echoing whereby current argument is highlighted.[2]
 
 More in-depth documentation echoing: both for argument at point and for the entire function.
 
@@ -235,11 +232,6 @@ Please use =M-x gimp-report-bug= from Emacs.  This is OK too for feature suggest
 If that should fail for some reason, you can contact me at =nielsforkgiesen@gmailknifecom=, but please replace the kitchen utensils with a dot before hitting "Send", lest anyone get hurt in the process.
 
 Footnotes:  
-[1] http://www.gnu.org/software/emacs
+[1] This happens only when issued with the usual define/define-macro construct, and only at top-level, not if you e.g. wrap =define= in another macro.
 
-[2] http://gimp.org
-
-[3] This happens only when issued with the usual define/define-macro construct, and only at top-level, not if you e.g. wrap =define= in another macro.
-
-[4]  For the interested: Gimp Mode gets its information in this regard from the following sources: the procedural database, the TinyScheme-function =get-closure-code= and lastly from =scheme-complete.el= (included) by Alex Shinn. In the echoing for script-fu functions the arguments as registered in the procedural database alternate with the arguments derived from the closure itself - if any.
-
+[2]  For the interested: Gimp Mode gets its information in this regard from the following sources: the procedural database, the TinyScheme-function =get-closure-code= and lastly from =scheme-complete.el= (included) by Alex Shinn. In the echoing for script-fu functions the arguments as registered in the procedural database alternate with the arguments derived from the closure itself - if any.

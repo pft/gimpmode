@@ -1,4 +1,4 @@
-;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.40 2008-07-17 12:59:50 sharik Exp $
+;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.41 2008-07-21 19:00:20 sharik Exp $
 ;; Copyright (C) 2008 Niels Giesen
 
 ;; Author: Niels Giesen <nielsforkgiesen@gmailspooncom, but please
@@ -22,8 +22,7 @@
 ;;; Commentary:
 
 ;; Interaction/editing mode for the GIMP
-;; see README for full description and usage.
-
+;; see gimpmode.pdf for full description and usage.
 
 ;;; Code:
 (provide 'gimp-mode)
@@ -252,10 +251,9 @@ source gimp. You will most probably have to change this value."
 (defcustom gimp-data-dir "/usr/share/gimp/2.0/"
   "Fall-back data dir of the GIMP.
 
-Setting this variable is only necessary for non-interactive use,
-such as on windhoos.
+Setting this variable is only necessary for non-interactive use.
 
-Value returned by evaluating the variable `gimp-dir' in the GIMP
+Value returned by evaluating the variable `gimp-data-dir' in the GIMP
 script-fu console."
   :group 'gimp-directories
   :type 'string)
@@ -267,6 +265,7 @@ script-fu console."
       (error "%s does not exist.  Check variable `gimp-src-dir'"
 	     (or gimp-src-dir "gimp-src-dir"))
     gimp-src-dir))
+
 (defcustom gimp-docs-alist
   '(("script-fu introduction" .
      "http://www.ve3syb.ca/wiki/doku.php?id=software:sf:start")
@@ -626,7 +625,7 @@ Optional argument EVENT is a mouse event."
   (destructuring-bind (version major minor) 
       (gimp-string-match 
        "\\([0-9]+\\)\.\\([0-9]+\\)"
-       "$Id: gimp-mode.el,v 1.40 2008-07-17 12:59:50 sharik Exp $" )
+       "$Id: gimp-mode.el,v 1.41 2008-07-21 19:00:20 sharik Exp $" )
       (if (interactive-p) 
           (prog1 nil 
             (message "GIMP mode version: %s.%s" major minor))
@@ -2536,20 +2535,22 @@ If GIMP is not running as an inferior process, open image(s) with gimp-remote."
 			    "(let \
 \((image (car (gimp-file-load RUN-INTERACTIVE\n\t%S\n\t%S))))
 \t(car (gimp-display-new image)))\n"
-				     (expand-file-name image)
-				     (expand-file-name image))))
+			    image
+			    image)))
                        (gimp-insert-and-send-string command)
                        nil))
                     (t 
 		     (if (eq window-system 'w32)
-			 (shell-command
-			  (format "gimp-win-remote %s %s" gimp-program image))
-		       (if (= 0 (shell-command "gimp-remote -q"))
-			   (shell-command (format "gimp-remote %s" image))))
-		     ))))
+			 (call-process "gimp-win-remote" nil 0 nil 
+				       gimp-program
+				       image)
+		       (call-process gimp-program nil 0 nil image))))))
       (if (listp img)
-	  (mapc 'open img)
-	(open img)))))
+	  (progn
+	    (mapc 'open (mapcar 'expand-file-name img))
+	    (message "Asked GIMP to open multiple images "))
+	(open (expand-file-name img))
+	(message "Asked GIMP to open %s " img)))))
 
 ;; Client Mode
 ;; Client mode global vars
@@ -2782,6 +2783,4 @@ Lisp world."
 
 (provide 'gimp-mode)
 ;;; gimp-mode.el ends here
-
-
 

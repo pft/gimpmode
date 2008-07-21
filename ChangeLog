@@ -1,7 +1,12 @@
 2008-07-21  Niels Giesen  <sharik@localhost>
 
+	* gimpmode.muse: deleted footnotes in favour of inline links.
+
+	* gimp-mode.el (gimp-data-dir): fixed typo
+	(gimp-open-image): enhanced the code.
+
 	* gimp-install.el: patch by Lennart Borgmann to deal with
-	Emacs23+windows boundness of `make-symbolic-link'.
+	Emacs23+windows fboundness of `make-symbolic-link'.
 
 2008-07-17  Niels Giesen  <sharik@localhost>
 
