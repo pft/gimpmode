@@ -1,3 +1,5 @@
+(add-to-list 'load-path 
+	     "/usr/share/emacs22/site-lisp/muse-el/")
 (require 'muse)
 (require 'muse-latex)
 (require 'muse-html)
