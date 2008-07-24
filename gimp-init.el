@@ -1,5 +1,4 @@
-;; This is gimp-init.el
-;;; gimp-init.el --- $Id: gimp-init.el,v 1.15 2008-07-17 13:01:13 sharik Exp $
+;;; gimp-init.el --- $Id: gimp-init.el,v 1.16 2008-07-24 09:05:14 sharik Exp $
 ;; Copyright (C) 2008 Niels Giesen.
 
 ;; Author: Niels Giesen <nielsforkgiesen@gmailspooncom, but please
@@ -56,4 +55,19 @@
 	    (require 'scheme-complete)
 	    (autoload 'eldoc-current-symbol "eldoc"))))
       '(gimp-mode-hook gimp-help-mode-hook inferior-gimp-mode-hook)) 
+
+(add-to-list 'auto-mode-alist
+	     '("\\(s-f-\\|script-fu\\).*\\.scm\\'" . gimp-mode))
+
+;; auto-insert-alist is *not* automatically loaded in a vanilla
+;; session... force by toggling:
+(auto-insert-mode)
+(auto-insert-mode)
+
+(add-to-list 
+ 'auto-insert-alist
+ '(gimp-mode 
+   lambda nil
+   (insert ";; -*- mode: Gimp; -*-\n")
+   (snippet-insert (eval gimp-registration-snippet))))
 

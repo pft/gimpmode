@@ -6,7 +6,7 @@
 <contents>
 * Short description 
 
- - [[http://www.gnu.org/software/emacs][Emacs]] for developing scheme (script-fu) scripts for the [[http://gimp.org][GIMP]].
+ - [[http://www.gnu.org/software/emacs][Emacs]] mode for developing scheme (script-fu) scripts for the [[http://gimp.org][GIMP]].
  - Interaction with the GIMP as subprocess or as a client.
  - Smart and fuzzy code completion . 
  - Documentation echoing.
@@ -119,17 +119,19 @@ Anyway, where were we. Yes. Once you see this, you can let the fun begin:
 
 ** ...or attach as a client 
 #client
-If you want to hook into a running GIMP session as a client (this is the only means of interaction on a windows system) use =M-x gimp-cl-connect= after having started the script-fu server from the GIMP. 
+If you want to hook into a running GIMP session as a client (this is the only means of interaction on a windows system) use =M-x gimp-cl-connect= after having started the script-fu server from the GIMP. In GIMP 2.4, the server is hidden under =Xtns > Script-Fu > Start Server=. In the development versions >= 2.5 it is tucked away (somewhat strangely in my humble opinion) under =Filters > Script-Fu > Start Server=. You will also find an entry there called "Dump internals for Emacs' Gimp Mode", which can be of use when =emacs-interaction.scm= is has been loaded before other scripts in your user directory on start-up. 
 
 [[screenshots/script-fu-server.png][Start up the server from the Gimp]]
-Note that Gimp Mode does not set up =.scm= buffers to automatically use gimp-mode. You'll have to do that yourself.  My favourite way to do this is to put 
+
+Gimp Mode sets up buffers to to automatically use gimp-mode when the file begins with "s-f-" or "script-fu-" and ends with ".scm" (just ending in "scm" does *not* suffice, as it would be improper to impose gimp-mode on any scheme file). There are other ways, such as to put:
 
 <example>
 ;; -*- mode: Gimp; -*-
 </example>
 
-in the first line of a script-fu file, so that other scheme files simply use whatever you or emacs have set up for them to use. 
+in the first line of a script-fu file.
 
+If you have set `auto-insert' set to a non-nil value, gimp-mode will insert that line and a registration when visiting a blank file in gimp-mode or using =M-x auto-insert=.
 
 * To Do (?)
 
@@ -220,8 +222,10 @@ Gimp Mode is licenced under the [[http://www.gnu.org/licenses/gpl.html][GPLv3]].
 	     (insert contents)
 	     (goto-char (point-min))
 	     (while (re-search-forward
-"\"\\(gimp-mode-v[1-9]\.[0-9]\\{1,3\\}\.\\(tar\.bz2\\|zip\\)\\)\"" nil t)
-	       (push (concat site (match-string 1)) all-tarballs)))	 (concat " - [[" (mapconcat 'identity all-tarballs
+"\"\\(gimp-mode-v[1-9]\.[0-9]\\{1,3\\}\.\\(tar\.bz2\\|zip\\)\\)\"" nil
+t)
+	       (push (concat site (match-string 1)) all-tarballs)))	
+(concat " - [[" (mapconcat 'identity all-tarballs
                      "]]\n - [[") "]]"))
 </lisp> 
 

@@ -1,4 +1,4 @@
-;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.41 2008-07-21 19:00:20 sharik Exp $
+;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.42 2008-07-24 09:05:14 sharik Exp $
 ;; Copyright (C) 2008 Niels Giesen
 
 ;; Author: Niels Giesen <nielsforkgiesen@gmailspooncom, but please
@@ -23,6 +23,32 @@
 
 ;; Interaction/editing mode for the GIMP
 ;; see gimpmode.pdf for full description and usage.
+
+;; TOC:
+ ;;;; Requirements
+ ;;;; Structure
+ ;;;; Faces
+ ;;;; Globals
+ ;;;; Customization
+ ;;;; General purpose functions and macros
+ ;;;; Keybindings
+ ;;;; Set up the modes
+ ;;;; Versioning
+ ;;;; Evaluation
+ ;;;; Help
+ ;;;; Stuff pertaining to running 'n' quitting
+ ;;;; Utility functions
+ ;;;; Caches: saving, deleting, restoring
+ ;;;; Tracing
+ ;;;; Modes
+ ;;;; Internal information retrieval
+ ;;;; Completion
+ ;;;; Shortcuts
+ ;;;; Doc echoing
+ ;;;; Source look-up
+ ;;;; Snippets
+ ;;;; Misc interactive commands
+;; Client mode global vars
 
 ;;; Code:
 (provide 'gimp-mode)
@@ -586,7 +612,12 @@ Optional argument EVENT is a mouse event."
 - in help (apropos) mode: echo documentation and move to next line
 - in other modes:
  - when in a string: insert N spaces
- - otherwise: echo documentation"
+ - otherwise: echo documentation
+
+Note that - though this is not handled by this command - if space
+is entered after a snippet abbreviation (see
+`gimp-list-snippets'), a snippet is inserted in a gimp-mode
+buffer."
   (interactive "p")
   (cond  ((eq major-mode 'gimp-help-mode)
           (if (gimp-describe-procedure-at-point)
@@ -597,8 +628,8 @@ Optional argument EVENT is a mouse event."
           (if gimp-just-one-space
 	      (just-one-space n)
 	    (self-insert-command n))
-;	  (indent-for-tab-command)
           (gimp-echo))))
+
  ;;;; Set up the modes
 (define-derived-mode gimp-mode scheme-mode "GIMP mode" 
   "Mode for editing script-fu and interacting with an inferior gimp process."
@@ -608,7 +639,7 @@ Optional argument EVENT is a mouse event."
   (add-to-list 'mode-line-process gimp-mode-line-format t)
   (setq indent-line-function 'lisp-indent-line)
   (if (null gimp-oblist-cache)
-      (gimp-restore-caches))) 
+      (gimp-restore-caches)))
 
 (define-derived-mode inferior-gimp-mode inferior-scheme-mode
   "Inferior GIMP"
@@ -625,7 +656,7 @@ Optional argument EVENT is a mouse event."
   (destructuring-bind (version major minor) 
       (gimp-string-match 
        "\\([0-9]+\\)\.\\([0-9]+\\)"
-       "$Id: gimp-mode.el,v 1.41 2008-07-21 19:00:20 sharik Exp $" )
+       "$Id: gimp-mode.el,v 1.42 2008-07-24 09:05:14 sharik Exp $" )
       (if (interactive-p) 
           (prog1 nil 
             (message "GIMP mode version: %s.%s" major minor))
@@ -1094,20 +1125,22 @@ Optional argument END-TEXT is the text appended to the message when TEST fails."
 	 (while 
 	     (and
               (not (bobp))
-              (let ((m (process-mark (gimp-proc))))
+              (let ((m (when (gimp-proc)
+			   (process-mark (gimp-proc)))))
+		(or (not m)
 		    (if 
 			(eq (marker-buffer m)
 			    (current-buffer))
 			(not (= (point)
 				(marker-position m)))
-		      t))		;no rules for other types of buffers.
-		  (or 
-		   (when (eq (char-syntax (char-before)) ?\")
-		     (backward-sexp 1)
-		     t)
-		   (memq (char-syntax (char-before)) '(?w ?_ 32 ?- ?\" ?> ?'))
-		   (when (memq (char-syntax (char-before)) '(?\)))
-		     (backward-sexp 1)
+		      t)))		;no rules for other types of buffers.
+	      (or 
+	       (when (eq (char-syntax (char-before)) ?\")
+		 (backward-sexp 1)
+		 t)
+	       (memq (char-syntax (char-before)) '(?w ?_ 32 ?- ?\" ?> ?'))
+	       (when (memq (char-syntax (char-before)) '(?\)))
+		 (backward-sexp 1)
 		     t)))
 	   (forward-char -1)))
        (prog1
@@ -1653,13 +1686,14 @@ s : search source code for symbol"
      (t 'other))))
 
 (defun gimp-get-closure-code (sym)
-  (read
-   (gimp-eval-to-string
-    (apply 'format
-	   "(let* ((bound? (symbol-bound? '%s))\
+  (when (gimp-proc)
+    (read
+     (gimp-eval-to-string
+      (apply 'format
+	     "(let* ((bound? (symbol-bound? '%s))\
  (code (if bound? (get-closure-code %s) #f)))\
  (if code (cons '%s (cadr code)) 'nil))"
-	   (make-list 4 sym)))))				
+	     (make-list 4 sym))))))				
 
 (defun gimp-procedure-description (sym)
   (let ((info (gimp-get-proc-description sym)))
@@ -2328,10 +2362,9 @@ into etags and find-tag."
       (t (error "Look up-for %s unimplemented" proc)))))
 
  ;;;; Snippets
-(snippet-with-abbrev-table
- 'gimp-mode-abbrev-table
- ("reg" . (format 
-           "(define (script-fu-$${name})\n$>$.)
+(defvar gimp-registration-snippet
+  '(format 
+    "(define (script-fu-$${name})\n$>$.)
  
 
 \(script-fu-register \"script-fu-$${name}\"
@@ -2348,6 +2381,10 @@ into etags and find-tag."
            user-mail-address
            user-full-name
            (format-time-string "%Y-%m-%d")))
+
+(snippet-with-abbrev-table
+ 'gimp-mode-abbrev-table
+ ("reg" . (eval gimp-registration-snippet)) ;ACH! evil...
  ("sft" . "SF-TOGGLE\t_\"$${On or Off?}\"\t$${TRUE}$>")
  ("sfv" . "SF-VALUE\t_\"$${text}\"\t\"$${STRING}\"$>")
  ("sfs" . "SF-STRING\t_\"$${text}\"\t\"$${STRING}\"$>")
@@ -2555,7 +2592,7 @@ If GIMP is not running as an inferior process, open image(s) with gimp-remote."
 ;; Client Mode
 ;; Client mode global vars
 (defun gimp-make-gimp-file (file)
-  (concat gimp-dir "/emacs/" file))
+  (expand-file-name (concat gimp-dir "/emacs/" file)))
 
 (defvar *gimp-output-file* (gimp-make-gimp-file "emacs-output.scm"))
 (defvar *gimp-input-file* (gimp-make-gimp-file "emacs-input.scm"))

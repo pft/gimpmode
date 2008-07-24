@@ -1,3 +1,19 @@
+2008-07-24  Niels Giesen  <sharik@localhost>
+
+	* gimp-init.el (auto-insert-alist): add auto-insert rule for
+	gimp-mode buffers;
+	(auto-mode-alist): safe entry to auto-mode-alist (buffers
+	whose files start with s-f- or script-fu- and end in .scm
+	are treated as gimp-mode buffers).
+
+	* gimp-mode.el (gimp-echo): fix for unconnected gimp-mode still
+	seeking a process.
+	(gimp-fnsym-in-current-sexp): idem
+
+	* emacs-interaction.scm: bugfix on version check (>= 2.5) for
+	placement of the script in the GIMP menu. Replaced (display "\n")
+	with (newline).
+
 2008-07-21  Niels Giesen  <sharik@localhost>
 
 	* gimp-mode.el (gimp-data-dir): fixed typo

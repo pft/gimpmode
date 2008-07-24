@@ -1,5 +1,5 @@
 ;; -*- mode: Gimp; -*-
-;;; emacs-interaction.scm --- $Id: emacs-interaction.scm,v 1.20 2008-07-21 17:36:28 sharik Exp $
+;;; emacs-interaction.scm --- $Id: emacs-interaction.scm,v 1.21 2008-07-24 09:05:14 sharik Exp $
 ;; Copyright (C) 2008 Niels Giesen.
 
 ;; Author: Niels Giesen <nielsforkgiesen@gmailspooncom, but please
@@ -32,6 +32,8 @@
 ;; the huge list generated (2933 versus 1781 symbols in my case).
 (define emacs-interaction-possible? #t)
 
+;; Set this to FALSE to export argument names too (clutters
+;; completion)
 (define emacs-only-bound-symbols? TRUE)
 
 (define emacs-dir 
@@ -103,7 +105,7 @@
 
 
 (script-fu-register "script-fu-dump-for-emacs"
-		    (if (string=? "2.5.0" (car (gimp-version)))
+		    (if (>= (string->number (substring (car (gimp-version)) 0 3)) 2.5)
 			 "<Image>/Filters/Languages/Script-Fu/Dump internals for Emacs' Gimp Mode..."
 			 "<Toolbox>/Xtns/Languages/Script-Fu/Dump internals for Emacs' Gimp Mode...")
                     _"Dump (part of) the oblist, fonts, the menu structure and
@@ -130,7 +132,7 @@ debugging)."
                     ""
                     SF-TOGGLE	_"Only dump bound symbols?" TRUE
 		    SF-TOGGLE	_"Dump Menu Structure?"	TRUE
-                    SF-TOGGLE	_"Dump fonts?" TRUE
+                    SF-TOGGLE	_"Dump fonts?"   	TRUE
 		    SF-TOGGLE	_"Dump brushes?"	TRUE
 		    SF-TOGGLE	_"Dump patterns?"	TRUE
 		    SF-TOGGLE	_"Dump gradients?"	TRUE
@@ -153,12 +155,11 @@ debugging)."
          (with-output-to-emacs-file ,input-file
              (write 
               '(set! *emacs-cl-output*  ,@body))
-             (display "\n")
+	     (newline)
              (write '(with-output-to-emacs-file
                          ,output-file
                          (write *emacs-cl-output*)))
-
-             (display "\n"))
+	     (newline))
          (load ,(make-emacs-file input-file)))))
 
 (define gimp-cl-handler 
@@ -166,9 +167,10 @@ debugging)."
     (with-output-to-emacs-file
         "emacs-output.scm"
         (apply error x)
-        (display "\n"))
+	(newline))
     (*error-hook* x)))
 
+;; Dump stuff only on start-up
 (if emacs-first-time?
     (begin
       (script-fu-dump-for-emacs emacs-only-bound-symbols? TRUE TRUE TRUE TRUE TRUE TRUE)
