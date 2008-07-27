@@ -1,3 +1,19 @@
+2008-07-27  Niels Giesen  <sharik@localhost>
+
+	* gimp-mode.el (gimp-all-scm-files): collect only files ending in
+	".scm"
+	(gimp-save-scm-files): function to ask user whether or not to save
+	scm files (calling `save-some-buffers'). 
+	(gimp-refresh-scripts): call gimp-save-scm-files before proceeding.
+	(gimp-echo-p): made echoing in non-interactive call optional based
+	on this variable.
+	(gimp-toggle-completion): toggles new variable `gimp-complete-p'
+	that defines whether or not to complete when not called
+	interactively. Can be nice sometimes (like, when passing LISP forms
+	that are to be evalled as arguments, completion can get in the way).
+	This is bound to C-cc.
+	(gimp-docs-alist): add reference to SICP
+
 2008-07-24  Niels Giesen  <sharik@localhost>
 
 	* gimp-init.el (auto-insert-alist): add auto-insert rule for
@@ -19,7 +35,7 @@
 	* gimp-mode.el (gimp-data-dir): fixed typo
 	(gimp-open-image): enhanced the code.
 
-	* gimp-install.el: patch by Lennart Borgmann to deal with
+	* gimp-install.el: patch by Lennart Borgman to deal with
 	Emacs23+windows fboundness of `make-symbolic-link'.
 
 2008-07-17  Niels Giesen  <sharik@localhost>

@@ -1,4 +1,4 @@
-;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.42 2008-07-24 09:05:14 sharik Exp $
+;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.43 2008-07-27 19:36:04 sharik Exp $
 ;; Copyright (C) 2008 Niels Giesen
 
 ;; Author: Niels Giesen <nielsforkgiesen@gmailspooncom, but please
@@ -216,8 +216,10 @@ another.  Now best left at the non-nil value.")
      (reduce (lambda (memo this)
 	       (or (and (and memo this)(concat memo "," this)) this memo))
 		(list 
-		 (when gimp-complete-fuzzy-p 
-		   "fuzzy")
+		 (if gimp-complete-p
+		     (if gimp-complete-fuzzy-p 
+			 "fuzzy"
+		       "strict"))
 		 (when (get 'gimp-trace 'trace-wanted) "tracing")
                  (and gimp-cl-host (concat gimp-cl-host ":"  
 					   (number-to-string gimp-cl-port))))))
@@ -306,7 +308,8 @@ script-fu console."
     ("gimp-mode page" . "http://niels.kicks-ass.org/gimpmode")
     ("grokking the gimp" .
      "http://www.linuxtopia.org/online_books/graphics_tools\
-/gimp_advanced_guide/index.html"))
+/gimp_advanced_guide/index.html")
+    ("sicp (Structure and Interpretation of Computer Programs)" . "http://mitpress.mit.edu/sicp/full-text/book/book.html"))
   "Alist of gimp documentation URLs."
   :group 'gimp
   :type '(alist :key-type string :value-type string))
@@ -505,6 +508,7 @@ Raise error if ITEM is not in the RING."
     (define-key m "\C-m" 'gimp-send-input)
     (define-key m "\M-\\" 'comint-dynamic-complete-filename)
     (define-key m "\C-cr" 'gimp-toggle-fuzzy-completion)
+    (define-key m "\C-cc" 'gimp-toggle-completion)
     (define-key m [mouse-1] 'gimp-insert-input)
     (define-key m [mouse-2] 'gimp-insert-input)
     m))
@@ -524,6 +528,7 @@ Raise error if ITEM is not in the RING."
     (define-key m "\C-cm" 'gimp-menu)
     (define-key m "\C-ci" 'run-gimp)
     (define-key m "\C-cr" 'gimp-toggle-fuzzy-completion)
+    (define-key m "\C-cc" 'gimp-toggle-completion)
     (define-key m "\M-\\" 'comint-dynamic-complete-filename)
     m))
 
@@ -656,7 +661,7 @@ buffer."
   (destructuring-bind (version major minor) 
       (gimp-string-match 
        "\\([0-9]+\\)\.\\([0-9]+\\)"
-       "$Id: gimp-mode.el,v 1.42 2008-07-24 09:05:14 sharik Exp $" )
+       "$Id: gimp-mode.el,v 1.43 2008-07-27 19:36:04 sharik Exp $" )
       (if (interactive-p) 
           (prog1 nil 
             (message "GIMP mode version: %s.%s" major minor))
@@ -714,8 +719,10 @@ make a vector in SCHEME with `in-gimp'.
    (let ((string 
 	  (replace-regexp-in-string
 	   "\n> \nEval: (tracing 0)\nEval: tracing\nEval: 0\nApply to: (0)1"
-		  "" string)))
-     (setq string
+	   "" string)))
+
+     (condition-case err
+	 (setq string
 	   (replace-regexp-in-string "^\\(?:Apply to\\|Eval\\|Gives\\): .*\n"
 				     (lambda (m)
 				       (gimp-set-face 
@@ -725,7 +732,9 @@ make a vector in SCHEME with `in-gimp'.
 					  (?E shy)
 					  (?A less-shy)
 					  (?G visited-procedure))))
-				     string))
+ 				     string))
+       (error nil))
+
      (replace-regexp-in-string "[]()[]"
 			       (lambda (m)
 				 (gimp-set-face m red)) string))))
@@ -1071,12 +1080,15 @@ Optional argument END-TEXT is the text appended to the message when TEST fails."
 
 (defun gimp-all-scm-files ()
   "Produce a list of all script-fu files."
-  (reduce
-   (lambda (memo dir)
-     (append memo (gimp-regular-files-in-dir dir)))
-   (list (format "%s/scripts" (gimp-data-dir))
-         (format "%s/scripts" (gimp-dir)))
-   :initial-value nil))
+  (loop for f in 
+	(reduce
+	 (lambda (memo dir)
+	   (append memo (gimp-regular-files-in-dir dir)))
+	 (list (format "%s/scripts" (gimp-data-dir))
+	       (format "%s/scripts" (gimp-dir)))
+	 :initial-value nil)
+	when (string-match "\.scm\\'" f)
+	collect f))
 
 (defun gimp-up-string ()
   "Move point to a place presumable not in a string."
@@ -1186,6 +1198,15 @@ Optional argument END-TEXT is the text appended to the message when TEST fails."
       (beginning-of-defun)
       (let ((parses (parse-partial-sexp (point) orig)))
         (nth 4 parses)))))
+
+(defun gimp-save-scm-files ()
+  "Ask user to save modified scheme files."
+  (save-some-buffers nil 
+		     (lambda ()
+		       (let ((buffer-name (buffer-file-name)))
+			 (and buffer-name
+			      (string-match "\.scm\\'" buffer-name)
+			      (buffer-modified-p))))))
 
  ;;;; Caches: saving, deleting, restoring
 (defun gimp-save-cache (cache)
@@ -1747,6 +1768,17 @@ Its state is indicated in the mode-line."
   :group 'gimp
   :type 'boolean)
 
+(defcustom gimp-complete-p t
+  "Perform completion?
+
+This defines whether or not completion is offered when pressing
+TAB.
+
+You can toggle this variable at any time with the command
+`gimp-toggle-completion'."
+  :group 'gimp
+  :type 'boolean)
+
 (defcustom gimp-completion-rules
 
   '(((lambda (desc name type)
@@ -2049,7 +2081,9 @@ Pushed into `hippie-expand-try-functions-list'."
 
 (defun gimp-complete ()
   "Main completion function."
-  (let ((fun (gimp-fnsym-in-current-sexp))
+  (unless (and (not (interactive-p))
+	       (not gimp-complete-p))
+      (let ((fun (gimp-fnsym-in-current-sexp))
         (pos (gimp-position))
         (gimp-command
          (save-excursion
@@ -2095,7 +2129,7 @@ Pushed into `hippie-expand-try-functions-list'."
               (insert
 	       (replace-regexp-in-string "\\(^\"\\|\"$\\)" "" answer)))))))
      (t
-      (gimp-complete-savvy gimp-oblist-cache)))))
+      (gimp-complete-savvy gimp-oblist-cache))))))
 
 (defun gimp-local-completion ()
   (let* ((desc (gimp-get-proc-arg 
@@ -2115,6 +2149,14 @@ Pushed into `hippie-expand-try-functions-list'."
       (if (functionp action)
           (apply action (list desc name type))
         action))))
+
+(gimp-defcommand gimp-toggle-completion ()
+  "Toggle fuzzy completion.
+
+See variable `gimp-complete-p' for a bit more detailed information."
+ (interactive)
+ (setq gimp-complete-p 
+	(not gimp-complete-p)))
 
 (gimp-defcommand gimp-toggle-fuzzy-completion ()
   "Toggle fuzzy completion.
@@ -2208,6 +2250,14 @@ Optional argument TERSE means only show that I am there to help you."
 		  (format "gimp-%s" arg))) 1)
 	       link))
  ;;;; Doc echoing
+(defcustom gimp-echo-p t
+  "Perform doc echoing?
+
+When set to a non-nil value, information on function and
+arguments will be echoed in the minibuffer."
+  :group 'gimp
+  :type 'boolean)
+
 (defun gimp-docstring (sym)
   (if (and 
        (eq (gimp-get-proc-type sym) 
@@ -2229,8 +2279,10 @@ Optional argument TERSE means only show that I am there to help you."
   "Echo function  and argument information for SYM.
 The echo takes the form of (function (name-1 TYPE)...(name-n TYPE)), where the
 argument at point is highlighted."
-  (interactive )
-  (unless (gimp-in-string-p)
+  (interactive)
+  (unless (or (gimp-in-string-p) 
+	      (and (not (interactive-p))
+		   (not gimp-echo-p)))
     (let ((result))
     (catch 'a
       (let* ((sym (or sym (gimp-fnsym-in-current-sexp)))
@@ -2530,10 +2582,11 @@ In %s\n\n\n"
 (gimp-defcommand gimp-refresh-scripts ()
   "Refresh script-fu scripts."
   (interactive)
+  (gimp-save-scm-files)
   (let* ((command "(car (script-fu-refresh RUN-INTERACTIVE))"))
     (if (eq this-command 'gimp-send-input)
         command
-      (message "Refreshing scripts...")
+      (message "Refreshing scripts... (C-g to quit)")
       (if (gimp-eval command)
           (message "Completed!")
         (message "Failed!")))))

@@ -11,6 +11,28 @@
  - Smart and fuzzy code completion . 
  - Documentation echoing.
  - Hypertext help system with history.
+
+* News
+
+** Version v1.43
+
+Echoing and completion made optional (and completion toggable with C-cc).
+
+Reference to SICP added in =gimp-documentation=.
+
+Some bugfixes.
+
+** Version v1.42:
+
+Auto-insertion of template in empty =script-fu-*.scm= files.
+
+Fixes for unconnected gimp-mode editing.
+
+Fix for menu entry in GIMP from svn
+
+** Version 1.41:
+
+Fix for installation on emacs23 on Windows (thanks Lennart Borgman).
  
 * Features
 
@@ -137,10 +159,11 @@ If you have set `auto-insert' set to a non-nil value, gimp-mode will insert that
 
  - A debugger (inferior mode only - if any).
  - Find a way to get to python/C stuff REGISTERED on procedure arguments. (such as: lower and upper bounds, step, precision, default values...)   (this has already been done for script-fu)
- - Spend a day behind someone elses win32 box to fix as much as possible and add sane defaults for custom variables (yuk!).
  - Test on an OSX box (interesting).
  - Add completion on =script-fu-register=, =script-fu-menu-register=.
  - Add function for constructing a basic =script-fu-register= form from a define form.
+ - Make completion selection better (navigation and selection between candidates).
+ - Show tracing in a separate buffer.
  - And of course I am open to suggestions
 
 * Known Bugs
