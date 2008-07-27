@@ -14,6 +14,10 @@
 
 * News
 
+** Version v1.44
+
+Added menu entries for most important commands.
+
 ** Version v1.43
 
 Echoing and completion made optional (and completion toggable with C-cc).

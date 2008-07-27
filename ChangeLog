@@ -13,6 +13,7 @@
 	that are to be evalled as arguments, completion can get in the way).
 	This is bound to C-cc.
 	(gimp-docs-alist): add reference to SICP
+	(gimp-menu-map): menu's added to all gimp-*-mode-maps.
 
 2008-07-24  Niels Giesen  <sharik@localhost>
 

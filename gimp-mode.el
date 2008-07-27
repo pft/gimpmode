@@ -1,4 +1,4 @@
-;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.43 2008-07-27 19:36:04 sharik Exp $
+;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.44 2008-07-27 21:03:39 sharik Exp $
 ;; Copyright (C) 2008 Niels Giesen
 
 ;; Author: Niels Giesen <nielsforkgiesen@gmailspooncom, but please
@@ -566,6 +566,55 @@ Raise error if ITEM is not in the RING."
     (define-key m "\C-cm" 'gimp-menu)
     m))
 
+;; menu "mixin"
+(defvar gimp-menu-map
+  (let ((map (make-sparse-keymap))) 
+
+    (define-key map [menu-bar gimp]
+      (cons "Gimp" (make-sparse-keymap "gimp-mode")))
+
+    (define-key map [menu-bar gimp gimp-documentation]
+      (cons "Related documentation" 'gimp-documentation))
+
+    (define-key map [menu-bar gimp gimp-report-bug]
+      (cons "Report a bug in gimp-mode" 'gimp-report-bug))
+
+    (define-key map [menu-bar gimp gimp-open-image]
+      (cons "Open image" 'gimp-open-image))
+  
+    (define-key map [menu-bar gimp gimp-list-snippets]
+      (cons "List snippets" 'gimp-list-snippets))
+
+    (define-key map [menu-bar gimp gimp-toggle-completion]
+      (cons "Toggle completion" 'gimp-toggle-completion))
+
+    (define-key map [menu-bar gimp gimp-toggle-fuzzy-completion]
+      (cons "Toggle fuzzy completion" 'gimp-toggle-fuzzy-completion))
+  
+    (define-key map [menu-bar gimp gimp-code-search]
+      (cons "Search for source code" 'gimp-code-search))
+  
+    (define-key map [menu-bar gimp gimp-apropos]
+      (cons "Apropos GIMP procedure" 'gimp-apropos))
+  
+    (define-key map [menu-bar gimp gimp-menu]
+      (cons "Find procedure through GIMP menu structure" 'gimp-menu))
+  
+    (define-key map [menu-bar gimp gimp-describe-procedure]
+      (cons "Describe procedure" 'gimp-describe-procedure))
+  
+    (define-key map [menu-bar gimp gimp-help]
+      (cons "Gimp Help" 'gimp-help))
+
+    (define-key map [menu-bar gimp gimp-run]
+      (cons "Run the gimp" 'run-gimp)) 
+
+    map))
+
+(set-keymap-parent gimp-mode-map gimp-menu-map)
+(set-keymap-parent inferior-gimp-mode-map gimp-menu-map)
+(set-keymap-parent gimp-help-mode-map gimp-menu-map)
+
 (define-key gimp-help-mode-map
   [(down-mouse-1)]
   (lambda ()
@@ -661,7 +710,7 @@ buffer."
   (destructuring-bind (version major minor) 
       (gimp-string-match 
        "\\([0-9]+\\)\.\\([0-9]+\\)"
-       "$Id: gimp-mode.el,v 1.43 2008-07-27 19:36:04 sharik Exp $" )
+       "$Id: gimp-mode.el,v 1.44 2008-07-27 21:03:39 sharik Exp $" )
       (if (interactive-p) 
           (prog1 nil 
             (message "GIMP mode version: %s.%s" major minor))
