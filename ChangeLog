@@ -1,3 +1,8 @@
+2008-07-29    <ngiesen@NIELS>
+
+	* gimp-mode.el (inferior-gimp-mode-map): fix for buf introduced in
+	v1.44: instead of parent-mode a "truer" mixin for the menu map.
+
 2008-07-27  Niels Giesen  <sharik@localhost>
 
 	* gimp-mode.el (gimp-all-scm-files): collect only files ending in
