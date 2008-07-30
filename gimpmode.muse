@@ -14,7 +14,7 @@
 
 * News
 
-** Version v1.45 (lacks gimpmode.pdf as updated from work...)
+** Version v1.45
 
 Fix for v1.44: use gimp-menu-map as mixin, not as parent.
 
