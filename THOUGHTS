@@ -8,3 +8,57 @@
   modes.  Say we want some keys to perform certain actions in both
   modes, but the console mode is derived from - say - comint-mode and
   the text buffer mode is derived from lisp-mode.  
+
+add constants to font-locking
+
+step inside for breakpoints ... 
+
+need pattern matching I guess...
+
+lambda 
+define
+let
+let*
+letrec 
+letrec*
+define-macro
+do
+dolist
+
+(lambda ()
+	.....)
+==>
+(db 
+  (lambda ()
+    (db-recurse ....)))
+
+
+(define (fun args*)
+  body*)
+==>
+(db (define (fun args*)
+  (db-recurse body*)))
+
+(let loop? (())
+     ...)
+==>
+(db (let loop (())
+  (db-recurse body*)))
+
+(letrec (())
+   body*)
+==>
+(db (letrec (())
+  (db-recurse body*)))
+
+(do ((var init step)*)
+    (test)
+  (body))
+==>
+(db (do ((var (db-recurse init) (db-recurse step)) *)
+    	((db-recurse test) (db result))
+  (db-recurse body*)))
+
+
+
+

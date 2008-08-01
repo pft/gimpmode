@@ -1,4 +1,4 @@
-;;; gimp-init.el --- $Id: gimp-init.el,v 1.16 2008-07-24 09:05:14 sharik Exp $
+;;; gimp-init.el --- $Id: gimp-init.el,v 1.17 2008-08-01 17:38:06 sharik Exp $
 ;; Copyright (C) 2008 Niels Giesen.
 
 ;; Author: Niels Giesen <nielsforkgiesen@gmailspooncom, but please
@@ -45,6 +45,8 @@
 	gimp-selector
 	gimp-open-image
 	gimp-cl-connect))    
+
+(autoload 'gimp-install "gimp-install.el")
 ;; Uncomment the following line to have a nice selector:
 ;(global-set-key "\C-cg" 'gimp-selector)
 

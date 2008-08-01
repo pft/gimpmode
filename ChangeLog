@@ -1,3 +1,36 @@
+2008-08-01  Niels Giesen  <sharik@localhost>
+
+	* gimp-mode.el (gimp-completion-rules): enhance rule for palettes
+	(gimp-shortcuts): gimp-clear (,clear from REPL) was added, to
+	clear the REPL screen.
+	(gimp-fnsym-in-current-sexp): fix for list beginning with a
+	number (that bugged `gimp-echo' higher up the stack): now returns
+	nil when the symbol begins with a number.
+	(gimp-echo): change cache-resp into response, as we're (a long
+	time..) not using caches anymore to save the echoing.
+
+	* gimp-install.el (gimp-install): put installation in a function,
+	then call it.
+
+	* fud.el (Module): new FUD FU debugger - elisp side
+
+	* fud.scm (Module): new FUD FU debugger - scheme side
+
+	* gimp-mode.el (gimp-switch-to-latest-source-buffer): made this
+	functionality a separate command, and enhanced it so that you will
+	switch to another source buffer if already in a source buffer.
+	(gimp-help-mode-map): removed gimp-help-refresh (which isn't a
+	command)
+	(gimp-mode): Add some rules to highlight the frequent use of
+	UPPERCASE CONSTANTS in script-fu. This required turning off
+	CASE-FOLD in `gimp-mode'.
+	(fud): FUD: the new fu debugger
+	(gimp-comint-filter): add FUD actions
+	(gimp-send-last-sexp): call `fud-update-breakpoints' before
+	sending something to the GIMP.
+	(gimp-send-input): call `fud-update-breakpoints' before
+	sending input to the GIMP.
+
 2008-07-29    <ngiesen@NIELS>
 
 	* gimp-mode.el (inferior-gimp-mode-map): fix for buf introduced in

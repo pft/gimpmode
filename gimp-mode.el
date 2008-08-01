@@ -1,4 +1,4 @@
-;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.45 2008-07-29 07:58:39 sharik Exp $
+;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.46 2008-08-01 17:38:06 sharik Exp $
 ;; Copyright (C) 2008 Niels Giesen
 
 ;; Author: Niels Giesen <nielsforkgiesen@gmailspooncom, but please
@@ -58,6 +58,7 @@
 (require 'cl)
 (require 'eldoc)
 (require 'thingatpt)
+(require 'fud)
 (eval-when-compile (load "gimp-init.el"))
 (eval-when (compile load)
   (require 'ring)
@@ -194,6 +195,10 @@ HINT is the help-echo, and face the gimp-FACE-face."
     (t (:weight bold :slant italic)))
   "Gimp Mode face used to highlight variable names."
   :group 'gimp-faces)
+
+(font-lock-add-keywords 
+ 'gimp-mode 
+'(("[A-Z-]\\{3,\\}" . font-lock-constant-face)) )
 
  ;;;; Globals
 (defconst gimp-email-regexp
@@ -556,6 +561,14 @@ Raise error if ITEM is not in the RING."
     (define-key m "\C-cc" 'gimp-toggle-completion)
     (define-key m [mouse-1] 'gimp-insert-input)
     (define-key m [mouse-2] 'gimp-insert-input)
+    (if (featurep 'fud)
+	(define-key m [(down-mouse-3)]
+	  (lambda ()
+	    "Set a fud breakpoint."
+	    (interactive)
+	    (let ((event (read-event)))
+	      (mouse-set-point event)
+	      (fud-set-breakpoint)))))
     m))
 
 (defvar gimp-mode-map
@@ -575,6 +588,14 @@ Raise error if ITEM is not in the RING."
     (define-key m "\C-cr" 'gimp-toggle-fuzzy-completion)
     (define-key m "\C-cc" 'gimp-toggle-completion)
     (define-key m "\M-\\" 'comint-dynamic-complete-filename)
+    (if (featurep 'fud)
+	(define-key m [(down-mouse-3)]
+	  (lambda ()
+	    "Set a fud breakpoint."
+	    (interactive)
+	    (let ((event (read-event)))
+	      (mouse-set-point event)
+	      (fud-set-breakpoint)))))
     m))
 
 (defvar gimp-help-mode-map
@@ -602,7 +623,6 @@ Raise error if ITEM is not in the RING."
     (define-key m "i" 'gimp-insert-sexp-at-repl)
     (define-key m "t" 'outline-toggle-children)
     (define-key m "S" 'gimp-selector)
-    (define-key m "R" 'gimp-help-refresh)
     (define-key m "\C-cf" 'gimp-describe-procedure)
     (define-key m "\C-ca" 'gimp-apropos)
     (define-key m "\C-ch" 'gimp-help)
@@ -696,7 +716,10 @@ buffer."
   (add-to-list 'mode-line-process gimp-mode-line-format t)
   (setq indent-line-function 'lisp-indent-line)
   (if (null gimp-oblist-cache)
-      (gimp-restore-caches)))
+      (gimp-restore-caches))
+  (setf 				;turn off CASE-FOLD in
+					;font-lock search
+   (caddr font-lock-defaults) nil))
 
 (define-derived-mode inferior-gimp-mode inferior-scheme-mode
   "Inferior GIMP"
@@ -713,7 +736,7 @@ buffer."
   (destructuring-bind (version major minor) 
       (gimp-string-match 
        "\\([0-9]+\\)\.\\([0-9]+\\)"
-       "$Id: gimp-mode.el,v 1.45 2008-07-29 07:58:39 sharik Exp $" )
+       "$Id: gimp-mode.el,v 1.46 2008-08-01 17:38:06 sharik Exp $" )
       (if (interactive-p) 
           (prog1 nil 
             (message "GIMP mode version: %s.%s" major minor))
@@ -731,6 +754,11 @@ buffer."
     (when (interactive-p)
       (message "GIMP version: %s" version))
     (list version major minor rev)))
+
+(defun gimp-check-version-compatibility ()
+  (let ((m (string-match "\\([0-9]\.[0-9]\\)\\(\.exe\\)?$" gimp-program)))
+    (when (and m (not (string-match (concat (match-string 1 gimp-program) "$") gimp-dir)))
+      (message "Version of `gimp-program' and `gimp-dir' do not match, this is probably an error, please correct"))))
  ;;;; Evaluation
 (defmacro in-gimp (body)
   "Evaluate fu sexps without having to quote them. Syntactic sugar.
@@ -766,6 +794,12 @@ make a vector in SCHEME with `in-gimp'.
 (defun gimp-comint-filter (proc string)
   (gimp-filter proc string)
   
+  (when (featurep 'fud)
+    (fud-find-reference string))
+
+  (when (featurep 'fud)
+   (fud-echo-value string))
+
   (comint-output-filter
    proc
    (let ((string 
@@ -802,6 +836,8 @@ When optional argument NEWLINE is non-nil, append a newline char."
 (defun gimp-send-last-sexp (&optional insert)
   "Send the previous sexp to the inferior Scheme process."
   (interactive "P")
+  (if (featurep 'fud)
+      (fud-update-breakpoints))
   (let ((result
 	 (gimp-eval-to-string
 	  (buffer-substring-no-properties
@@ -1027,32 +1063,53 @@ Deletes any previous stuff at that REPL"
  ;;;; Stuff pertaining to running 'n' quitting
 
 ;;;###autoload
-(defun run-gimp ()
-  "Start the GIMP and its REPL."
-  (interactive)
-  (if (buffer-live-p (gimp-buffer))
-      (if (gimp-buffer-window (gimp-buffer))
-	  (select-window (gimp-buffer-window (gimp-buffer)))
-	(switch-to-buffer-other-window (gimp-buffer)))
-    (if (eq window-system 'w32) 
-	(message "Probably no interaction possible here,\
+(defun run-gimp (override-p)
+  "Start the GIMP and its REPL.
+
+With prefix argument OVERRIDE-P, prompt for executable and
+arguments."
+  (interactive "P")
+  (let ((gimp-program
+	 (if override-p 
+	     (read-file-name "Gimp executable: " "/" nil t gimp-program)
+	   gimp-program))
+	(gimp-command-line-args 
+	 (if override-p 
+	     (read-from-minibuffer "Run with arguments: " gimp-command-line-args)
+	   gimp-command-line-args)))
+    (if override-p 
+	(let ((configuration-dir
+	       (read-directory-name
+		"Gimp configuration directory (shall be set for this Emacs session): " "~/" nil t gimp-dir)))
+	  (customize-set-variable 'gimp-dir (expand-file-name configuration-dir))
+	  (if  (not (file-exists-p (expand-file-name
+				    (concat gimp-dir "/scripts/emacs-interaction.scm"))))
+	      (if (y-or-n-p "Gimp-mode was not installed in that directory, install it there? ")
+		  (gimp-install gimp-dir)
+		(error "Backing out")))))
+    (if (buffer-live-p (gimp-buffer))
+	(if (gimp-buffer-window (gimp-buffer))
+	    (select-window (gimp-buffer-window (gimp-buffer)))
+	  (switch-to-buffer-other-window (gimp-buffer)))
+      (if (eq window-system 'w32) 
+	  (message "Probably no interaction possible here,\
  see `gimp-cl-connect' to connect as a client to the GIMP script-fu server"))
-    (run-scheme (concat gimp-program " " gimp-command-line-args)) 
-    (set-process-sentinel 
-     (gimp-proc)
-     (lambda (p s)
-       (if (string-match "finished" s)
-           (error "Probably the GIMP is already running.
+      (run-scheme (concat gimp-program " " gimp-command-line-args)) 
+      (set-process-sentinel 
+       (gimp-proc)
+       (lambda (p s)
+	 (if (string-match "finished" s)
+	     (error "Probably the GIMP is already running.
 
 Either close that instance, add the -e switch to `gimp-command-line-args',
 or run command `gimp-cl-connect'.")
-         (message s))))
-    (save-window-excursion 
-      (switch-to-buffer (gimp-buffer))
-      (setq buffer-read-only t))
-    (set-process-filter
-     (gimp-proc)
-     'gimp-first-run-action)))
+	   (message s))))
+      (save-window-excursion 
+	(switch-to-buffer (gimp-buffer))
+	(setq buffer-read-only t))
+      (set-process-filter
+       (gimp-proc)
+       'gimp-first-run-action))))
 
 (defun gimp-first-run-action (proc string)
   (set-process-sentinel 
@@ -1119,6 +1176,21 @@ Optional argument END-TEXT is the text appended to the message when TEST fails."
   (let ((proc (gimp-proc)))
     (when proc
       (process-buffer (gimp-proc)))))
+
+(defun gimp-latest-source-buffer ()
+  "Return latest visited source buffer.
+
+Return nil if none or only one, being the current
+buffer, is found."
+  (let* ((this-buffer (current-buffer))
+	 (buffer (car
+		  (member-if
+		  (lambda (b)
+		    (with-current-buffer b
+		      (and (eq major-mode 'gimp-mode)
+			   (not (eq b this-buffer)))))
+		  (buffer-list)))))
+    buffer))
 
 (defun gimp-dir ()
   (if (not (gimp-interactive-p))
@@ -1212,10 +1284,49 @@ Optional argument END-TEXT is the text appended to the message when TEST fails."
 	   (if
                (or 
                 (= (or (char-after (1- (point))) 0) ?\")
-                (bobp)) ;or at beginning of buffer
+                (bobp)
+		(<  47 (char-after))
+;or at beginning of buffer
 	       nil
 	     (gimp-current-symbol))
 	 (goto-char p))))))
+
+(defun gimp-fnsym-in-current-sexp ()
+  (let ((p (point)))
+     (when  (not (looking-back ",[[:alnum:]- ]+"))
+       (with-syntax-table scheme-mode-syntax-table
+	 (while 
+	     (and
+              (not (bobp))
+              (let ((m (when (gimp-proc)
+			   (process-mark (gimp-proc)))))
+		(or (not m)
+		    (if 
+			(eq (marker-buffer m)
+			    (current-buffer))
+			(not (= (point)
+				(marker-position m)))
+		      t)))		;no rules for other types of buffers.
+	      (or 
+	       (when (eq (char-syntax (char-before)) ?\")
+		 (backward-sexp 1)
+		 t)
+	       (memq (char-syntax (char-before)) '(?w ?_ 32 ?- ?\" ?> ?'))
+	       (when (memq (char-syntax (char-before)) '(?\)))
+		 (backward-sexp 1)
+		     t)))
+	   (forward-char -1)))
+       (prog1
+	   ;; Return nil if current word is actually:
+	   (if
+               (or 
+                (= (or (char-after (1- (point))) 0) ?\") ;at a string
+                (bobp)			;or at beginning of buffer
+		(number-at-point))	;or beginning with a number -
+					;hence no symbol.
+	       nil
+	     (gimp-current-symbol))
+	 (goto-char p)))))
 
 (defun gimp-position ()
   "Return position of point in current lambda form."
@@ -1905,7 +2016,8 @@ You can toggle this variable at any time with the command
          gimp-brushes-cache))
 
     ((lambda (desc name type)
-       (string-match "palette" desc))
+       (or (string-match "palette" desc)
+	   (string= type "GIMP_PDB_PALETTE")))
      . (lambda (&rest ignore)
          gimp-palettes-cache))
 
@@ -2293,6 +2405,12 @@ Optional argument TERSE means only show that I am there to help you."
                       (point))))
     (error "Not in *GIMP* buffer")))
 
+(gimp-defcommand gimp-clear ()
+  "Clear REPL"
+  (interactive)
+  (erase-buffer)
+  (comint-send-string (gimp-proc) "(begin (display \"Display \") 'cleared)\n"))
+
 (defun gimp-make-input-field (arg)
   (gimp-button arg input 
 	       (gimp-string-match
@@ -2336,17 +2454,16 @@ argument at point is highlighted."
 	      (and (not (interactive-p))
 		   (not gimp-echo-p)))
     (let ((result))
-    (catch 'a
-      (let* ((sym (or sym (gimp-fnsym-in-current-sexp)))
+      (let* ((sym (or sym (gimp-fnsym-in-current-sexp))) 
 	     (str (symbol-name sym))
-	     cache-resp
+	     response
 	     (pos (gimp-position)))
 	
 	(cond ((gethash sym gimp-dump)
 	       ;; Get it
-	       (setq cache-resp
+	       (setq response
 		     (gimp-docstring (read str))))
-	      ((unless nil;(string-match "define\\(?:-macro\\)?\\|let" str)
+	      ((unless nil ;(string-match "define\\(?:-macro\\)?\\|let" str)
                                         ;`scheme-get-current-symbol-info'
                                         ;"fails" in these cases.
 		 (let
@@ -2355,44 +2472,44 @@ argument at point is highlighted."
 		   (if (and info (listp (read info))) ;the actual condition
                                         ;for cond clause
 		       (progn
-			 (setq cache-resp (read info))
+			 (setq response (read info))
 			 (setq result (gimp-string-match "(.*)\\(.*\\)" info 1))
 			 t)		;break
 		     nil))))
 	      (t
 	       ;; Get it (unless we have it already)
-	       (unless cache-resp
-		 (setq cache-resp
+	       (unless response
+		 (setq response
 		       (if gimp-try-and-get-closure-code-p
 			   (gimp-get-closure-code sym)))
-		 (when (not (consp cache-resp))
-		   (setq cache-resp nil)))))
+		 (when (not (consp response))
+		   (setq response nil)))))
 
-	(when (and cache-resp 
-                   (not (eq 'gimp-error (car cache-resp)))) ;this may be 
-                                                     ;an error
-                                                     ;in gimp-cl
-	  (setq cache-resp
+	(when (and response 
+                   (not (eq 'gimp-error (car response)))) ;this may be 
+					;an error
+					;in gimp-cl
+	  (setq response
  		(mapcar (lambda (item) (format "%s" item))
-			(dotted-to-list cache-resp)))
-	  (setf (car cache-resp)
+			(dotted-to-list response)))
+	  (setf (car response)
 		(propertize str 'face 'font-lock-keyword-face))
 	  ;; Show it
-	  (let ((this-arg (nth pos cache-resp)))
+	  (let ((this-arg (nth pos response)))
 	    (when this-arg
 	      (when (> pos 0)
-		(let ((arg (nth pos cache-resp)))
-		  (setf (nth pos cache-resp)
+		(let ((arg (nth pos response)))
+		  (setf (nth pos response)
 			(if (string-match "^\. " arg)
 			    (concat ". " 
 				    (propertize (substring arg 2)
 						'face 'highlight))
 			  (propertize arg 'face 'highlight)))))
-	      (message "(%s)%s" (mapconcat 'identity cache-resp " ")
+	      (message "(%s)%s" (mapconcat 'identity response " ")
 		       (or result ""))
 	      (when (> pos 0)
 		(set-text-properties 0 (length this-arg)
-				     nil (nth pos cache-resp)))))))))))
+				     nil (nth pos response))))))))))
 
 (defun gimp-echo-procedure-description (sym)
   "Echo short description for SYM."
@@ -2564,15 +2681,7 @@ Type the abbreviations on the left in a GIMP Mode buffer, and hit ENTER
 Argument CHAR is used to choose between buffers.'."
   (interactive "cSwitch to gimp buffer [rldhc?]: ")
   (case char
-    (?l (let ((buffer (car
-		       (member-if
-			(lambda (b)
-			  (with-current-buffer b
-			    (eq major-mode 'gimp-mode)))
-			(buffer-list)))))
-          (if buffer
-              (switch-to-buffer buffer)
-            (error "No living gimp-mode buffers to switch to"))))
+    (?l (call-interactively 'gimp-switch-to-latest-source-buffer))
     (?h (gimp-help))
     (?r (call-interactively 'run-gimp))
     (?c (if (eq (process-status gimp-cl-proc) 'open)
@@ -2585,6 +2694,15 @@ Argument CHAR is used to choose between buffers.'."
         (sit-for 3)
         (call-interactively 'gimp-selector))
     (t (call-interactively 'gimp-selector))))
+
+(defun gimp-switch-to-latest-source-buffer ()
+  "Switch to the latest source buffer in gimp-mode.
+If none is found, display a message stating so."
+  (interactive)
+  (let ((buffer (gimp-latest-source-buffer)))
+    (if buffer
+	(switch-to-buffer buffer)
+      (message "No (other) living gimp-mode buffers to switch to."))))
 
 (gimp-defcommand gimp-load-script (&optional script)
   "Load a SCRIPT into the scheme image."
@@ -2851,6 +2969,8 @@ Lisp world."
                  (comint-send-input)))))
           (gimp-command (message "No such command: %s" gimp-command))
           (t
+	     (if (fboundp 'fud-update-breakpoints)
+		 (fud-update-breakpoints))
 	   (let ((undo-list (if (listp buffer-undo-list)
 				buffer-undo-list
 			      nil)))
