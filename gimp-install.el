@@ -1,4 +1,4 @@
-;;; gimp-install.el --- $Id: gimp-install.el,v 1.7 2008-08-01 17:38:06 sharik Exp $
+;;; gimp-install.el --- $Id: gimp-install.el,v 1.8 2008-08-03 22:03:07 sharik Exp $
 ;; Copyright (C) 2008 Niels Giesen.
 
 ;; Author: Niels Giesen <nielsforkgiesen@gmailspooncom, but please
@@ -73,11 +73,22 @@ For more information consult the file README."
 			    "scripts"
 			    emacs-interaction.scm)
 		      "/")))
+
+;; 	 (fud.scm "fud.scm")
+;; 	 (fud.scm-target
+;; 	  (expand-file-name 
+;; 	   (mapconcat 'identity
+;; 		      (list gimp-dir
+;; 			    "scripts"
+;; 			    fud.scm)
+;; 		      "/")))
+
 	 (gimp-init-file (concat gmd "gimp-init.el")))
     (unless (file-exists-p gimp-emacs-dir)
       (message "Making directory %s for communication emacs<->gimp..."
 	       gimp-emacs-dir
 	       (make-directory gimp-emacs-dir)))
+
     (message "Installing %s..." emacs-interaction.scm-target)
     (let (done
 	  (funs (if (fboundp 'make-symbolic-link)
@@ -95,6 +106,24 @@ For more information consult the file README."
 			t))
 		(setq done t))
 	    (error (message "%s" (error-message-string err)))))))
+
+;    (message "Installing %s..." fud.scm-target)
+;;     (let (done
+;; 	  (funs (if (fboundp 'make-symbolic-link)
+;; 		    '(make-symbolic-link copy-file)
+;; 		  '(copy-file))))
+;;       (dolist (fun '(make-symbolic-link copy-file))
+;; 	(unless done
+;; 	  (condition-case err
+;; 	      (progn
+;; 		(apply fun
+;; 		       (list
+;; 			(expand-file-name
+;; 			 (concat gmd fud.scm))
+;; 			fud.scm-target
+;; 			t))
+;; 		(setq done t))
+;; 	    (error (message "%s" (error-message-string err)))))))
 
     (progn
       (find-file-literally (concat gmd "gimp-vars.el"))
@@ -116,6 +145,8 @@ stuff depending on it."
       (kill-buffer (current-buffer)))
 
     (load gimp-init-file)
+    (byte-compile-file 
+     (concat gmd "fud.el"))
     (byte-compile-file 
      (concat gmd "gimp-mode.el"))
     (byte-compile-file 

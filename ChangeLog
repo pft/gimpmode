@@ -1,3 +1,8 @@
+2008-08-03  Niels Giesen  <sharik@localhost>
+
+	* gimp-mode.el (gimp-snippets): drop radio snippet, as the param
+	type does not exist
+
 2008-08-03  Niels Giesen  <niels.giesen@gmail.com>
 
 	* gimp-mode.el (gimp-comint-filter): add prettification to output

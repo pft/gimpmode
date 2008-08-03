@@ -12,7 +12,55 @@
  - Documentation echoing.
  - Hypertext help system with history.
 
-* News
+* News: FUD 
+
+** Version v1.48 (the FUD release): 
+ 
+This version adds a betabetabeta version of =FUD=, meaning the Fu Debugger. It is however not yet set up by default yet (as it is *very* beta, as in "don't expect it to work" (actually it does...) and would break the client mode right now).  With FUD, you can define breakpoints and instruct functions for stepping, poking at the environment at run-time &c.
+
+Uncomment the =(require 'fud)= *before* compilation to experience a bit of what lies ahead. Also, symlink or copy the file fud.scm to =~/.gimp-2.[45]/scripts/=. See contents of =fud.scm= and =fud.el= for ponters. Expect more =FUD= in about three weeks time. First vacation.
+
+- gimp-mode.el (gimp-snippets): drop radio snippet, as the param
+type does not exist
+
+- gimp-mode.el (gimp-comint-filter): add prettification to output
+of the GIMP.
+
+- fud.scm: add stepping inside and function instruction.
+
+- fud.el: add fud-bullet bitmap to show breakpoints.
+
+- gimp-mode.el (gimp-open-image): changed order so that message is
+not put in the *GIMP* buffer.
+
+- gimp-mode.el (gimp-completion-rules): enhance rule for palettes
+(gimp-shortcuts): gimp-clear (,clear from REPL) was added, to
+clear the REPL screen.
+
+- (gimp-fnsym-in-current-sexp): fix for list beginning with a
+number (that bugged `gimp-echo' higher up the stack): now returns
+nil when the symbol begins with a number.
+
+- (gimp-echo): change cache-resp into response, as we're (a long time..) not using caches anymore to save the echoing.
+
+- gimp-install.el (gimp-install): put installation in a function,
+then call it.
+
+- fud.el (Module): new FUD FU debugger - elisp side
+
+- fud.scm (Module): new FUD FU debugger - scheme side
+
+- gimp-mode.el (gimp-switch-to-latest-source-buffer): made this
+functionality a separate command, and enhanced it so that you will
+switch to another source buffer if already in a source buffer.
+
+- (gimp-help-mode-map): removed gimp-help-refresh (which isn't a  command)
+
+- (gimp-mode): Add some rules to highlight the frequent use of
+UPPERCASE CONSTANTS in script-fu. This required turning off
+CASE-FOLD in `gimp-mode'.
+
+- (gimp-comint-filter): add FUD actions
 
 ** Version v1.45
 

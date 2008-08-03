@@ -1,4 +1,4 @@
-;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.47 2008-08-03 16:03:49 sharik Exp $
+;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.48 2008-08-03 22:03:07 sharik Exp $
 ;; Copyright (C) 2008 Niels Giesen
 
 ;; Author: Niels Giesen <nielsforkgiesen@gmailspooncom, but please
@@ -58,12 +58,13 @@
 (require 'cl)
 (require 'eldoc)
 (require 'thingatpt)
-(require 'fud)
 (eval-when-compile (load "gimp-init.el"))
 (eval-when (compile load)
   (require 'ring)
   (require 'snippet)
-  (require 'scheme-complete))
+  (require 'scheme-complete)
+;  (require 'fud)
+  )
  ;;;; Structure
 (defgroup gimp nil "Customization group for GIMP (script-fu) programming."
   :group 'shell
@@ -561,14 +562,15 @@ Raise error if ITEM is not in the RING."
     (define-key m "\C-cc" 'gimp-toggle-completion)
     (define-key m [mouse-1] 'gimp-insert-input)
     (define-key m [mouse-2] 'gimp-insert-input)
-    (if (featurep 'fud)
+    (with-no-warnings 
+      (if (featurep 'fud)
 	(define-key m [(down-mouse-3)]
 	  (lambda ()
 	    "Set a fud breakpoint."
 	    (interactive)
 	    (let ((event (read-event)))
 	      (mouse-set-point event)
-	      (fud-set-breakpoint)))))
+	      (fud-set-breakpoint))))))
     m))
 
 (defvar gimp-mode-map
@@ -588,14 +590,15 @@ Raise error if ITEM is not in the RING."
     (define-key m "\C-cr" 'gimp-toggle-fuzzy-completion)
     (define-key m "\C-cc" 'gimp-toggle-completion)
     (define-key m "\M-\\" 'comint-dynamic-complete-filename)
-    (if (featurep 'fud)
+    (with-no-warnings
+      (if (featurep 'fud)
 	(define-key m [(down-mouse-3)]
 	  (lambda ()
 	    "Set a fud breakpoint."
 	    (interactive)
 	    (let ((event (read-event)))
 	      (mouse-set-point event)
-	      (fud-set-breakpoint)))))
+	      (fud-set-breakpoint))))))
     m))
 
 (defvar gimp-help-mode-map
@@ -736,7 +739,7 @@ buffer."
   (destructuring-bind (version major minor) 
       (gimp-string-match 
        "\\([0-9]+\\)\.\\([0-9]+\\)"
-       "$Id: gimp-mode.el,v 1.47 2008-08-03 16:03:49 sharik Exp $" )
+       "$Id: gimp-mode.el,v 1.48 2008-08-03 22:03:07 sharik Exp $" )
       (if (interactive-p) 
           (prog1 nil 
             (message "GIMP mode version: %s.%s" major minor))
@@ -794,14 +797,11 @@ make a vector in SCHEME with `in-gimp'.
 (defun gimp-comint-filter (proc string)
   (gimp-filter proc string)
   
-  (when (featurep 'fud)
-    (fud-find-reference string))
-
-  (when (featurep 'fud)
-   (fud-echo-value string))
-
-  (when (featurep 'fud)
-    (setq string (fud-prettify-code string)))
+  (with-no-warnings
+    (when (featurep 'fud)
+      (fud-find-reference string)
+      (fud-echo-value string)
+      (setq string (fud-prettify-code string))))
 
   (comint-output-filter
    proc
@@ -840,7 +840,7 @@ When optional argument NEWLINE is non-nil, append a newline char."
   "Send the previous sexp to the inferior Scheme process."
   (interactive "P")
   (if (featurep 'fud)
-      (fud-update-breakpoints))
+      (with-no-warnings (fud-update-breakpoints)))
   (let ((result
 	 (gimp-eval-to-string
 	  (buffer-substring-no-properties
@@ -2577,7 +2577,6 @@ into etags and find-tag."
  ("sft" . "SF-TOGGLE\t_\"$${On or Off?}\"\t$${TRUE}$>")
  ("sfv" . "SF-VALUE\t_\"$${text}\"\t\"$${STRING}\"$>")
  ("sfs" . "SF-STRING\t_\"$${text}\"\t\"$${STRING}\"$>")
- ("sfr" . "SF-RADIO\t_\"$${Choose: (radio) }\"\t'($${option1...})$>")
  ("sfa" .
   "SF-ADJUSTMENT\t_\"$${Adjust: }\"\t'($${initval} $${lower} $${upper}\
  $${step_inc} $${page_inc} $${digits} $${type (0: slider, 1: spinner) })$>")
@@ -2605,7 +2604,6 @@ into etags and find-tag."
     ("sft" . "SF-TOGGLE...")
     ("sfv" . "SF-VALUE...")
     ("sfs" . "SF-STRING...")
-    ("sfr" . "SF-RADIO...")
     ("sfa" . "SF-ADJUSTMENT...")
     ("sfc" . "SF-COLOR...")
     ("sff" . "SF-FILENAME...")
@@ -2937,8 +2935,9 @@ Lisp world."
                  (comint-send-input)))))
           (gimp-command (message "No such command: %s" gimp-command))
           (t
+	   (with-no-warnings
 	     (if (fboundp 'fud-update-breakpoints)
-		 (fud-update-breakpoints))
+		 (fud-update-breakpoints)))
 	   (let ((undo-list (if (listp buffer-undo-list)
 				buffer-undo-list
 			      nil)))

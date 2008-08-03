@@ -74,6 +74,31 @@
      (newline)
      evalled))
 
+(define-macro (unfud f)
+;;  "Remove instruction by fudify on function F"
+  (let
+    ((name f))
+    `(begin
+       (if
+	(not
+	 (assq ',name fudlist))
+	(error
+	 (string-append
+	  (symbol->string ',f)
+	  " is not fudified")))
+       (define ,f
+	 (eval
+	  (cadr
+	   (assq ',name fudlist))))
+       (set! fudlist
+	     (fud-delete
+	      (assq ',name fudlist)
+	      fudlist))
+       ',name)))
+
+(define (fud-breakify sxp)
+  (list 'fud-break "0.0 file:nil" sxp))
+
 (define-macro (fud-break breakpoint . form)
   `(begin
      (when fud-tracing
@@ -204,19 +229,15 @@
       (if (= fud-recursion 0)
 	  (fud-trace)))))
 
-(define (fud-breakify sxp)
-  "Return SXP embedded in a FUD breakpoint instruction."
-  (list 'fud-break "0.0 file:nil" sxp))
-
 (define (fud-instruct-1 thunk)
-  "Instruct evaluatable members of THUNK with `fud-breakify'.
+ ;;  "Instruct evaluatable members of THUNK with `fud-breakify'.
 
-Special forms and macros supported are if, cond, let, let*, letrec, do
-and lambda. Forms BEGINNING with a symbol in `blacklist' are returned
-as is. 
+;; Special forms and macros supported are if, cond, let, let*, letrec, do
+;; and lambda. Forms BEGINNING with a symbol in `blacklist' are returned
+;; as is. 
 
-For instruction of functions and macros --blacklisted here--, see
-`fudify' and `unfud'."
+;; For instruction of functions and macros --blacklisted here--, see
+;; `fudify' and `unfud'."
   (let ((in-let? #f)
 	(in-lambda? #f)
 	(in-do? #f)
@@ -294,7 +315,7 @@ For instruction of functions and macros --blacklisted here--, see
 	    thunk)))
 
 ;; Instruction of functions:
-(define (delete item lst)
+(define (fud-delete item lst)
   (let
       ((out
 	'()))
@@ -315,16 +336,16 @@ For instruction of functions and macros --blacklisted here--, see
   '())
 
 (define-macro (fudify f)
-"Instruct a function for debugging;
+;; "Instruct a function for debugging;
 
-Any subsequent call to function F will cause fud-breaks to occur at
-any immediate sublevel of F.  Remove the instruction with (unfud
-FUNTION).
+;; Any subsequent call to function F will cause fud-breaks to occur at
+;; any immediate sublevel of F.  Remove the instruction with (unfud
+;; FUNTION).
 
-Any redefinition will uninstruct the function. This will give you the
-error `Function is already fudified' if after that you want to fudify
-it again.  Client agents can to some intercepting to make this
-automatic."
+;; Any redefinition will uninstruct the function. This will give you the
+;; error `Function is already fudified' if after that you want to fudify
+;; it again.  Client agents can to some intercepting to make this
+;; automatic."
   (let
       ((name f))
     `(begin
@@ -344,24 +365,4 @@ automatic."
 	  (fud-instruct-1
 	   (get-closure-code ,f)))))))
 
-(define-macro (unfud f)
-  "Remove instruction by fudify on function F"
-  (let
-    ((name f))
-    `(begin
-       (if
-	(not
-	 (assq ',name fudlist))
-	(error
-	 (string-append
-	  (symbol->string ',f)
-	  " is not fudified")))
-       (define ,f
-	 (eval
-	  (cadr
-	   (assq ',name fudlist))))
-       (set! fudlist
-	     (delete
-	      (assq ',name fudlist)
-	      fudlist))
-       ',name)))
+

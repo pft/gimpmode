@@ -42,10 +42,21 @@
 ;; `fud-echo-value'          echo the (in- or outvalue) of the code in breakpoint
 
 ;;; Code:
+(require 'cl)
+(defgroup fud nil
+  "Customization group for the FUD Fu Debugger."
+  :group 'gimp)
+
+(defface fud-bullet-face
+  '((t (:foreground "#d00"
+        :bold t)))
+  "Face for menu items."
+  :group 'fud)
+
 (define-fringe-bitmap 'fud-bullet 
   [0 60 126 -1 -1 -1 126 60 0])
 
-(set-fringe-bitmap-face 'fud-bullet 'gimp-red-face)
+(set-fringe-bitmap-face 'fud-bullet 'fud-bullet-face)
 
 (defun fud-show-breakpoint-bullet (&optional pos)
   (put-text-property
@@ -63,17 +74,6 @@
   "FUD Unified Debugger"
   :group 'gimp)
 
-(defun fud-field (str)
-  (propertize
-    str
-    'field 'breakpoint
-    'font-lock-face 'gimp-red-face
-    'help-echo (format "Breakpoint (toggle with <mouse-3>)\n%s" str)
-    'intangible t
-    'mouse-face 'highlight
-    'rear-nonsticky '(mouse-face font-lock-face)
-    'keymap fud-map))
-
 (defvar fud-map 
   (let ((m (make-sparse-keymap)))
     (define-key m [(down-mouse-3)]
@@ -88,9 +88,19 @@
  	  (fud-remove-breakpoint))))
     m))
 
+(defun fud-field (str)
+  (propertize
+    str
+    'field 'breakpoint
+    'font-lock-face 'fud-bullet-face
+    'help-echo (format "Breakpoint (toggle with <mouse-3>)\n%s" str)
+    'intangible t
+    'mouse-face 'highlight
+    'rear-nonsticky '(mouse-face font-lock-face)
+    'keymap fud-map))
+
 (defun fud-breakpoint-begin ()
   (save-excursion
-;  (fud-show-breakpoint-bullet)
    (fud-field 
     (concat
      "("
@@ -113,9 +123,10 @@
   (insert (fud-breakpoint-begin))
   (forward-sexp 1)
   (insert (fud-breakpoint-end))
-  (save-excursion 
-    (fud-toplevel)
-    (gimp-send-last-sexp)))
+;; (save-excursion 
+;;     (fud-toplevel)
+;;     (gimp-send-last-sexp))
+  )
 
 (defun fud-remove-breakpoint ()
   "Remove breakpoint a point."
@@ -135,9 +146,10 @@
     (delete-backward-char
      (- (field-end (point))
 	(field-beginning (point)))))
-  (save-excursion 
-    (fud-toplevel)
-    (gimp-send-last-sexp)))
+  ;; (save-excursion 
+;;     (fud-toplevel)
+;;     (gimp-send-last-sexp))
+)
 
 (defun fud-update-breakpoints (&optional beg end)
   "Update breakpoints for sexp before point."
@@ -232,9 +244,6 @@ If not found, return nil."
   (assert (fud-echo-value " I: (spaces->underscores \"13091q wekjq wejkoiqp wejqwe qwek op123\")"))
   (assert (fud-echo-value "O: (spaces->underscores \"13091q wekjq wejkoiqp wejqwe qwek op123\")"))
   (message "All tests passed"))
-
-(eval-when (compile)
-  (fud-run-tests))
 
 (provide 'fud)
 ;;; fud.el ends here
