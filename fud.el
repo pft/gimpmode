@@ -22,7 +22,24 @@
 
 ;;; Commentary:
 
-;; FUD stands for FU Unified Debugger
+;; FUD stands for the FU Debugger. It is the elisp side for fud.scm It
+;; is developed for use with gimp-mode to debug code written in the
+;; TinyScheme implementation shipped with the GIMP, but its design is
+;; such that it could in principle work with any scheme.
+;; 
+;; It's basis is setting break-points.  It can also parse the output
+;; of fud.scm, and provides 
+
+;; `fud-set-breakpoint'      set a breakpoint around a sexp.
+;; `fud-remove-breakpoint'   remove breakpoint at point
+;; `fud-update-breakpoints'  update breakpoints in sexp before point
+
+;; These functions handle output from fud.scm:
+
+;; `fud-reference-in-string' return sexp decribing a breakpoint
+;; `fud-find-reference'      lookup the code belonging to
+;; `fud-prettify-code'       prettify the output
+;; `fud-echo-value'          echo the (in- or outvalue) of the code in breakpoint
 
 ;;; Code:
 (define-fringe-bitmap 'fud-bullet 
@@ -40,10 +57,7 @@
    
 (defun fud-toplevel (&optional arg)
   (interactive "p")
-  (while 
-      (not (condition-case nil
-	       (up-list arg)
-	     (error t)))))
+  (end-of-defun arg))
 
 (defgroup fud nil
   "FUD Unified Debugger"
@@ -89,7 +103,6 @@
        (buffer-file-name))
       'display
       '(left-fringe fud-bullet))))))
-
 
 (defun fud-breakpoint-end ()
   (fud-field ")"))

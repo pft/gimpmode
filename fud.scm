@@ -21,66 +21,17 @@
 
 ;;; Commentary:
 
-;; FUD stands for the FU Unified Debugger.
+;; FUD stands for the FU Debugger. It is developed for use
+;; with gimp-mode to debug code written in the TinyScheme
+;; implementation shipped with the GIMP, but its design is such that
+;; it could in principle work with any scheme.
 ;; 
-;; It's basis is handling break-points set interactively through
-;; another breakpoint, or by use of fud.el with Emacs, which is
-;; integrated in gimp-mode.
-
-;; (define fud-last-result #f)
-
-;; (define-macro (fud . x)
-;;   (fud-trace)
-;;   `(prog1 
-;;     (call/cc
-;;      (lambda (exit)
-;;        (push-handler (lambda (e)
-;; 		       (exit e)))
-;;        ,@x))
-;;     (fud-trace)))
-
-;; (define-macro (fudr)
-;;   (fud-trace)
-  
-;;   `(prog1 
-;;     (display "FUD> ")
-;;     (let 
-;; 	((result 
-;; 	  (call/cc
-;; 	   (lambda (exit)
-;; 	     (push-handler (lambda (e)
-;; 			     (display e)
-;; 			     (exit e)))
-;; 	     (let ((res (eval (read))))
-;; 	       (print res)
-;; 	       res)))))
-;; ;;    (pop-handler)
-;; ;;      (display result)
-;;     (unless (eq? result 'fud-quit)
-;; 	      (fudr)))))
-
-;; (define (fud-repl)
-;;   (newline)
-;;   (catch (fud-repl)
-;; 	 (display "FUD> ")
-;; 	 (print (eval (fud(read))))
-;; 	 (fud-repl)))
+;; It's basis is setting and handling break-points FUD.scm integrates
+;; with fud.el, which in turn is integrated in gimp-mode.
 
 (define (fud-prompt)
   (newline)
   (fud-write-string "FUD> "))
-
-;; (define (fud-handler x)
-;;   (set! fud-last-result x)
-;;   (display (string-append "Error: " x))
-;;   (newline)
-;;   (display "Use value (V) / Abort (A) ")
-;;   (let ((c (read-char)))
-;;     (cond ((char-ci=? c #\v)
-;; 	   (push-handler fud-handler)
-;; 	   (read))
-;; 	  ((char-ci=? c #\a)
-;; 	   (throw x)))))
 
 (define fud-result #f) 
 
@@ -264,7 +215,8 @@ Special forms and macros supported are if, cond, let, let*, letrec, do
 and lambda. Forms BEGINNING with a symbol in `blacklist' are returned
 as is. 
 
-FOr instruction of functions, see `fudify' and `unfud'."
+For instruction of functions and macros --blacklisted here--, see
+`fudify' and `unfud'."
   (let ((in-let? #f)
 	(in-lambda? #f)
 	(in-do? #f)
@@ -359,7 +311,6 @@ FOr instruction of functions, see `fudify' and `unfud'."
      (pair? out)
      (reverse out))))
 
-
 (define fudlist
   '())
 
@@ -414,122 +365,3 @@ automatic."
 	      (assq ',name fudlist)
 	      fudlist))
        ',name)))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-;; (define-macro (fud . x)
-;;   (let ((fudilicious #t))
-;;   `(set! fud-last-result
-;; 	 (call/cc (lambda (fudilicious)
-;; 		    ,@x)))))
-
-;; (define-macro (fud . x)
-;;   (fud-trace)
-;;   (catch (delay fud-last-result)
-;;   `(call/cc (lambda (k)
-;; 	      (push-handler (lambda (x)
-;; 			      (set! fud-last-result x)
-;; 			      (throw x)))
-;; 		,@x))))
-
-;; 	  ((char-ci=? c #\i)
-;; 	   (display "Expression (quit to quit) : ")
-;; 	   (let loop ((var (read)))
-;; 	     (push-handler fud-handler)
-;; 	     (cond ((eqv? 'quit var)
-;; 		    (throw x))
-;; 		   ((catch "threw an error" (display (eval var)))
-;; 		    (newline)
-;; 		    (display "Expression: ")
-;; 		    (loop (read))))))
-
-;; (define-macro (fud . x)
-;;   `(begin
-;;      (fud-trace)
-;;      (push-handler (lambda (x)
-;; 		     (set! fud-last-result x)
-;; 		     (throw x)))
-;;      (set! fud-result 
-;; 	   (catch (delay fud-last-result)
-;; 		  ,@x))))
-
-
-;; (define-macro condition-case
-;;    (lambda (form)
-;;      (let ((label (gensym))
-;; 	   (err (gensym)))
-;;        `(call/cc
-;; 	 (lambda (exit)
-;; 	   (push-handler
-;; 	    (lambda (,err)
-;; 	      (exit (apply ,(cadr form) ,err))))
-;; 	   (let ((,label (begin ,@(cddr form))))
-;; 	     (pop-handler)
-;; 	     ,label))))))
