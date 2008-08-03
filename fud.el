@@ -25,6 +25,19 @@
 ;; FUD stands for FU Unified Debugger
 
 ;;; Code:
+(define-fringe-bitmap 'fud-bullet 
+  [0 60 126 -1 -1 -1 126 60 0])
+
+(set-fringe-bitmap-face 'fud-bullet 'gimp-red-face)
+
+(defun fud-show-breakpoint-bullet (&optional pos)
+  (put-text-property
+   (or pos (point))
+   (+ 1
+      (or pos (point)))
+   'display
+   '(left-fringe fud-bullet)))
+   
 (defun fud-toplevel (&optional arg)
   (interactive "p")
   (while 
@@ -62,13 +75,21 @@
     m))
 
 (defun fud-breakpoint-begin ()
-  (fud-field 
-   (format 
-    "(fud-break \"%d.%d [[ file:%s ]]\""
-    (line-number-at-pos)
-    (- (point)
-       (point-at-bol))
-    (buffer-file-name))))
+  (save-excursion
+;  (fud-show-breakpoint-bullet)
+   (fud-field 
+    (concat
+     "("
+     (propertize
+      (format 
+       "fud-break \"%d.%d [[ file:%s ]]\""
+       (line-number-at-pos)
+       (- (point)
+	  (point-at-bol))
+       (buffer-file-name))
+      'display
+      '(left-fringe fud-bullet))))))
+
 
 (defun fud-breakpoint-end ()
   (fud-field ")"))
@@ -158,6 +179,15 @@ If not found, return nil."
 	  (forward-sexp -1))
       (other-window 1))))
 
+(defun fud-prettify-code (str)
+  (with-temp-buffer
+    (insert str)
+    (scheme-mode)
+    (pp-buffer)
+    (indent-region (point-min)
+		   (point-max))
+    (buffer-string)))
+
 (defun fud-echo-value (str)
   (if (string-match "^[[:space:]]*[IO]:.*$" str)
       (progn (message (match-string 0 str))
@@ -179,17 +209,11 @@ If not found, return nil."
 (defun fud-run-tests ()
   (interactive)
   (assert 
-   (fud-reference-in-string "Break O<- 241.58 [[ file:/home/sharik/.emacs.d/gimp/fud.scm ]]")
-   t
- "FAILED fud-reference-in-string in step-out string")
+   (fud-reference-in-string "Break O<- 241.58 [[ file:/home/sharik/.emacs.d/gimp/fud.scm ]]"))
   (assert 
-   (not (null (nth 3 (fud-reference-in-string "Break O<- 241.58 [[ file:/home/sharik/.emacs.d/gimp/fud.scm ]]"))))
-   t
-   "fud-reference-in-string FAILED to specify t for break-out string")
+   (not (null (nth 3 (fud-reference-in-string "Break O<- 241.58 [[ file:/home/sharik/.emacs.d/gimp/fud.scm ]]")))))
   (assert 
- (fud-reference-in-string "Break I-> 241.58 [[ file:/home/sharik/.emacs.d/gimp/fud.scm ]]")
- t
- "FAILED fud-reference-in-string in step in-string")
+   (fud-reference-in-string "Break I-> 241.58 [[ file:/home/sharik/.emacs.d/gimp/fud.scm ]]"))
   (assert 
    (fud-reference-in-string "Break I-> 241.58 [[ file:nil ]]"))
   (assert (fud-echo-value " I: (spaces->underscores \"13091q wekjq wejkoiqp wejqwe qwek op123\")"))

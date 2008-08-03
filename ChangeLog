@@ -1,3 +1,15 @@
+2008-08-03  Niels Giesen  <niels.giesen@gmail.com>
+
+	* gimp-mode.el (gimp-comint-filter): add prettification to output
+	of the GIMP.
+
+	* fud.scm: add stepping inside and function instruction.
+
+	* fud.el: add fud-bullet bitmap to show breakpoints.
+
+	* gimp-mode.el (gimp-open-image): changed order so that message is
+	not put in the *GIMP* buffer.
+
 2008-08-01  Niels Giesen  <sharik@localhost>
 
 	* gimp-mode.el (gimp-completion-rules): enhance rule for palettes

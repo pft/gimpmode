@@ -1,4 +1,4 @@
-;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.46 2008-08-01 17:38:06 sharik Exp $
+;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.47 2008-08-03 16:03:49 sharik Exp $
 ;; Copyright (C) 2008 Niels Giesen
 
 ;; Author: Niels Giesen <nielsforkgiesen@gmailspooncom, but please
@@ -736,7 +736,7 @@ buffer."
   (destructuring-bind (version major minor) 
       (gimp-string-match 
        "\\([0-9]+\\)\.\\([0-9]+\\)"
-       "$Id: gimp-mode.el,v 1.46 2008-08-01 17:38:06 sharik Exp $" )
+       "$Id: gimp-mode.el,v 1.47 2008-08-03 16:03:49 sharik Exp $" )
       (if (interactive-p) 
           (prog1 nil 
             (message "GIMP mode version: %s.%s" major minor))
@@ -799,6 +799,9 @@ make a vector in SCHEME with `in-gimp'.
 
   (when (featurep 'fud)
    (fud-echo-value string))
+
+  (when (featurep 'fud)
+    (setq string (fud-prettify-code string)))
 
   (comint-output-filter
    proc
@@ -1253,46 +1256,8 @@ buffer, is found."
          (read (current-word)))))
 
 (defun gimp-fnsym-in-current-sexp ()
-  "Return function symbol in current sexp."
   (let ((p (point)))
     (gimp-without-string
-     (when  (not (looking-back ",[[:alnum:]- ]+"))
-       (with-syntax-table scheme-mode-syntax-table
-	 (while 
-	     (and
-              (not (bobp))
-              (let ((m (when (gimp-proc)
-			   (process-mark (gimp-proc)))))
-		(or (not m)
-		    (if 
-			(eq (marker-buffer m)
-			    (current-buffer))
-			(not (= (point)
-				(marker-position m)))
-		      t)))		;no rules for other types of buffers.
-	      (or 
-	       (when (eq (char-syntax (char-before)) ?\")
-		 (backward-sexp 1)
-		 t)
-	       (memq (char-syntax (char-before)) '(?w ?_ 32 ?- ?\" ?> ?'))
-	       (when (memq (char-syntax (char-before)) '(?\)))
-		 (backward-sexp 1)
-		     t)))
-	   (forward-char -1)))
-       (prog1
-	   ;; Return nil if current word is inside a string.
-	   (if
-               (or 
-                (= (or (char-after (1- (point))) 0) ?\")
-                (bobp)
-		(<  47 (char-after))
-;or at beginning of buffer
-	       nil
-	     (gimp-current-symbol))
-	 (goto-char p))))))
-
-(defun gimp-fnsym-in-current-sexp ()
-  (let ((p (point)))
      (when  (not (looking-back ",[[:alnum:]- ]+"))
        (with-syntax-table scheme-mode-syntax-table
 	 (while 
@@ -1326,7 +1291,7 @@ buffer, is found."
 					;hence no symbol.
 	       nil
 	     (gimp-current-symbol))
-	 (goto-char p)))))
+	 (goto-char p))))))
 
 (defun gimp-position ()
   "Return position of point in current lambda form."
@@ -2162,7 +2127,11 @@ Optional argument LST specifies a list of completion candidates."
 	      (scroll-up))))
 ;; Do completion.
       (multiple-value-bind (beg end pattern) (gimp-current-arg)
-          (let* ((lst (or lst gimp-oblist-cache))
+          (let* ((lst (mapcar (lambda (i)
+				(if (listp i)
+				    (car i)
+				  i)) 	;let the list be possibly of form ((matchable . metadata))
+			      (or lst gimp-oblist-cache)))
 	     (completion
 	      (if (not gimp-complete-fuzzy-p)
 		  (try-completion pattern lst nil)
@@ -2209,8 +2178,7 @@ Optional argument LST specifies a list of completion candidates."
 			 (delete-region beg end)
 			 (insert (car lst2))))))
 		 (unless minibuf-is-in-use
-		   (message "Making completion list...%s" "done")
-		   )))))))))
+		   (message "Making completion list...%s" "done"))))))))))
 
 (defun gimp-complete-oblist (&optional discard)
   "Function that always just uses the oblist to complete the symbol at point.
@@ -2809,8 +2777,8 @@ If GIMP is not running as an inferior process, open image(s) with gimp-remote."
 	  (progn
 	    (mapc 'open (mapcar 'expand-file-name img))
 	    (message "Asked GIMP to open multiple images "))
-	(open (expand-file-name img))
-	(message "Asked GIMP to open %s " img)))))
+	(message "Asked GIMP to open %s " img)
+	(open (expand-file-name img))))))
 
 ;; Client Mode
 ;; Client mode global vars

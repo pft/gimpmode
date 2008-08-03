@@ -60,5 +60,77 @@ dolist
   (db-recurse body*)))
 
 
+Actually, I do not think instructing beforehand is good, better do it
+lazily: let fud-break give you the option to step inside, upon which
+all immediate subforms that can handle it are instructed with a
+fud-break spec.
+
+So, on fud-break + step-inside:
+
+(fud-break "" 
+	   (let ((behold 1))
+	   	1 (mapcar (lambda () ..) '(129 304)))) => 
+
+(let ((behold (fud-break "" 1)))
+     (fud-break 1)	 
+     (fud-break (mapcar (lambda () ..) '(129 304)))) ;lazy
+
+(define (fud-instruct sxp)
+	 (mapcar 
+	 (lambda (sxp)
+	 	 )))
+
+
+thus:
+
+(let ((in-let #f))
+    (mapcar (lambda (th)
+	      (cond ((memq th '(let))
+		     (begin
+		       (set! in-let #t)
+		       th))
+		    (in-let
+		     (if (symbol? th) th
+			 (begin
+			   (set! in-let #f)
+			   (mapcar (lambda (th)
+				       (list (car th)
+					     (fud-breakify (cadr th)))) th))))
+		    (else
+		     (fud-breakify th))))
+	  '(let loop ((behold 4))
+	     1
+	     (mapcar (lambda (b) (+ n 19)) '(129 304)))))
+
+(define (fud-instruct-1 thunk)
+  (let ((in-let #f)
+	(in-lambda #f)
+	(num 0))
+    (mapcar (lambda (th)
+	      (set! num (+ 1 num))
+	      (cond ((and (= num 1)
+			  (memq th '(let)))
+		     (set! in-let #t)
+		     th)
+		    (in-let		;special let rule
+		     (if (symbol? th) th
+			 (begin
+			   (set! in-let #f)
+			   (mapcar (lambda (th)
+				     (list (car th)
+					   (fud-breakify (cadr th)))) th))))
+		    ((and (= num 1)
+			  (memq th '(lambda)))
+		     (set! in-lambda #t)
+		     'lambda)
+		    (in-lambda		;simple lambda rule
+		     (set! in-lambda #f)
+		     th)
+		    (else
+		     (fud-breakify th))))
+	    thunk)))
+
+ranking system for completions according to number of times chosen/being part of the
+language.
 
 

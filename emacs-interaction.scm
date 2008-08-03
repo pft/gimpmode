@@ -1,5 +1,5 @@
 ;; -*- mode: Gimp; -*-
-;;; emacs-interaction.scm --- $Id: emacs-interaction.scm,v 1.21 2008-07-24 09:05:14 sharik Exp $
+;;; emacs-interaction.scm --- $Id: emacs-interaction.scm,v 1.22 2008-08-03 16:03:49 sharik Exp $
 ;; Copyright (C) 2008 Niels Giesen.
 
 ;; Author: Niels Giesen <nielsforkgiesen@gmailspooncom, but please
@@ -98,7 +98,7 @@
   (with-output-to-emacs-file                  ;dump oblist
    "emacs-gimp-oblist-cache"
    (write (if (= only-bound? TRUE)
-              (emacs-flatten-and-filter-bound (oblist))
+	      (emacs-flatten-and-filter-bound (oblist))
               (emacs-flatten (oblist)))))
   (gimp-procedural-db-dump              ;dump the dump
    (string-append gimp-dir "/dump.db")))
