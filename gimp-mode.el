@@ -1,4 +1,4 @@
-;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.48 2008-08-03 22:03:07 sharik Exp $
+;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.49 2008-10-05 08:07:25 sharik Exp $
 ;; Copyright (C) 2008 Niels Giesen
 
 ;; Author: Niels Giesen <nielsforkgiesen@gmailspooncom, but please
@@ -63,8 +63,7 @@
   (require 'ring)
   (require 'snippet)
   (require 'scheme-complete)
-;  (require 'fud)
-  )
+  (require 'fud))
  ;;;; Structure
 (defgroup gimp nil "Customization group for GIMP (script-fu) programming."
   :group 'shell
@@ -174,11 +173,16 @@ HINT is the help-echo, and face the gimp-FACE-face."
   :group 'gimp-faces)
 
 (defface gimp-function-name-face
-  '((((class color) (min-colors 88) (background light)) (:foreground "Blue1"))
-    (((class color) (min-colors 88) (background dark)) (:foreground "LightSkyBlue"))
-    (((class color) (min-colors 16) (background light)) (:foreground "Blue"))
-    (((class color) (min-colors 16) (background dark)) (:foreground "LightSkyBlue"))
-    (((class color) (min-colors 8)) (:foreground "blue" :weight bold))
+  '((((class color) (min-colors 88) (background light)) 
+     (:foreground "Blue1"))
+    (((class color) (min-colors 88) (background dark))
+     (:foreground "LightSkyBlue"))
+    (((class color) (min-colors 16) (background light))
+     (:foreground "Blue"))
+    (((class color) (min-colors 16) (background dark))
+     (:foreground "LightSkyBlue"))
+    (((class color) (min-colors 8))
+     (:foreground "blue" :weight bold))
     (t (:inverse-video t :weight bold)))
   "Gimp Mode face used to highlight function names."
   :group 'gimp-faces)
@@ -188,11 +192,16 @@ HINT is the help-echo, and face the gimp-FACE-face."
      (:foreground "Gray90" :weight bold :slant italic))
     (((class grayscale) (background dark))
      (:foreground "DimGray" :weight bold :slant italic))
-    (((class color) (min-colors 88) (background light)) (:foreground "DarkGoldenrod"))
-    (((class color) (min-colors 88) (background dark)) (:foreground "LightGoldenrod"))
-    (((class color) (min-colors 16) (background light)) (:foreground "DarkGoldenrod"))
-    (((class color) (min-colors 16) (background dark)) (:foreground "LightGoldenrod"))
-    (((class color) (min-colors 8)) (:foreground "yellow" :weight light))
+    (((class color) (min-colors 88) (background light))
+     (:foreground "DarkGoldenrod"))
+    (((class color) (min-colors 88) (background dark))
+     (:foreground "LightGoldenrod"))
+    (((class color) (min-colors 16) (background light))
+     (:foreground "DarkGoldenrod"))
+    (((class color) (min-colors 16) (background dark))
+     (:foreground "LightGoldenrod"))
+    (((class color) (min-colors 8))
+     (:foreground "yellow" :weight light))
     (t (:weight bold :slant italic)))
   "Gimp Mode face used to highlight variable names."
   :group 'gimp-faces)
@@ -274,7 +283,7 @@ Define such command with `gimp-defcommand' to be automatically included.")
   "Directories where the GIMP finds its sources"
   :group 'gimp)
 
-(defcustom gimp-src-dir (expand-file-name "~/src/gimp-2.4.2/")
+(defcustom gimp-src-dir (expand-file-name "~/Src/gimp-2.6/")
   "Source directory for the GIMP.
 
 On Debian(-derivatives), get the source for your distribution with apt-get
@@ -321,7 +330,7 @@ script-fu console."
   :type '(alist :key-type string :value-type string))
 
 (defcustom gimp-program (if (eq window-system 'w32)
-                            "gimp-2.4.exe" ;Probably... does not
+                            "gimp-2.6.exe" ;Probably... does not
 					   ;really matter anyway
                             "gimp")
   "Name of Gimp executable"
@@ -329,36 +338,37 @@ script-fu console."
   :type '(string))
 
 (defcustom gimp-command-line-args
-  "--batch-interpreter=plug-in-script-fu-eval -b -"
+   "-c --batch-interpreter=plug-in-script-fu-eval -b -"
   "Arguments to give to the GIMP. 
 
-  The list below is taken from GIMP version 2.4:
-  -v, --version                  Show version information and exit
-  --license                      Show license information and exit
-  --verbose                      Be more verbose
-  -n, --new-instance             Start a new GIMP instance
-  -a, --as-new                   Open images as new
-  -i, --no-interface             Run without a user interface
-  -d, --no-data                  Do not load brushes, gradients, patterns, ...
-  -f, --no-fonts                 Do not load any fonts
-  -s, --no-splash                Do not show a startup window
-  --no-shm                       Do not use shared memory between GIMP\
- and plugins
-  --no-cpu-accel                 Do not use special CPU acceleration functions
-  --session=<name>               Use an alternate sessionrc file
-  -g, --gimprc=<filename>        Use an alternate user gimprc file
-  --system-gimprc=<filename>     Use an alternate system gimprc file
-  -b, --batch=<command>          Batch command to run\
- (can be used multiple times)
-  --batch-interpreter=<proc>     The procedure to process batch commands with
-  -c, --console-messages         Send messages to console instead of using a\
- dialog
-  --pdb-compat-mode=<mode>       PDB compatibility mode (off|on|warn)
-  --stack-trace-mode=<mode>      Debug in case of a crash (never|query|always)
-  --debug-handlers               Enable non-fatal debugging signal handlers
-  --g-fatal-warnings             Make all warnings fatal
-  --dump-gimprc                  Output a gimprc file with default settings
-  --display=DISPLAY              X display to use"
+  The list below is taken from GIMP version 2.6:
+GNU Image Manipulation Program
+
+Application Options:
+  -v, --version                       Show version information and exit
+  --license                           Show license information and exit
+  --verbose                           Be more verbose
+  -n, --new-instance                  Start a new GIMP instance
+  -a, --as-new                        Open images as new
+  -i, --no-interface                  Run without a user interface
+  -d, --no-data                       Do not load brushes, gradients, patterns, ...
+  -f, --no-fonts                      Do not load any fonts
+  -s, --no-splash                     Do not show a startup window
+  --no-shm                            Do not use shared memory between GIMP and plugins
+  --no-cpu-accel                      Do not use special CPU acceleration functions
+  --session=<name>                    Use an alternate sessionrc file
+  -g, --gimprc=<filename>             Use an alternate user gimprc file
+  --system-gimprc=<filename>          Use an alternate system gimprc file
+  -b, --batch=<command>               Batch command to run (can be used multiple times)
+  --batch-interpreter=<proc>          The procedure to process batch commands with
+  -c, --console-messages              Send messages to console instead of using a dialog
+  --pdb-compat-mode=<mode>            PDB compatibility mode (off|on|warn)
+  --stack-trace-mode=<mode>           Debug in case of a crash (never|query|always)
+  --debug-handlers                    Enable non-fatal debugging signal handlers
+  --g-fatal-warnings                  Make all warnings fatal
+  --dump-gimprc                       Output a gimprc file with default settings
+  --display=DISPLAY                   X display to use"
+
   :group 'gimp
   :type 'string)
 
@@ -565,12 +575,7 @@ Raise error if ITEM is not in the RING."
     (with-no-warnings 
       (if (featurep 'fud)
 	(define-key m [(down-mouse-3)]
-	  (lambda ()
-	    "Set a fud breakpoint."
-	    (interactive)
-	    (let ((event (read-event)))
-	      (mouse-set-point event)
-	      (fud-set-breakpoint))))))
+	  'fud-mouse-set-breakpoint)))
     m))
 
 (defvar gimp-mode-map
@@ -593,12 +598,7 @@ Raise error if ITEM is not in the RING."
     (with-no-warnings
       (if (featurep 'fud)
 	(define-key m [(down-mouse-3)]
-	  (lambda ()
-	    "Set a fud breakpoint."
-	    (interactive)
-	    (let ((event (read-event)))
-	      (mouse-set-point event)
-	      (fud-set-breakpoint))))))
+	  'fud-mouse-set-breakpoint)))
     m))
 
 (defvar gimp-help-mode-map
@@ -715,7 +715,6 @@ buffer."
   "Mode for editing script-fu and interacting with an inferior gimp process."
   (use-local-map gimp-mode-map)
   (abbrev-mode 1)
-  (setq local-abbrev-table gimp-mode-abbrev-table)
   (add-to-list 'mode-line-process gimp-mode-line-format t)
   (setq indent-line-function 'lisp-indent-line)
   (if (null gimp-oblist-cache)
@@ -723,6 +722,7 @@ buffer."
   (setf 				;turn off CASE-FOLD in
 					;font-lock search
    (caddr font-lock-defaults) nil))
+
 
 (define-derived-mode inferior-gimp-mode inferior-scheme-mode
   "Inferior GIMP"
@@ -739,7 +739,7 @@ buffer."
   (destructuring-bind (version major minor) 
       (gimp-string-match 
        "\\([0-9]+\\)\.\\([0-9]+\\)"
-       "$Id: gimp-mode.el,v 1.48 2008-08-03 22:03:07 sharik Exp $" )
+       "$Id: gimp-mode.el,v 1.49 2008-10-05 08:07:25 sharik Exp $" )
       (if (interactive-p) 
           (prog1 nil 
             (message "GIMP mode version: %s.%s" major minor))
@@ -760,8 +760,12 @@ buffer."
 
 (defun gimp-check-version-compatibility ()
   (let ((m (string-match "\\([0-9]\.[0-9]\\)\\(\.exe\\)?$" gimp-program)))
-    (when (and m (not (string-match (concat (match-string 1 gimp-program) "$") gimp-dir)))
-      (message "Version of `gimp-program' and `gimp-dir' do not match, this is probably an error, please correct"))))
+    (when (and m
+	       (not
+		(string-match (concat (match-string 1 gimp-program) "$") 
+			      gimp-dir)))
+      (message "Version of `gimp-program' and `gimp-dir' \
+do not match, this is probably an error, please correct"))))
  ;;;; Evaluation
 (defmacro in-gimp (body)
   "Evaluate fu sexps without having to quote them. Syntactic sugar.
@@ -868,10 +872,11 @@ Lisp world."
     (set-process-filter (gimp-proc) 'gimp-filter)
     (scheme-send-string string t)
     (unless discard
-      (while (not (string-match "^> $" gimp-output)) ;prompt has not
+      (with-local-quit
+	(while (not (string-match "^> $" gimp-output)) ;prompt has not
 						     ;yet returned
         (sit-for .01))				   ;keep polling
-      (substring gimp-output 0 -2)))
+	(substring gimp-output 0 -2))))
    ((eq (process-status gimp-cl-proc)
         'open) (gimp-cl-eval-to-string string discard))
    (t "nil")))                 ;strip prompt
@@ -1072,6 +1077,7 @@ Deletes any previous stuff at that REPL"
 With prefix argument OVERRIDE-P, prompt for executable and
 arguments."
   (interactive "P")
+  (setq gimp-output "")
   (let ((gimp-program
 	 (if override-p 
 	     (read-file-name "Gimp executable: " "/" nil t gimp-program)
@@ -1083,11 +1089,14 @@ arguments."
     (if override-p 
 	(let ((configuration-dir
 	       (read-directory-name
-		"Gimp configuration directory (shall be set for this Emacs session): " "~/" nil t gimp-dir)))
+		"Gimp configuration directory\
+ (shall be set for this Emacs session): " "~/" nil t gimp-dir)))
 	  (customize-set-variable 'gimp-dir (expand-file-name configuration-dir))
 	  (if  (not (file-exists-p (expand-file-name
-				    (concat gimp-dir "/scripts/emacs-interaction.scm"))))
-	      (if (y-or-n-p "Gimp-mode was not installed in that directory, install it there? ")
+				    (concat gimp-dir
+					    "/scripts/emacs-interaction.scm"))))
+	      (if (y-or-n-p "Gimp-mode was not installed in that directory,\
+ install it there? ")
 		  (gimp-install gimp-dir)
 		(error "Backing out")))))
     (if (buffer-live-p (gimp-buffer))
@@ -1118,7 +1127,10 @@ or run command `gimp-cl-connect'.")
   (set-process-sentinel 
    (gimp-proc)
    (lambda (p s)
-     (ignore)))
+     (when (string-match "finished" s)
+         (gimp-save-input-ring)
+	 (kill-buffer (gimp-buffer))
+	 (message "GIMP process ended."))))
   (switch-to-buffer (gimp-buffer))
   (let (buffer-read-only)		;make the buffer capable
                                         ;of receiving user input etc.
@@ -1177,8 +1189,9 @@ Optional argument END-TEXT is the text appended to the message when TEST fails."
  ;;;; Utility functions
 (defun gimp-buffer ()
   (let ((proc (gimp-proc)))
-    (when proc
-      (process-buffer (gimp-proc)))))
+    (if proc
+      (process-buffer (gimp-proc))
+      (get-buffer "*GIMP*"))))
 
 (defun gimp-latest-source-buffer ()
   "Return latest visited source buffer.
@@ -2063,9 +2076,9 @@ arguments pertaining to the argument, in order:
 (defun gimp-indent-and-complete ()
   "Indent and complete function or argument at point."
   (interactive)
-  (progn
+  (let ((bolp (bolp)))
     (lisp-indent-line)
-    (gimp-complete)
+    (when (not bolp) (gimp-complete))
     (gimp-echo)))
 
 (defun gimp-current-arg ()
@@ -2644,7 +2657,7 @@ Type the abbreviations on the left in a GIMP Mode buffer, and hit ENTER
  ;;;; Misc interactive commands
 (gimp-defcommand gimp-selector (char)
   "GIMP buffer switcher similar to `slime-selector.
-Argument CHAR is used to choose between buffers.'."
+Argument CHAR is used to choose between actions.'."
   (interactive "cSwitch to gimp buffer [rldhc?]: ")
   (case char
     (?l (call-interactively 'gimp-switch-to-latest-source-buffer))
@@ -2654,9 +2667,10 @@ Argument CHAR is used to choose between buffers.'."
             (switch-to-buffer gimp-cl-buffer-name)
           (gimp-cl-connect)))
     (?d (call-interactively 'gimp-documentation))
+    (27 nil)
     (?? (message
 	 "i = inferior gimp buffer; l: last lisp buffer;\
- d: online documentation; h: help.")
+ d: online documentation; h: help; c: connect as client; ESC: cancel.")
         (sit-for 3)
         (call-interactively 'gimp-selector))
     (t (call-interactively 'gimp-selector))))
@@ -2950,7 +2964,7 @@ Lisp world."
                          nil            ;tracing does not work in gimp-cl
                        (scheme-send-string "(tracing 1)" t))
 		     (sit-for 0.1)
-		     (set 'gimp-output ""))
+ 		     (setq gimp-output ""))
                    (goto-char (point-max))
                    (if (gimp-cl-p)
                        (let ((cl-input (buffer-substring-no-properties
@@ -2980,7 +2994,7 @@ Lisp world."
                  (if (gimp-cl-p)  nil ;tracing does not work in gimp-cl
                    (scheme-send-string "(tracing 0)" t))
 		 (sit-for 0.1)
-		 (set 'gimp-output ""))
+		 (setq gimp-output ""))
 	       (setq buffer-undo-list undo-list)))))))
 
 (defun gimp-cl-mkprompt ()
