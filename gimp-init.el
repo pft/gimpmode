@@ -1,4 +1,4 @@
-;;; gimp-init.el --- $Id: gimp-init.el,v 1.17 2008-08-01 17:38:06 sharik Exp $
+;;; gimp-init.el --- $Id: gimp-init.el,v 1.18 2008-10-05 08:07:25 sharik Exp $
 ;; Copyright (C) 2008 Niels Giesen.
 
 ;; Author: Niels Giesen <nielsforkgiesen@gmailspooncom, but please
@@ -60,6 +60,14 @@
 
 (add-to-list 'auto-mode-alist
 	     '("\\(s-f-\\|script-fu\\).*\\.scm\\'" . gimp-mode))
+
+(defun gimp-script-p ()
+  "Return t when current buffer holds a GIMP script."
+  (when (string-match "gimp.*\.scm\\'" (buffer-file-name))
+    t))
+
+(add-to-list 'magic-mode-alist 
+	     '(gimp-script-p . gimp-mode))
 
 ;; auto-insert-alist is *not* automatically loaded in a vanilla
 ;; session... force by toggling:

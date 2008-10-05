@@ -129,7 +129,7 @@
 	   ;; INPUT
 	   (case (char-downcase (read-char))
 	      ;; Go...
-	      ((#\s)
+	      ((#\g)
 	       (display "Continued... (fud-trace) to trace again")
 	       (newline)
 	       (return (eval (car ',form))))

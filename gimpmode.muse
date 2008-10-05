@@ -18,7 +18,7 @@
  
 This version adds a betabetabeta version of =FUD=, meaning the Fu Debugger. It is however not yet set up by default yet (as it is *very* beta, as in "don't expect it to work" (actually it does...) and would break the client mode right now).  With FUD, you can define breakpoints and instruct functions for stepping, poking at the environment at run-time &c.
 
-Uncomment the =(require 'fud)= *before* compilation to experience a bit of what lies ahead. Also, symlink or copy the file fud.scm to =~/.gimp-2.[45]/scripts/=. See contents of =fud.scm= and =fud.el= for ponters. Expect more =FUD= in about three weeks time. First vacation.
+Uncomment the =(require 'fud)= in =gimp-mode.el= *before* compilation to experience a bit of what lies ahead. Also, symlink or copy the file fud.scm to =~/.gimp-2.[45]/scripts/=. See contents of =fud.scm= and =fud.el= for pointers. Expect more =FUD= in about three weeks time. First vacation.
 
 - gimp-mode.el (gimp-snippets): drop radio snippet, as the param
 type does not exist
@@ -137,7 +137,7 @@ To overcome the problem of not being able to interact with the GIMP as a subproc
 The features the client mode (as opposed to the truly inferior mode) currently lacks are:
 
  - tracing.
- - scheme functions =display=, =write= and any derivatives do not work.
+ - scheme functions =display=, =write= and any derivatives do not work. For these exact reasons, the FU Debugger does not work in this mode.
 
 Note: behaviour when using both modes together is unspecified (what a lovely fall-back that word is...) and unsupported (although I do use it when developing the client mode the trick is to first run =M-x run-gimp=, start the server, and then run =M-x gimp-cl-connect=).
 
@@ -201,7 +201,8 @@ If you want to hook into a running GIMP session as a client (this is the only me
 
 [[screenshots/script-fu-server.png][Start up the server from the Gimp]]
 
-Gimp Mode sets up buffers to to automatically use gimp-mode when the file begins with "s-f-" or "script-fu-" and ends with ".scm" (just ending in "scm" does *not* suffice, as it would be improper to impose gimp-mode on any scheme file). There are other ways, such as to put:
+Gimp Mode sets up buffers to to automatically use gimp-mode when the file begins with "s-f-" or "script-fu-" and ends with ".scm" (just ending in "scm" does *not* suffice, as it would be improper to impose gimp-mode on any scheme file). Also any file ending in ".scm" and in a path containing the string "gimp" is automatically started in gimp-mode (as of v1.49).  There are other ways, such as to put:
+
 
 <example>
 ;; -*- mode: Gimp; -*-
@@ -217,9 +218,9 @@ If you have set `auto-insert' set to a non-nil value, gimp-mode will insert that
  - Find a way to get to python/C stuff REGISTERED on procedure arguments. (such as: lower and upper bounds, step, precision, default values...)   (this has already been done for script-fu)
  - Test on an OSX box (interesting).
  - Add completion on =script-fu-register=, =script-fu-menu-register=.
- - Add function for constructing a basic =script-fu-register= form from a define form.
+ - Add function for constructing a basic =script-fu-register= form from a =define= form.
  - Make completion selection better (navigation and selection between candidates).
- - Show tracing in a separate buffer.
+ - Show tracing in a separate buffer (?).
  - And of course I am open to suggestions
 
 * Known Bugs
@@ -230,7 +231,7 @@ Please file any bugs you might find via =M-x gimp-report-bug RET=.
 
 * Possibly Asked Questions
 
-Q. What was your incentive to write this?
+Q. What was your incentive to write Gimp Mode?
 
 A. When writing a script for the GIMP, I found the discoverability to be quite low, existing interaction mechanisms clunky and, well, to be honest, I simply have the habit of writing an Emacs mode whenever I embark on any new project that can be handled by emacs and has not been handled be emacs yet -- or insufficiently. I have to admit that often this stops me from engaging in the project itself, becoming too absorbed in its interaction with emacs.
 

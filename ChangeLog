@@ -1,3 +1,26 @@
+2008-10-05  Niels Giesen  <sharik@localhost>
+
+	* gimp-mode.el (gimp-selector): Add ESC as binding to cancel the
+	selector + mention it under ?. Mention binding of ?c to
+	gimp-cl-connect under ?.
+	(gimp-first-run-action): Save input ring when gimp is closed
+	externally.
+	(gimp-buffer): Just (get-buffer "*GIMP*") if process is finished.
+	(run-gimp): clear gimp-output before going any further. This
+	closes the bug "Wrong argument: sequencep Copyright" (or something
+	like that..). 
+
+	* gimp-mode.el, gimp-install.el: change default gimp
+	version from 2.4 to 2.6
+
+2008-08-24  Niels Giesen  <sharik@localhost>
+
+	* gimp-init.el (magic-mode-alist): when the string "gimp" is part
+	of buffer-file-name (anywhere) AND filename ends in ".scm",
+	gimp-mode will be activated. This effectively means any scheme
+	script distributed with the GIMP, or that is in your
+	gimp-configuration directory will use gimp-mode.
+ 
 2008-08-03  Niels Giesen  <sharik@localhost>
 
 	* gimp-mode.el (gimp-snippets): drop radio snippet, as the param

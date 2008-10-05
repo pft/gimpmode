@@ -27,7 +27,7 @@
 ;; TinyScheme implementation shipped with the GIMP, but its design is
 ;; such that it could in principle work with any scheme.
 ;; 
-;; It's basis is setting break-points.  It can also parse the output
+;; Its basis is setting break-points.  It can also parse the output
 ;; of fud.scm, and provides 
 
 ;; `fud-set-breakpoint'      set a breakpoint around a sexp.
@@ -123,10 +123,16 @@
   (insert (fud-breakpoint-begin))
   (forward-sexp 1)
   (insert (fud-breakpoint-end))
-;; (save-excursion 
-;;     (fud-toplevel)
-;;     (gimp-send-last-sexp))
-  )
+(save-excursion 
+    (fud-toplevel)
+    (gimp-send-last-sexp)))
+
+(defun fud-mouse-set-breakpoint ()
+  "Set a fud breakpoint with the mouse."
+  (interactive)
+  (let ((event (read-event)))
+    (mouse-set-point event)
+    (fud-set-breakpoint)))
 
 (defun fud-remove-breakpoint ()
   "Remove breakpoint a point."
@@ -146,10 +152,9 @@
     (delete-backward-char
      (- (field-end (point))
 	(field-beginning (point)))))
-  ;; (save-excursion 
-;;     (fud-toplevel)
-;;     (gimp-send-last-sexp))
-)
+  (save-excursion 
+    (fud-toplevel)
+    (gimp-send-last-sexp)))
 
 (defun fud-update-breakpoints (&optional beg end)
   "Update breakpoints for sexp before point."

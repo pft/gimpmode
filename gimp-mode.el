@@ -1,4 +1,4 @@
-;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.49 2008-10-05 08:07:25 sharik Exp $
+;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.50 2008-10-05 08:09:09 sharik Exp $
 ;; Copyright (C) 2008 Niels Giesen
 
 ;; Author: Niels Giesen <nielsforkgiesen@gmailspooncom, but please
@@ -63,7 +63,8 @@
   (require 'ring)
   (require 'snippet)
   (require 'scheme-complete)
-  (require 'fud))
+;;   (require 'fud)
+  )
  ;;;; Structure
 (defgroup gimp nil "Customization group for GIMP (script-fu) programming."
   :group 'shell
@@ -739,7 +740,7 @@ buffer."
   (destructuring-bind (version major minor) 
       (gimp-string-match 
        "\\([0-9]+\\)\.\\([0-9]+\\)"
-       "$Id: gimp-mode.el,v 1.49 2008-10-05 08:07:25 sharik Exp $" )
+       "$Id: gimp-mode.el,v 1.50 2008-10-05 08:09:09 sharik Exp $" )
       (if (interactive-p) 
           (prog1 nil 
             (message "GIMP mode version: %s.%s" major minor))

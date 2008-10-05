@@ -1,4 +1,4 @@
-;;; gimp-install.el --- $Id: gimp-install.el,v 1.8 2008-08-03 22:03:07 sharik Exp $
+;;; gimp-install.el --- $Id: gimp-install.el,v 1.9 2008-10-05 08:07:25 sharik Exp $
 ;; Copyright (C) 2008 Niels Giesen.
 
 ;; Author: Niels Giesen <nielsforkgiesen@gmailspooncom, but please
@@ -62,8 +62,8 @@ For more information consult the file README."
 		(if (eq window-system 'w32) 
 		    (format "C:/Documents and Settings/%s/%s"
 			    user-login-name
-			    ".gimp-2.4/")
-		  "~/.gimp-2.4/")))))
+			    ".gimp-2.6/")
+		  "~/.gimp-2.6/")))))
 	 (gimp-emacs-dir (expand-file-name (concat gimp-dir "/emacs/")))
 	 (emacs-interaction.scm "emacs-interaction.scm")
 	 (emacs-interaction.scm-target
@@ -74,14 +74,14 @@ For more information consult the file README."
 			    emacs-interaction.scm)
 		      "/")))
 
-;; 	 (fud.scm "fud.scm")
-;; 	 (fud.scm-target
-;; 	  (expand-file-name 
-;; 	   (mapconcat 'identity
-;; 		      (list gimp-dir
-;; 			    "scripts"
-;; 			    fud.scm)
-;; 		      "/")))
+	 (fud.scm "fud.scm")
+	 (fud.scm-target
+	  (expand-file-name 
+	   (mapconcat 'identity
+		      (list gimp-dir
+			    "scripts"
+			    fud.scm)
+		      "/")))
 
 	 (gimp-init-file (concat gmd "gimp-init.el")))
     (unless (file-exists-p gimp-emacs-dir)
@@ -107,23 +107,23 @@ For more information consult the file README."
 		(setq done t))
 	    (error (message "%s" (error-message-string err)))))))
 
-;    (message "Installing %s..." fud.scm-target)
-;;     (let (done
-;; 	  (funs (if (fboundp 'make-symbolic-link)
-;; 		    '(make-symbolic-link copy-file)
-;; 		  '(copy-file))))
-;;       (dolist (fun '(make-symbolic-link copy-file))
-;; 	(unless done
-;; 	  (condition-case err
-;; 	      (progn
-;; 		(apply fun
-;; 		       (list
-;; 			(expand-file-name
-;; 			 (concat gmd fud.scm))
-;; 			fud.scm-target
-;; 			t))
-;; 		(setq done t))
-;; 	    (error (message "%s" (error-message-string err)))))))
+   (message "Installing %s..." fud.scm-target)
+    (let (done
+	  (funs (if (fboundp 'make-symbolic-link)
+		    '(make-symbolic-link copy-file)
+		  '(copy-file))))
+      (dolist (fun '(make-symbolic-link copy-file))
+	(unless done
+	  (condition-case err
+	      (progn
+		(apply fun
+		       (list
+			(expand-file-name
+			 (concat gmd fud.scm))
+			fud.scm-target
+			t))
+		(setq done t))
+	    (error (message "%s" (error-message-string err)))))))
 
     (progn
       (find-file-literally (concat gmd "gimp-vars.el"))
