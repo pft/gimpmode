@@ -1,4 +1,4 @@
-;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.50 2008-10-05 08:09:09 sharik Exp $
+;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.51 2008-10-12 10:28:24 sharik Exp $
 ;; Copyright (C) 2008 Niels Giesen
 
 ;; Author: Niels Giesen <nielsforkgiesen@gmailspooncom, but please
@@ -740,7 +740,7 @@ buffer."
   (destructuring-bind (version major minor) 
       (gimp-string-match 
        "\\([0-9]+\\)\.\\([0-9]+\\)"
-       "$Id: gimp-mode.el,v 1.50 2008-10-05 08:09:09 sharik Exp $" )
+       "$Id: gimp-mode.el,v 1.51 2008-10-12 10:28:24 sharik Exp $" )
       (if (interactive-p) 
           (prog1 nil 
             (message "GIMP mode version: %s.%s" major minor))
@@ -866,20 +866,33 @@ Lisp world."
           (read (substring output 1)))	;so strip
       (read output))))
 
-(defun gimp-eval-to-string (string &optional discard)
+(defun gimp-eval-to-string (string &optional discard timeout)
+  "Eval STRING in the GIMP. 
+
+With optional argument DISCARD, do not wait van return value.
+Throw an error if TIMEOUT seconds have passed. This can be used
+to avoid infinite looping. "
+;; Apparently `with-local-quit' did not cut it, therefore the timeout
+;; option'.  Without TIMEOUT, just keep on trying until `gimp-output'
+;; matches \"^> $\""
   (cond
    ((gimp-interactive-p)
     (setq gimp-output "")
     (set-process-filter (gimp-proc) 'gimp-filter)
     (scheme-send-string string t)
     (unless discard
-      (with-local-quit
-	(while (not (string-match "^> $" gimp-output)) ;prompt has not
-						     ;yet returned
-        (sit-for .01))				   ;keep polling
-	(substring gimp-output 0 -2))))
+      (let ((time (current-time)))
+	(with-local-quit
+	  (while 
+	    (not (string-match "^> $" gimp-output)) ;prompt has not
+					;yet returned
+	    (when (and timeout (> (cadr (time-since time)) timeout))
+	      (error "%S Timed out" this-command))
+	    (sit-for .01))			     ;keep polling
+	  (substring gimp-output 0 -2)))))
    ((eq (process-status gimp-cl-proc)
-        'open) (gimp-cl-eval-to-string string discard))
+        'open)
+    (gimp-cl-eval-to-string string discard))
    (t "nil")))                 ;strip prompt
 
 (defun gimp-insert-input (event)
@@ -1038,6 +1051,13 @@ Optional argument SUBMENU defines the default content of the minibuffer."
 				 nil t (or submenu "<")))
          (plug-in (car (rassoc* entry gimp-menu :key 'car :test 'string=))))
     (gimp-describe-procedure plug-in)))
+
+(defun gimp-insert-menu-path ()
+  (interactive)
+  (insert (completing-read "Insert menu entry: "
+			   (mapcar 'cadr gimp-menu)
+			   nil nil "<")))
+
 
 (defun gimp-submenu-at-point (pos)
   "Return submenu at POS."
@@ -1856,7 +1876,7 @@ s : search source code for symbol"
 	     "(let* ((bound? (symbol-bound? '%s))\
  (code (if bound? (get-closure-code %s) #f)))\
  (if code (cons '%s (cadr code)) 'nil))"
-	     (make-list 4 sym))))))				
+	     (make-list 4 sym)) nil 1))))				
 
 (defun gimp-procedure-description (sym)
   (let ((info (gimp-get-proc-description sym)))
@@ -2416,7 +2436,10 @@ arguments will be echoed in the minibuffer."
            'fu)
        (eq this-command last-command))
       (progn 
-        (setq this-command 'other-command)
+	;; set this-command to its name, so that calls to eq will
+	;; fail, but we still can know what command has been
+	;; effectively called.
+        (setq this-command (symbol-name this-command)) 
         (if gimp-try-and-get-closure-code-p
 	    (gimp-get-closure-code sym)))
     (cons sym 
@@ -2443,8 +2466,7 @@ argument at point is highlighted."
 	
 	(cond ((gethash sym gimp-dump)
 	       ;; Get it
-	       (setq response
-		     (gimp-docstring (read str))))
+	       (setq response (gimp-docstring (read str))))
 	      ((unless nil ;(string-match "define\\(?:-macro\\)?\\|let" str)
                                         ;`scheme-get-current-symbol-info'
                                         ;"fails" in these cases.
@@ -2460,12 +2482,13 @@ argument at point is highlighted."
 		     nil))))
 	      (t
 	       ;; Get it (unless we have it already)
-	       (unless response
-		 (setq response
-		       (if gimp-try-and-get-closure-code-p
-			   (gimp-get-closure-code sym)))
-		 (when (not (consp response))
-		   (setq response nil)))))
+	       (unless (and response (not (consp response)))
+;;; 		 (setq response
+;;; 		       (if (and gimp-try-and-get-closure-code-p
+;;; 				(not (eq this-command 'gimp-indent-and-complete)))
+;;; 			   (gimp-get-closure-code sym)))
+					;		 (when (not (consp response))
+		 (setq response nil))))
 
 	(when (and response 
                    (not (eq 'gimp-error (car response)))) ;this may be 
@@ -2571,8 +2594,8 @@ into etags and find-tag."
  
 
 \(script-fu-register \"script-fu-$${name}\"
-                    _\"$${blurp (use _ before shortcut letter!) }\"
-                    _\"$${help}\"
+                    _\"$${menu entry (use _ before shortcut letter!) }\"
+                    _\"$${hint}\"
                     \"$${%s} ($${%s})\"
                     \"$${%s}\"
                     \"$${%s}\"

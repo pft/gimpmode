@@ -12,9 +12,34 @@
  - Documentation echoing.
  - Hypertext help system with history.
 
-* News: FUD 
+* News: hanging emacs bug fixed.
 
+** Version v1.51:
+
+- gimp-mode.el (gimp-get-closure-code): traced down hanging emacs on
+quickly repeated keypresses (TAB and SPACE), to this call. Added a
+timeout argument of one second to the call of gimp-eval-to-string.
+(gimp-eval-to-string): add timeout option to avoid infinite loop.
+Throw error if timeout is exceeded. (Note: this bug could have also
+been avoided by setting `gimp-try-and-get-closure-code-p' to non-nil).
+
+** Version v1.50:
+
+- gimp-mode.el (gimp-selector): Add ESC as binding to cancel the
+selector + mention it under ?. Mention binding of ?c to
+gimp-cl-connect under ?.
+(gimp-first-run-action): Save input ring when gimp is closed
+externally.
+(gimp-buffer): Just (get-buffer "*GIMP*") if process is finished.
+(run-gimp): clear gimp-output before going any further. This
+closes the bug "Wrong argument: sequencep Copyright" (or something like that..).
+
+- gimp-mode.el, gimp-install.el: change default gimp version from 2.4 to 2.6
+
+- gimp-init.el (magic-mode-alist): when the string "gimp" is part of buffer-file-name (anywhere) AND filename ends in ".scm", gimp-mode will be activated. This effectively means any scheme script distributed with the GIMP, or that is in your gimp-configuration directory will use gimp-mode.
+ 
 ** Version v1.48 (the FUD release): 
+
  
 This version adds a betabetabeta version of =FUD=, meaning the Fu Debugger. It is however not yet set up by default yet (as it is *very* beta, as in "don't expect it to work" (actually it does...) and would break the client mode right now).  With FUD, you can define breakpoints and instruct functions for stepping, poking at the environment at run-time &c.
 

@@ -19,5 +19,5 @@ mv gimp-mode-v$VERSION.tar.bz2 $TMPDIR/gimp-mode.tar.bz2
 mv gimp-mode-v$VERSION.zip $TMPDIR/gimp-mode.zip
 echo "Uploading files..."
 scp $TMPDIR/* skrinka:/var/www/public/GimpMode
-echo "old stuff at $TMPDIR"
+echo "Uploaded stuff still available at $TMPDIR"
 

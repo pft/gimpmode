@@ -1,3 +1,14 @@
+2008-10-12  Niels Giesen  <niels.giesen@gmail.com>
+
+
+	* gimp-mode.el (gimp-get-closure-code): traced down hanging emacs
+	on quickly repeated keypresses (TAB and SPACE), to this call.
+	Added a timeout argument of one second to the call of
+	gimp-eval-to-string.
+	(gimp-eval-to-string): add timeout option to avoid infinite
+	loop. (Note: this bug could have also been avoided by setting
+	`gimp-try-and-get-closure-code-p' to non-nil)
+
 2008-10-05  Niels Giesen  <sharik@localhost>
 
 	* gimp-mode.el (gimp-selector): Add ESC as binding to cancel the
@@ -8,7 +19,7 @@
 	(gimp-buffer): Just (get-buffer "*GIMP*") if process is finished.
 	(run-gimp): clear gimp-output before going any further. This
 	closes the bug "Wrong argument: sequencep Copyright" (or something
-	like that..). 
+	like that..).
 
 	* gimp-mode.el, gimp-install.el: change default gimp
 	version from 2.4 to 2.6
