@@ -164,11 +164,11 @@ The features the client mode (as opposed to the truly inferior mode) currently l
  - tracing.
  - scheme functions =display=, =write= and any derivatives do not work. For these exact reasons, the FU Debugger does not work in this mode.
 
-Note: behaviour when using both modes together is unspecified (what a lovely fall-back that word is...) and unsupported (although I do use it when developing the client mode the trick is to first run =M-x run-gimp=, start the server, and then run =M-x gimp-cl-connect=).
+Note: behaviour when using both modes together is unspecified (what a lovely fall-back that word is...) and unsupported (although I do use it when developing the client mode. The trick is to first run =M-x run-gimp=, start the server, and then run =M-x gimp-cl-connect=).
 
 Note that on any system gimp-mode is perfectly capable of performing quite well `off-line', as it reads in most data through the use of caches. Stuff it cannot do unconnected (i.e. evaluation, and some echoing and completion that are dependent on evaluation) it will simply ignore. If not, that is a bug and should be filed as such (=M-x gimp-report-bug=).
 
-2. I have not written many script-fu files to test this mode on, two wit: two, one of which is =emacs-interaction.scm=  that comes with Gimp Mode (for the curious: the [[http://registry.gimp.org/node/6226][other one]] makes a selection of sun rays).
+2. I have not written many script-fu files to test this mode on, to wit: two, one of which is =emacs-interaction.scm=  that comes with Gimp Mode (for the curious: the [[http://registry.gimp.org/node/6226][other one]] makes a selection of sun rays).
 
 3. There is no way currently to recover from non-returning forms, such an infinite loop, save for killing the process altogether.  I'd love to find a way to deal with this.  In this regard, the client mode is the better choice, as you are able to spawn several servers and just re-connect from emacs.
 

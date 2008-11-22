@@ -9,6 +9,11 @@
   modes, but the console mode is derived from - say - comint-mode and
   the text buffer mode is derived from lisp-mode.  
 
+
+; (modify-coding-system-alist 'process "ypsilon" '(utf-8 . utf-8))
+
+  the text buffer mode is derived from lisp-mode.  
+
 add constants to font-locking
 
 step inside for breakpoints ... 
