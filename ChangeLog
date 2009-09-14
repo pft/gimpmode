@@ -1,3 +1,8 @@
+2009-09-13  niels giesen  <sharik@localhost>
+
+	* Multiple patches by Brent Goodrick to fix bugs thrown by
+	completion functions inside comments and let/let* forms.
+ 
 2008-10-12  Niels Giesen  <niels.giesen@gmail.com>
 
 

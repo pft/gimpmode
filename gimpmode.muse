@@ -12,7 +12,12 @@
  - Documentation echoing.
  - Hypertext help system with history.
 
-* News: hanging emacs bug fixed.
+* News: people do use Gimp Mode
+
+** Version v1.52:
+
+- Multiple patches by Brent Goodrick to fix bugs thrown by
+completion functions inside comments and let/let* forms.
 
 ** Version v1.51:
 

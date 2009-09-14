@@ -1,4 +1,4 @@
-;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.51 2008-10-12 10:28:24 sharik Exp $
+;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.52 2009-09-14 12:14:27 sharik Exp $
 ;; Copyright (C) 2008 Niels Giesen
 
 ;; Author: Niels Giesen <nielsforkgiesen@gmailspooncom, but please
@@ -439,6 +439,14 @@ If no `interactive' form is used in BODY, an error is signalled."
          (gimp-up-string))
      ,@body))
 
+(defmacro gimp-without-string-or-comment (&rest body)
+  `(save-excursion
+     (if (gimp-in-string-p)
+         (gimp-up-string))
+     (if (gimp-in-comment-p)
+         (gimp-up-comment))
+     ,@body))
+
 (defun gimp-string-match (re str &optional num)
   (when (string-match re str)
     (if num (match-string num str)
@@ -740,7 +748,7 @@ buffer."
   (destructuring-bind (version major minor) 
       (gimp-string-match 
        "\\([0-9]+\\)\.\\([0-9]+\\)"
-       "$Id: gimp-mode.el,v 1.51 2008-10-12 10:28:24 sharik Exp $" )
+       "$Id: gimp-mode.el,v 1.52 2009-09-14 12:14:27 sharik Exp $" )
       (if (interactive-p) 
           (prog1 nil 
             (message "GIMP mode version: %s.%s" major minor))
@@ -1256,6 +1264,11 @@ buffer, is found."
   (when (re-search-backward "[^\\]\"" nil t)
     (forward-char 1)))
 
+(defun gimp-up-comment ()
+  "Move point to a place presumable not in a comment."
+  (while (gimp-in-comment-p)
+    (backward-char 1)))
+
 (defun gimp-beginning-of-sexp ()
   (let ((parse-sexp-ignore-comments t))
     (condition-case err
@@ -1291,57 +1304,58 @@ buffer, is found."
 
 (defun gimp-fnsym-in-current-sexp ()
   (let ((p (point)))
-    (gimp-without-string
-     (when  (not (looking-back ",[[:alnum:]- ]+"))
+    (gimp-without-string-or-comment
+     (when (not (looking-back ",[[:alnum:]- ]+"))
        (with-syntax-table scheme-mode-syntax-table
-	 (while 
-	     (and
+         (while
+             (and
               (not (bobp))
               (let ((m (when (gimp-proc)
-			   (process-mark (gimp-proc)))))
-		(or (not m)
-		    (if 
-			(eq (marker-buffer m)
-			    (current-buffer))
-			(not (= (point)
-				(marker-position m)))
-		      t)))		;no rules for other types of buffers.
-	      (or 
-	       (when (eq (char-syntax (char-before)) ?\")
-		 (backward-sexp 1)
-		 t)
-	       (memq (char-syntax (char-before)) '(?w ?_ 32 ?- ?\" ?> ?'))
-	       (when (memq (char-syntax (char-before)) '(?\)))
-		 (backward-sexp 1)
-		     t)))
-	   (forward-char -1)))
+                         (process-mark (gimp-proc)))))
+                (or (not m)
+                    (if
+                        (eq (marker-buffer m)
+                            (current-buffer))
+                        (not (= (point)
+                                (marker-position m)))
+                      t)))       ;no rules for other types of buffers.
+              (or
+               (gimp-in-comment-p)
+               (when (eq (char-syntax (char-before)) ?\")
+                 (backward-sexp 1)
+                 t)
+               (memq (char-syntax (char-before)) '(?w ?_ 32 ?- ?\" ?> ?'))
+               (when (memq (char-syntax (char-before)) '(?\)))
+                 (backward-sexp 1)
+                 t)))
+           (forward-char -1)))
        (prog1
-	   ;; Return nil if current word is actually:
-	   (if
-               (or 
+;; Return nil if current word is actually:
+           (if
+               (or
                 (= (or (char-after (1- (point))) 0) ?\") ;at a string
-                (bobp)			;or at beginning of buffer
-		(number-at-point))	;or beginning with a number -
-					;hence no symbol.
-	       nil
-	     (gimp-current-symbol))
-	 (goto-char p))))))
+                (bobp)                  ;or at beginning of buffer
+                (number-at-point))      ;or beginning with a number -
+                                        ;hence no symbol.
+               nil
+             (gimp-current-symbol))
+         (goto-char p))))))
 
 (defun gimp-position ()
   "Return position of point in current lambda form."
   (if (bolp)		 ;correct, but does not intercept all possible
                                         ;0-positions, of course
       0
-    (gimp-without-string
+    (gimp-without-string-or-comment
      (let ((count 0))
        (if (not (looking-at "[ \n\t)(\"']+"))
 	   (forward-sexp 1))
        (if (looking-back "[ \n\t)(]+")
 	   (incf count))
-       (while (not (or (looking-back "( *")
-		       (looking-back comint-prompt-regexp)))
-	 (backward-sexp 1)
-	 (incf count))
+       (while (not (or (looking-back (rx "(" (* (or "\n" white))))
+                       (looking-back comint-prompt-regexp)))
+         (backward-sexp 1)
+         (incf count))
        (decf count)))))
 
 ;; adapted from scheme-in-string-p in scheme-complete.el
@@ -2161,58 +2175,58 @@ Optional argument LST specifies a list of completion candidates."
 	      (scroll-up))))
 ;; Do completion.
       (multiple-value-bind (beg end pattern) (gimp-current-arg)
-          (let* ((lst (mapcar (lambda (i)
-				(if (listp i)
-				    (car i)
-				  i)) 	;let the list be possibly of form ((matchable . metadata))
-			      (or lst gimp-oblist-cache)))
-	     (completion
-	      (if (not gimp-complete-fuzzy-p)
-		  (try-completion pattern lst nil)
-		(or (gimp-try-fuzzy-completion pattern lst) pattern))))
-	(cond ((eq completion t))
-	      ((null completion)
-	       (ding))
-	      ((not (string= pattern completion))
-	       (delete-region beg end)
-	       (insert completion)
-;; Don't leave around a completions buffer that's out of date.
-	       (let ((win (get-buffer-window "*Completions*" 0)))
-		 (if win (with-selected-window win (bury-buffer)))))
-	      (t
-	       (let ((minibuf-is-in-use
-		      (eq (minibuffer-window) (selected-window))))
-		 (unless minibuf-is-in-use
-		   (message "Making completion list..."))
-		 (let ((lst2
-			(if gimp-complete-fuzzy-p
-			    (gimp-all-fuzzy-completions
-			     pattern
-			     lst)
-			  (all-completions pattern lst nil))))
-		   (if (not gimp-complete-fuzzy-p)
-		       (setq lst2 (sort lst2 'string<)))
-		   (if (> (length lst2) 1)
-		       (progn
-;; (with-output-to-temp-buffer "*Completions*"
-;;   (display-completion-list nil))
-					;set up a good buffer (with
-					;all them hooks (orig code:)
-			 (with-output-to-temp-buffer "*Completions*"
-			   (display-completion-list lst2))
-			 (gimp-highlight-matches completion
-                                                 "*Completions*"))
-
-;; Don't leave around a completions buffer that's
-;; out of date.
-		     (if (not gimp-complete-fuzzy-p)
-			 (let ((win (get-buffer-window "*Completions*" 0)))
-			   (if win (with-selected-window win (bury-buffer))))
-		       (when (= 1 (length lst))
-			 (delete-region beg end)
-			 (insert (car lst2))))))
-		 (unless minibuf-is-in-use
-		   (message "Making completion list...%s" "done"))))))))))
+               (and (not (string-equal pattern ""))
+             (let* ((lst (mapcar (lambda (i)
+                                   (if (listp i)
+                                       (car i)
+                                     i))        ;let the list be possibly of form ((matchable . metadata))
+                                 (or lst gimp-oblist-cache)))
+                    (completion
+                     (if (not gimp-complete-fuzzy-p)
+                         (try-completion pattern lst nil)
+                       (or (gimp-try-fuzzy-completion pattern lst) pattern))))
+               (cond ((eq completion t))
+                     ((null completion)
+                      (ding))
+                     ((not (string= pattern completion))
+                      (delete-region beg end)
+                      (insert completion)
+                      ;; Don't leave around a completions buffer that's out of date.
+                      (let ((win (get-buffer-window "*Completions*" 0)))
+                        (if win (with-selected-window win (bury-buffer)))))
+                     (t
+                      (let ((minibuf-is-in-use
+                             (eq (minibuffer-window) (selected-window))))
+                        (unless minibuf-is-in-use
+                          (message "Making completion list..."))
+                        (let ((lst2
+                               (if gimp-complete-fuzzy-p
+                                   (gimp-all-fuzzy-completions
+                                    pattern
+                                    lst)
+                                 (all-completions pattern lst nil))))
+                          (if (not gimp-complete-fuzzy-p)
+                              (setq lst2 (sort lst2 'string<)))
+                          (if (> (length lst2) 1)
+                              (progn
+                                ;; (with-output-to-temp-buffer "*Completions*"
+                                ;;   (display-completion-list nil))
+                                        ;set up a good buffer (with
+                                        ;all them hooks (orig code:)
+                                (with-output-to-temp-buffer "*Completions*"
+                                  (display-completion-list lst2))
+                                (gimp-highlight-matches completion
+                                                        "*Completions*"))
+                            ;; Don't leave around a completions buffer that's
+                            ;; out of date.
+                            (if (not gimp-complete-fuzzy-p)
+                                (let ((win (get-buffer-window "*Completions*" 0)))
+                                  (if win (with-selected-window win (bury-buffer))))
+                              (when (= 1 (length lst))
+                                (delete-region beg end)
+                                (insert (car lst2))))))
+                        (unless minibuf-is-in-use
+                          (message "Making completion list...%s" "done")))))))))))
 
 (defun gimp-complete-oblist (&optional discard)
   "Function that always just uses the oblist to complete the symbol at point.
@@ -2243,7 +2257,7 @@ Pushed into `hippie-expand-try-functions-list'."
 (defun gimp-completable-at-p ()
   "Check whether thing at p is completable."
   (let ((fun (gimp-fnsym-in-current-sexp)))
-    (gethash fun gimp-dump)))
+    (and fun (gethash fun gimp-dump))))
 
 (defun gimp-complete ()
   "Main completion function."
@@ -2258,7 +2272,7 @@ Pushed into `hippie-expand-try-functions-list'."
     (cond
      (gimp-command
       (gimp-complete-savvy gimp-shortcuts))
-     ((> pos (length (gimp-get-proc-args fun)))
+     ((and fun (> pos (length (gimp-get-proc-args fun))))
       (point))
      ((gimp-completable-at-p)
       (let* ((desc (gimp-get-proc-arg fun (1- pos)))
@@ -2456,6 +2470,7 @@ The echo takes the form of (function (name-1 TYPE)...(name-n TYPE)), where the
 argument at point is highlighted."
   (interactive)
   (unless (or (gimp-in-string-p) 
+              (gimp-in-comment-p)
 	      (and (not (interactive-p))
 		   (not gimp-echo-p)))
     (let ((result))
@@ -2463,58 +2478,57 @@ argument at point is highlighted."
 	     (str (symbol-name sym))
 	     response
 	     (pos (gimp-position)))
-	
-	(cond ((gethash sym gimp-dump)
-	       ;; Get it
-	       (setq response (gimp-docstring (read str))))
-	      ((unless nil ;(string-match "define\\(?:-macro\\)?\\|let" str)
+        (when sym
+          (cond ((gethash sym gimp-dump)
+                 ;; Get it
+                 (setq response (gimp-docstring (read str))))
+                ((unless nil ;(string-match "define\\(?:-macro\\)?\\|let" str)
                                         ;`scheme-get-current-symbol-info'
                                         ;"fails" in these cases.
-		 (let
-		     ((info
-		       (scheme-get-current-symbol-info)))
-		   (if (and info (listp (read info))) ;the actual condition
+                   (let
+                       ((info
+                         (scheme-get-current-symbol-info)))
+                     (if (and info (listp (read info))) ;the actual condition
                                         ;for cond clause
-		       (progn
-			 (setq response (read info))
-			 (setq result (gimp-string-match "(.*)\\(.*\\)" info 1))
-			 t)		;break
-		     nil))))
-	      (t
-	       ;; Get it (unless we have it already)
-	       (unless (and response (not (consp response)))
-;;; 		 (setq response
-;;; 		       (if (and gimp-try-and-get-closure-code-p
-;;; 				(not (eq this-command 'gimp-indent-and-complete)))
-;;; 			   (gimp-get-closure-code sym)))
-					;		 (when (not (consp response))
-		 (setq response nil))))
-
-	(when (and response 
-                   (not (eq 'gimp-error (car response)))) ;this may be 
-					;an error
-					;in gimp-cl
-	  (setq response
- 		(mapcar (lambda (item) (format "%s" item))
-			(dotted-to-list response)))
-	  (setf (car response)
-		(propertize str 'face 'font-lock-keyword-face))
-	  ;; Show it
-	  (let ((this-arg (nth pos response)))
-	    (when this-arg
-	      (when (> pos 0)
-		(let ((arg (nth pos response)))
-		  (setf (nth pos response)
-			(if (string-match "^\. " arg)
-			    (concat ". " 
-				    (propertize (substring arg 2)
-						'face 'highlight))
-			  (propertize arg 'face 'highlight)))))
-	      (message "(%s)%s" (mapconcat 'identity response " ")
-		       (or result ""))
-	      (when (> pos 0)
-		(set-text-properties 0 (length this-arg)
-				     nil (nth pos response))))))))))
+                         (progn
+                           (setq response (read info))
+                           (setq result (gimp-string-match "(.*)\\(.*\\)" info 1))
+                           t)           ;break
+                       nil))))
+                (t
+;; Get it (unless we have it already)
+                 (unless (and response (not (consp response)))
+;;;             (setq response
+;;;                   (if (and gimp-try-and-get-closure-code-p
+;;;                            (not (eq this-command 'gimp-indent-and-complete)))
+;;;                       (gimp-get-closure-code sym)))
+                                        ;                (when (not (consp response))
+                   (setq response nil))))
+          (when (and response
+                     (not (eq 'gimp-error (car response)))) ;this may be
+                                        ;an error
+                                        ;in gimp-cl
+            (setq response
+                  (mapcar (lambda (item) (format "%s" item))
+                          (dotted-to-list response)))
+            (setf (car response)
+                  (propertize str 'face 'font-lock-keyword-face))
+;; Show it
+            (let ((this-arg (nth pos response)))
+              (when this-arg
+                (when (> pos 0)
+                  (let ((arg (nth pos response)))
+                    (setf (nth pos response)
+                          (if (string-match "^\. " arg)
+                              (concat ". "
+                                      (propertize (substring arg 2)
+                                                  'face 'highlight))
+                            (propertize arg 'face 'highlight)))))
+                (message "(%s)%s" (mapconcat 'identity response " ")
+                         (or result ""))
+                (when (> pos 0)
+                  (set-text-properties 0 (length this-arg)
+                                       nil (nth pos response)))))))))))
 
 (defun gimp-echo-procedure-description (sym)
   "Echo short description for SYM."
