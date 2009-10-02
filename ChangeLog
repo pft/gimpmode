@@ -1,3 +1,7 @@
+2009-10-02  Niels Giesen  <niels.giesen@gmail.com>
+
+	* gimp-mode.el (gimp-unit-test-execute): Applying patch by Brent Goodrick 
+
 2009-09-13  niels giesen  <sharik@localhost>
 
 	* Multiple patches by Brent Goodrick to fix bugs thrown by
