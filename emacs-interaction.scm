@@ -1,6 +1,6 @@
 ;; -*- mode: Gimp; -*-
-;;; emacs-interaction.scm --- $Id: emacs-interaction.scm,v 1.22 2008-08-03 16:03:49 sharik Exp $
-;; Copyright (C) 2008 Niels Giesen.
+;;; emacs-interaction.scm
+;; Copyright (C) 2008-2009 Niels Giesen.
 
 ;; Author: Niels Giesen <nielsforkgiesen@gmailspooncom, but please
 ;; replace the kitchen utensils with a dot before hitting "Send">

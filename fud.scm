@@ -1,7 +1,11 @@
 ;; -*- mode: gimp; -*-
-;; Copyright (C) 2008  Niels Giesen
+;; Copyright (C) 2008-2009  Niels Giesen
 
-;; Author: Niels Giesen <sharik@localhost>
+
+;; Author: Niels Giesen <nielsforkgiesen@gmailspooncom, but please
+;; replace the kitchen utensils with a dot before hitting "Send">
+;; Keywords: processes, multimedia, extensions, tools, gimp, scheme
+;; Homepage: http://niels.kicks-ass.org/gimpmode
 ;; Keywords: lisp, tools, scheme, debugging
 
 ;; This file is free software; you can redistribute it and/or modify

@@ -1,5 +1,5 @@
-;;; gimp-install.el --- $Id: gimp-install.el,v 1.9 2008-10-05 08:07:25 sharik Exp $
-;; Copyright (C) 2008 Niels Giesen.
+;;; gimp-install.el
+;; Copyright (C) 2008-2009 Niels Giesen.
 
 ;; Author: Niels Giesen <nielsforkgiesen@gmailspooncom, but please
 ;; replace the kitchen utensils with a dot before hitting "Send">

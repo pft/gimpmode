@@ -1,5 +1,5 @@
-;;; gimp-mode.el --- $Id: gimp-mode.el,v 1.53 2009-10-02 20:55:07 sharik Exp $
-;; Copyright (C) 2008 Niels Giesen
+;;; gimp-mode.el 
+;; Copyright (C) 2008-2009 Niels Giesen
 
 ;; Author: Niels Giesen <nielsforkgiesen@gmailspooncom, but please
 ;; replace the kitchen utensils with a dot before hitting "Send">
@@ -750,17 +750,15 @@ buffer."
   (add-to-list 'mode-line-process gimp-mode-line-format t))
 
  ;;;; Versioning
+(defvar gimp-version "1.54"
+  "Gimp Mode version")
 (gimp-defcommand gimp-gimp-mode-version ()
   "Version of this mode."
   (interactive)
-  (destructuring-bind (version major minor) 
-      (gimp-string-match 
-       "\\([0-9]+\\)\.\\([0-9]+\\)"
-       "$Id: gimp-mode.el,v 1.53 2009-10-02 20:55:07 sharik Exp $" )
-      (if (interactive-p) 
-          (prog1 nil 
-            (message "GIMP mode version: %s.%s" major minor))
-        (format "%s.%s" major minor))))
+  (if (interactive-p) 
+      (prog1 nil 
+	(message "GIMP mode version: %s" gimp-version))
+    gimp-version))
 
 (defalias 'gimp-mode-version 'gimp-gimp-mode-version)
 
