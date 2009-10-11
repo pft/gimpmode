@@ -63,7 +63,7 @@
 
 (defun gimp-script-p ()
   "Return t when current buffer holds a GIMP script."
-  (when (string-match "gimp.*\.scm\\'" (buffer-file-name))
+  (when (and (buffer-file-name) (string-match "gimp.*\.scm\\'" (buffer-file-name)))
     t))
 
 (add-to-list 'magic-mode-alist 

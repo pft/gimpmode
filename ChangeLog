@@ -1,6 +1,48 @@
+2009-10-11  Niels Giesen  <niels.giesen@gmail.com>
+
+	* gimp-mode.el (gimp-complete): Add correct handling of complete,
+	but not unique function input, i.e., show that it is unique, and
+	offer the completions buffer. Handle end of completable & unique
+	function input (with further args) by adding a space char in the
+	buffer.
+	(gimp-first-run-action): Try and fix the situation where stuff is
+	already inserted into the buffer, but unfetched by a process
+	filter (thanks Brent). This is apparently one of the causes for
+	Emacs to hang during start-up. Testing showed that Emacs is far
+	more inclined to hang when changing (window-manager-defined)
+	windows when the two GIMP windows have come up back to Emacs,
+	either by mouse or ALT-TABbing. Have got no clue whatsoever how to
+	fix this.
+	
+	(gimp-unit-test-completions): Applying patch by Brent Goodrick to
+	differentiate between tests that need GIMP to be run as a
+	subprocess and ones that don't. Add one test for latest changes to
+	gimp-complete.
+
+	Miscellaneous patches by Brent Goodrick:
+
+	Add an additional level of indi rection for direct access to
+	gimp-oblist-cache to instead use a new function called
+	gimp-get-oblist-cache that restores it from the file on demand.
+	There was a case in one of the tests (I don't recall which) that
+	ran afoul of a nil gimp-oblist-cache without it.
+	
+	gimp-save-input-ring needs to check that there is an actual
+	gimp-proc before attempting to use the buffer.
+
+	gimp-unit-test now calls gimp-quit at the very end, so that I
+	could run the unit test in a tight loop to validate that the hang
+	didn't show up again.
+
+	Don't allow gimp-script-p to fail when there is no file associated
+	with the current buffer. This can occur for gimp-mode buffers that
+	are not associated with files (shows up because gimp-script-p is
+	in magic-mode-alist).
+	
 2009-10-02  Niels Giesen  <niels.giesen@gmail.com>
 
-	* gimp-mode.el (gimp-unit-test-execute): Applying patch by Brent Goodrick 
+	* gimp-mode.el (gimp-unit-test-execute): Applying patch by Brent
+	Goodrick
 
 2009-09-13  niels giesen  <sharik@localhost>
 

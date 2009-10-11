@@ -567,7 +567,7 @@ Raise error if ITEM is not in the RING."
       (cons "Gimp Help" 'gimp-help))
 
     (define-key m [menu-bar gimp gimp-run]
-      (cons "Run the gimp" 'run-gimp)) 
+      (cons "Run the GIMP" 'run-gimp)) 
 
     m))
 
@@ -938,7 +938,7 @@ Argument EVENT is a mouse-event."
 	(gimp-string-match
 	 "[[:space:]]*(define\\(-macro\\)?[[:space:]]+(?\\([[:word:]-?!><]+\\)"
 	 str 2)))
-    (if (and var-or-fun (not (member var-or-fun gimp-oblist-cache)))
+    (if (and var-or-fun (not (member var-or-fun (gimp-get-oblist-cache))))
 	(push var-or-fun gimp-oblist-cache))))
 
 (defun dotted-to-list (dl)
@@ -1164,6 +1164,16 @@ or run command `gimp-cl-connect'.")
        'gimp-first-run-action))))
 
 (defun gimp-first-run-action (proc string)
+  ;; Seed the gimp-output with what has been seen so far in the process
+  ;; buffer, so that the call to gimp-progress below can detect if the prompt
+  ;; has happened quickly (to prevent a hang otherwise):
+  (setq gimp-output
+	(concat 
+	 (buffer-substring-no-properties
+	  (point-min)
+	  (point-max))
+	 string))
+  (gimp-set-comint-filter)   ;set comint filter for subsequent input
   (set-process-sentinel 
    (gimp-proc)
    (lambda (p s)
@@ -1171,28 +1181,28 @@ or run command `gimp-cl-connect'.")
          (gimp-save-input-ring)
 	 (kill-buffer (gimp-buffer))
 	 (message "GIMP process ended."))))
-  (switch-to-buffer (gimp-buffer))
-  (let (buffer-read-only)		;make the buffer capable
+  (with-current-buffer (gimp-buffer)
+    (let (buffer-read-only)		;make the buffer capable
                                         ;of receiving user input etc.
-    (insert string)
-    (unless (string= (buffer-name)
-                     "*GIMP*")
-      (rename-buffer "*GIMP*"))
-    (setq scheme-buffer (current-buffer))
-    (inferior-gimp-mode)
-    (gimp-set-comint-filter)   ;set comint filter for subsequent input
-    (with-local-quit                    
-      (gimp-progress (concat (current-message)
-			     "...waiting to finish (C-g to quit) ...")
-		     (lambda ()
-		       (not (string-match "^> $"  gimp-output)))
-		     "done!")
+      (insert string)
+      (unless (string= (buffer-name)
+		       "*GIMP*")
+	(rename-buffer "*GIMP*"))
+      (setq scheme-buffer (current-buffer))
+      (inferior-gimp-mode)
+      (with-local-quit                    
+	(gimp-progress (concat (current-message)
+			       "...waiting to finish (C-g to quit) ...")
+		       (lambda ()
+			 (not (string-match "^> "  gimp-output)))
+		       "done!")
       (gimp-restore-caches)
       (gimp-restore-input-ring)
       (unless gimp-inhibit-start-up-message
 	(gimp-shortcuts t))
+      (process-put (gimp-proc) 'listening t)
       (message "%s The GIMP is loaded. Have FU." (or (current-message) ""))))
-  (setq buffer-read-only nil))
+    (setq buffer-read-only nil)))
 
 (defun gimp-progress (message test &optional end-text)
   "Show MESSAGE with rotating thing at end while TEST yields a non-nil value.
@@ -1222,9 +1232,13 @@ Optional argument END-TEXT is the text appended to the message when TEST fails."
   "Quit gimp session."
   (interactive)
   (gimp-save-input-ring)
-  (gimp-eval-to-string "(gimp-quit 0)" t)
-  (kill-buffer (gimp-buffer))
-  (message "GIMP process ended."))
+  (if (gimp-buffer)
+      (progn
+	(gimp-eval-to-string "(gimp-quit 0)" t)
+	(kill-buffer (gimp-buffer))
+	(message "GIMP process ended.")
+	(setq gimp-output ""))
+    (message "GIMP process was not started.")))
 
  ;;;; Utility functions
 (defun gimp-buffer ()
@@ -1315,6 +1329,11 @@ buffer, is found."
   (if gimp-pdb-cache
       gimp-pdb-cache
     (gimp-error-must-run-gimp)))
+
+(defun gimp-get-oblist-cache ()
+  (unless gimp-oblist-cache
+      (gimp-restore-caches)) 
+ gimp-oblist-cache)
 
 (defun gimp-procedure-at-point (&optional as-string)
   (let  ((sym (when (gethash (symbol-at-point) (gimp-get-dump-hash))
@@ -1506,10 +1525,11 @@ screwed up.  It is wise then to preceed it with a call to
 ;; Input ring
 (defun gimp-save-input-ring ()
   "Save the input ring for subsequent sessions."
-  (let ((r
-         (with-current-buffer (gimp-buffer) comint-input-ring)))
-    (with-temp-file (format "%s/emacs/emacs-%s" (gimp-dir) "comint-input-ring")
-      (insert (format "%S" r)))))
+  (when (gimp-buffer)
+    (let ((r
+	   (with-current-buffer (gimp-buffer) comint-input-ring)))
+      (with-temp-file (format "%s/emacs/emacs-%s" (gimp-dir) "comint-input-ring")
+	(insert (format "%S" r))))))
 
 (defun gimp-restore-input-ring ()
   (with-current-buffer (gimp-buffer)
@@ -1746,7 +1766,7 @@ hereafter."
 
 (gimp-defcommand gimp-describe-procedure (&optional proc)
   "Describe function in current sexp, or the one at point.
-This is a full description, similar to the one in the gimp pdb browser.
+This is a full description, similar to the one in the GIMP pdb browser.
 The description is shown in the *GIMP Help* buffer.
 
 If the procedure is menu-registered, the submenus shown can be followed (by
@@ -2130,7 +2150,7 @@ You can toggle this variable at any time with the command
     ((lambda (desc name type)
        t)
      . (lambda (&rest ignore)
-         gimp-oblist-cache)))
+         (gimp-get-oblist-cache))))
   
   "Ruleset for deciding the completion to perform by `gimp-make-completion'.
 
@@ -2228,7 +2248,7 @@ Optional argument LST specifies a list of completion candidates."
                                      i))        
 				 ;;let the list be possibly of form
 				 ;;((matchable . metadata))
-                                 (or lst gimp-oblist-cache)))
+                                 (or lst (gimp-get-oblist-cache))))
                     (completion
                      (if (not gimp-complete-fuzzy-p)
                          (try-completion pattern lst nil)
@@ -2284,7 +2304,7 @@ Pushed into `hippie-expand-try-functions-list'."
   (case major-mode
     ((gimp-mode inferior-gimp-mode)
      (gimp-complete-savvy  
-      gimp-oblist-cache))))
+      (gimp-get-oblist-cache)))))
 
 (push 'gimp-complete-oblist hippie-expand-try-functions-list)
 
@@ -2313,6 +2333,16 @@ Pushed into `hippie-expand-try-functions-list'."
 	       (not gimp-complete-p))
     (let* ((fun (gimp-fnsym-in-current-sexp))
 	   (pos (gimp-position))
+	   (all-completions 
+	    (funcall
+	     (if gimp-complete-fuzzy-p
+		 'gimp-all-fuzzy-completions
+	       'all-completions)
+	     (symbol-name fun)
+	     (mapcar (lambda (i)
+		       (symbol-name (car i)))
+		     (gimp-hash-to-list
+		      (gimp-get-dump-hash)))))
 	   (gimp-command
 	    (save-excursion
 	      (cadr (gimp-string-match "^,\\([[:alpha:]-]*\\)"
@@ -2328,6 +2358,18 @@ Pushed into `hippie-expand-try-functions-list'."
 	(point))
        ((and fun (> pos (length num-args)))
 	(point))
+       ((and 
+	 (= pos 0)
+	 (gimp-completable-at-p)
+	 (cdr all-completions))
+	(gimp-complete-savvy)
+	;; not really an error, but I want to back out:
+	(error "[Complete, but not unique: %S]" fun))
+       ((and 
+	 (= pos 0)
+	 (gimp-completable-at-p)
+	 (not (looking-back (rx (+ (or "\n" white))))))
+	 (insert 32))
        ((and (gimp-completable-at-p)
 	     ;; Prompt for completion of the argument if there is info for that
 	     ;; argument, but not otherwise:
@@ -2357,7 +2399,7 @@ Pushed into `hippie-expand-try-functions-list'."
 	   ;; sometimes expected):
 	   ((and (null list)
 		 (not (looking-back (rx (+ (or "\n" white))))))
-	    (gimp-complete-savvy gimp-oblist-cache))
+	    (gimp-complete-savvy (gimp-get-oblist-cache)))
 	   (list
 	    (gimp-complete-savvy list))
 	   (t (let ((answer (read-from-minibuffer
@@ -2375,7 +2417,7 @@ Pushed into `hippie-expand-try-functions-list'."
 		(insert
 		 (replace-regexp-in-string "\\(^\"\\|\"$\\)" "" answer)))))))
        (t
-	(gimp-complete-savvy gimp-oblist-cache))))))
+	(gimp-complete-savvy (gimp-get-oblist-cache)))))))
 
 (defun gimp-local-completion ()
   (let* ((desc (gimp-get-proc-arg 
@@ -2442,7 +2484,7 @@ See variable `gimp-complete-fuzzy-p' for a bit more detailed information."
   (let* ((max-lisp-eval-depth 30000)
 	 (completions (gimp-all-fuzzy-completion-data pattern list)))
     (if (null completions) 
-	(error "[Can't find completion for %S]" pattern)
+ 	(error "[Can't find completion for %S]" pattern)
       (if (fboundp 'icicle-expanded-common-match)
 	  (icicle-expanded-common-match 
 	   (gimp-make-fuzzy-match-re pattern)
@@ -3160,13 +3202,18 @@ used for interactive debugging by avoiding obscuring the
 traceback (useful when you also have debug-on-error enabled with
 `toggle-debug-on-error').
 
-:preconditioner is a lambda form to funcall before running the test:
+:preconditioner is a lambda form to funcall before running the test.
+
+:error-checker is a lambda form to funcall when an error
+occurs. When it is defined, and returns non-nil, then the error
+that occurred is deemed to be expected. If it returns nil, then
+the error is not expected and an error is thrown.
 
 \nKeywords supported:  :use-nil-dump-file :dont-trap :validator \
-:preconditioner
+:preconditioner :error-checker
 \n(fn TEST-NAME FUNCTION-TO-TEST EXPRESSION [KEYWORD VALUE]...)"
   (cl-parsing-keywords
-      (:expression :use-nil-dump-file :dont-trap :validator :preconditioner) ()
+      (:expression :use-nil-dump-file :dont-trap :validator :preconditioner :error-checker) ()
     (let ((tmp-scm-file (make-temp-file "gimp-mode-test" nil ".scm"))
 	  ;; Set gimp-dump to nil temporarily to simulate that the GIMP dump file
 	  ;; did not exist upon startup, but only if cl-use-nil-dump-file is t
@@ -3210,7 +3257,10 @@ traceback (useful when you also have debug-on-error enabled with
 	    (condition-case err
 		(funcall function-to-test)
 	      (error
-	       (if (not (string-equal (cadr err) gimp-error-must-run-gimp-error-message))
+	       ;; When cl-error-checker is defined, then call it. If it returns
+	       ;; non-nil, then everything checks out fine, otherwise, we throw
+	       ;; an unexpected error condition:
+	       (if (and cl-error-checker (not (funcall cl-error-checker err)))
 		   (error "FAILED \"%s\": Unexpected error: %S" test-name err)))))
 	  ;; Call the cl-validator and expect a string result if it fails, and that
 	  ;; string result is the reason for the failure. But if cl-validator is not
@@ -3228,7 +3278,7 @@ traceback (useful when you also have debug-on-error enabled with
 
 (defun gimp-unit-test-completions (dont-trap)
   "Unit test function for testing completion."
-  (flet ((current-word-validator 
+  (flet ((current-word-validator
 	  (word)
 	  `(lambda (&rest ignored)
 	     (let ((word (current-word)))
@@ -3242,40 +3292,73 @@ traceback (useful when you also have debug-on-error enabled with
 	    (and (car read-from-minibuffer-list)
 		 (format
 		  "Expected no prompting but instead got one or more prompts: %S"
-		  read-from-minibuffer-list)))))
+		  read-from-minibuffer-list))))
+	 (kill-completions-buffer ()
+				  (mapc (lambda (buffer)
+					  (and (string-match (rx "*Completions*") (buffer-name buffer))
+					       (kill-buffer buffer)))
+					(buffer-list))))
     (let ((function-to-test (lambda ()
-				 (call-interactively 'gimp-indent-and-complete))))
+			      (call-interactively 'gimp-indent-and-complete))))
+      ;; First, we run a set of tests that work when `run-gimp' has yet to be
+      ;; executed, following by another set where we do expect `run-gimp' to
+      ;; have been executed.  So, before we execute the first set, we insure
+      ;; that gimp is not running.
+      (when (gimp-proc)
+	(error "Please terminate the existing Gimp session before running the gimp-mode unit-test."))
       ;; Insure that we have a proper error message when the `gimp-dump' variable
       ;; does not exist, which means that the user has yet to run `run-gimp' the
       ;; very first time after having installed gimp-mode (the installation of which
       ;; includes inserting a .scm file into the users GIMP startup directory to
       ;; dump out a representation of the GIMP PDB for Emacs to read into the
       ;; `gimp-dump' hash):
-      (gimp-unit-test-execute "Error checking for missing dump hash"
-			      function-to-test
-			      :expression "(gimp-displays-flush<point>)"
-			      :use-nil-dump-file t
-			      :dont-trap dont-trap)
+      (gimp-unit-test-execute
+       "T001: Error checking for missing dump hash"
+       function-to-test
+       :expression "(gimp-displays-flush<point>)"
+       :use-nil-dump-file t
+       :dont-trap dont-trap)
       ;; Do the same test as above, but this time test that no Emacs Lisp error
       ;; occurs during completion of a GIMP Scheme function known to have zero
       ;; arguments:
-      (gimp-unit-test-execute 
-       "Check for zero-args function name completion"
+      (gimp-unit-test-execute
+       "T002: Check for zero-args function name completion"
        function-to-test
        :expression "(gimp-displays-flush<point>)"
        :dont-trap dont-trap
        :validator
        (current-word-validator "gimp-displays-flush"))
-      (gimp-unit-test-execute 
-       "Check for one-arg function name completion with arg already specified"
+      ;; Test for completions on a function:
+      (gimp-unit-test-execute
+       "T009: Check for function name completion with preceding space\
+ but with first arg of integer type"
+       function-to-test
+       :expression "(gimp-image-<point>)"
+       ;; kill all completion buffers initially, so as to test for at
+       ;; least one showing up during completion:
+       :preconditioner 'kill-completions-buffer
+       :dont-trap dont-trap
+       :validator
+       (lambda (&rest read-from-minibuffer-list)
+	 (unless (remove-if-not
+		  (lambda (buffer)
+		    (string-match (rx "*Completions*") (buffer-name buffer)))
+		  (buffer-list))
+	   "No completions buffer showed up when completing on \"gimp-image-<point>\"")))
+      (gimp-unit-test-execute
+       "T003: Check for one-arg function name completion with arg already specified"
        function-to-test
        :expression "(gimp-display-ne<point> image)"
        :dont-trap dont-trap
+       ;; kill all completion buffers initially, because otherwise the
+       ;; completion mechanism would otherwise just scroll that window. That
+       ;; may be a bug, but we can't tell yet exactly:
+       :preconditioner 'kill-completions-buffer
        :validator (current-word-validator "gimp-display-new"))
       ;; Test for two-arg function completion. No prompting for
       ;; arguments should be done:
       (gimp-unit-test-execute
-       "Check for two-arg function name completion with arg already specified"
+       "T004: Check for two-arg function name completion with arg already specified"
        function-to-test
        :expression "(gimp-image-new<point> image)"
        :dont-trap dont-trap
@@ -3294,8 +3377,8 @@ traceback (useful when you also have debug-on-error enabled with
       ;; in without the preceding whitespace, then it will be a part
       ;; of the previous word, which is not syntactically correct, and
       ;; certainly not what the user desires):
-      (gimp-unit-test-execute 
-       "Check for function name completion without preceding space\
+      (gimp-unit-test-execute
+       "T005: Check for function name completion without preceding space\
  but with first arg of image type"
        function-to-test
        :expression "(gimp-display-new<point> image)"
@@ -3306,7 +3389,7 @@ traceback (useful when you also have debug-on-error enabled with
       ;; this case and the preceding case, there is no preceding space
       ;; which is key here:
       (gimp-unit-test-execute
-       "Check for function name completion without preceding space\
+       "T006: Check for function name completion without preceding space\
  but with first arg of integer type"
        function-to-test
        :expression "(gimp-image-new<point>)"
@@ -3316,20 +3399,23 @@ traceback (useful when you also have debug-on-error enabled with
       ;; an image type as the first argument. Note that there _is_
       ;; preceding whitespace in front of point here:
       (gimp-unit-test-execute
-       "Check for function name completion with preceding space\
+       "T007: Check for function name completion with preceding space\
  but with first arg of image type"
        function-to-test
        :expression "(gimp-display-new <point> image)"
        :dont-trap dont-trap
+       :error-checker (lambda (err)
+			;; In this special case, since we have yet to execute
+			;; `run-gimp', and the user is asking to complete on an
+			;; image, there is no way for us to identify the image
+			;; object ids without contacting the GIMP process. So we
+			;; expect to see an
+			;; gimp-error-must-run-gimp-error-message error being thrown:
+			(string-equal (cadr err) gimp-error-must-run-gimp-error-message))
        :validator (lambda (&rest read-from-minibuffer-list)
 		    (let ((first-arg (car read-from-minibuffer-list)))
 		      (cond ((null first-arg)
-			     (format "Expected a prompt but got none"))
-			    ;; Pass the test if the prompt
-			    ;; contains the word "image"
-			    ;; in upper or lower case:
-			    ((let ((case-fold-search t))
-			       (string-match "image" (caar first-arg)))
+			     ;; Got no prompt, as expected. Return t:
 			     t)
 			    (t
 			     (format
@@ -3337,38 +3423,65 @@ traceback (useful when you also have debug-on-error enabled with
 			      (caar first-arg)))))))
       ;; Expect no prompting on a integer argument type when
       ;; completing after some whitespace:
-      (gimp-unit-test-execute 
-       "Check for function name completion with preceding space\
+      (gimp-unit-test-execute
+       "T008: Check for function name completion with preceding space\
  but with first arg of integer type"
        function-to-test
        :expression "(gimp-image-new <point>)"
        :dont-trap dont-trap
        :validator (expect-no-prompting-validator))
-      ;; Test for completions on a function:
+
+
       (gimp-unit-test-execute
-       "Check for function name completion with preceding space\
+       "T011: Check for function name completion with preceding space\
  but with first arg of integer type"
        function-to-test
-       :expression "(gimp-image-<point>)"
-       ;; kill all completion buffers initially, so as to test for at
-       ;; least one showing up during completion:
-       :preconditioner
-       (lambda ()
-	 (mapc (lambda (buffer)
-		 (and (string-match (rx "*Completions*") (buffer-name buffer))
-		      (kill-buffer buffer)))
-	       (buffer-list)))
+       :expression "(script-fu-neon<point>)"
        :dont-trap dont-trap
-       :validator
-       (lambda (&rest read-from-minibuffer-list)
-	 (unless (remove-if-not
-		  (lambda (buffer)
-		    (string-match (rx "*Completions*") (buffer-name buffer)))
-		  (buffer-list))
-	   "No completions buffer showed up when completing on \"gimp-image-<point>\"")))
-      ;; (gimp-unit-test-execute "Check for one-arg function name
-      ;; completion with arg not already specified"
-      ;; "(gimp-display-new<point>)" nil dont-trap)
+       :validator (expect-no-prompting-validator))
+      ;; For the subsequent tests, we need to execute `run-gimp', but first
+      ;; assert that we are still without the GIMP process:
+
+      (when (gimp-proc)
+	(error (concat "Assertion failed: The GIMP process should "
+		       "not have been started by prior unit tests.")))
+      ;; Once every 10 runs or so, the execution of `run-gimp' below hangs with
+      ;; an infinite "hit Ctrl-g" prompt.  Until we can determine a fix, disable
+      ;; the rest of the tests that require `run-gimp' to have run to completion
+      ;; (using a (when nil ... ) block):
+      (message "Unit test is running the GIMP now via `run-gimp' ...")
+
+      (run-gimp nil)
+      (while (and (gimp-proc)
+		  (not (process-get (gimp-proc)
+				    'listening)))
+	(sit-for 0.1))
+      (unless (gimp-proc)
+ 	(error "Assertion failed: The GIMP process was not started as expected."))
+
+      (gimp-unit-test-execute
+       "T010: Check for function name completion with preceding space\
+ but with first arg of image type with Gimp running"
+       function-to-test
+       :expression "(gimp-display-new <point> image)"
+       :dont-trap dont-trap
+       ;; No :error-checker defined here, as we do not expect any errors. The
+       ;; Gimp should be contacted to find the image IDs and a suitable prompt
+       ;; provided.
+       :validator (lambda (&rest read-from-minibuffer-list)
+ 		    (let ((first-arg (car read-from-minibuffer-list)))
+ 		      (cond ((null first-arg)
+ 			     (format "Expected a prompt but got none"))
+ 			    ;; Pass the test if the prompt
+ 			    ;; contains the word "image"
+ 			    ;; in upper or lower case:
+ 			    ((let ((case-fold-search t))
+ 			       (string-match "image" (caar first-arg)))
+ 			     t)
+ 			    (t
+ 			     (format
+ 			      "Unexpected first argument prompt for gimp-display-new: %S"
+ 			      (caar first-arg)))))))
       (message "PASSED: All gimp-mode unit-tests pass."))))
 
 (defun gimp-unit-test (&optional dont-trap)
@@ -3391,9 +3504,8 @@ testing functions. See documentation on keyword arg :dont-trap in
   ;;
   ;; ... add more unit test function calls here ...
   ;;
+  (gimp-quit)
   (message "PASSED: All gimp-mode unit-tests pass."))
 
 (provide 'gimp-mode)
-;;; gimp-mode.el ends here
-
-
+;; gimp-mode.el ends here
