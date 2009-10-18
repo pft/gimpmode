@@ -724,10 +724,7 @@ buffer."
 	 (t
           (if gimp-just-one-space
 	      (just-one-space n)
-	    ;; Call the self-insert-command to give pre-command-hook's a chance
-	    ;; to operate (such as `delete-selection-mode'). See also the
-	    ;; setting for 'delete-selection property later on:
-	    (call-interactively 'self-insert-command))
+	    (self-insert-command n))
           (gimp-echo))))
 
 ;; Notify delete-selection-mode that gimp-space should act like what a space
