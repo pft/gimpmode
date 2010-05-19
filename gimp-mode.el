@@ -1225,7 +1225,12 @@ Optional argument END-TEXT is the text appended to the message when TEST fails."
 	    (setq last-char 45))
         (message "%s%c" (substring mess 0 (1- (length mess))) 
 		 (ring-next r last-char))
-        (sit-for .15)))
+	;; Discard any terminal input if sit-for returned immediately, thus forcing
+	;; the gimp-filter function to get called with any new pending process
+	;; input.  What effect this has on the C-g quiting aspect is not known
+	;; at this point:
+	(if (not (sit-for .15))
+	    (discard-input))))
     (if end-text (message "%s%s" (current-message) end-text))))
 
 (defalias 'gimp-start 'run-gimp 
