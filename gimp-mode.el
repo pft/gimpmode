@@ -1,5 +1,5 @@
 ;;; gimp-mode.el 
-;; Copyright (C) 2008-2009 Niels Giesen
+;; Copyright (C) 2008-2010 Niels Giesen
 
 ;; Author: Niels Giesen <nielsforkgiesen@gmailspooncom, but please
 ;; replace the kitchen utensils with a dot before hitting "Send">
@@ -2906,45 +2906,47 @@ and `image-dired-display-image-mode'.
 If GIMP is not running as an inferior process, open image(s) with gimp-remote."
   (interactive)
   (let ((img 
-	 (case major-mode
-	   ((image-dired-thumbnail-mode image-dired-display-image-mode)
-	    (get-text-property 
-	     (point) 
-	     'original-file-name))
-	   (dired-mode
-	    (with-no-warnings (dired-get-marked-files)))
-					; silence compiler, as
-					; `dired-get-marked-files' is
-					; always present when
-					; dired-mode is on
-	   (t (read-file-name "File: ")))))
+		 (case major-mode
+		   ((image-dired-thumbnail-mode image-dired-display-image-mode)
+			(get-text-property 
+			 (point) 
+			 'original-file-name))
+		   (dired-mode
+			(with-no-warnings (dired-get-marked-files)))
+										; silence compiler, as
+										; `dired-get-marked-files' is
+										; always present when
+										; dired-mode is on
+		   (t (read-file-name "File: ")))))
     (if (null img) (error "No image at point"))
     (flet ((open (image)
-		   (cond 
-                    ((or (gimp-interactive-p)
-			 (gimp-cl-p))
-                     (let 
-			 ((command 
-			   (format
-			    "(let \
+				 (cond 
+				  ((or (gimp-interactive-p)
+					   (gimp-cl-p))
+				   (let 
+					   ((command 
+						 (format
+						  "(let \
 \((image (car (gimp-file-load RUN-INTERACTIVE\n\t%S\n\t%S))))
 \t(car (gimp-display-new image)))\n"
-			    image
-			    image)))
-                       (gimp-insert-and-send-string command)
-                       nil))
-                    (t 
-		     (if (eq window-system 'w32)
-			 (call-process "gimp-win-remote" nil 0 nil 
-				       gimp-program
-				       image)
-		       (call-process gimp-program nil 0 nil image))))))
+						  image
+						  image)))
+					 (gimp-insert-and-send-string command)
+					 nil))
+				  (t 
+				   (if (eq window-system 'w32)
+					   (call-process "gimp-win-remote" nil 0 nil 
+									 gimp-program
+									 image)
+					 (call-process gimp-program nil 0 nil image))))))
+	  (when (not (cdr img))
+		(setq img (car img)))
       (if (listp img)
-	  (progn
-	    (mapc 'open (mapcar 'expand-file-name img))
-	    (message "Asked GIMP to open multiple images "))
-	(message "Asked GIMP to open %s " img)
-	(open (expand-file-name img))))))
+		  (progn
+			(mapc 'open (mapcar 'expand-file-name img))
+			(message "Asked GIMP to open %d images " (length img)))
+		(message "Asked GIMP to open %s " img)
+		(open (expand-file-name img))))))
 
 ;; Client Mode
 ;; Client mode global vars
