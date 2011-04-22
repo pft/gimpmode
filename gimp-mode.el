@@ -2952,7 +2952,7 @@ If GIMP is not running as an inferior process, open image(s) with gimp-remote."
 									 gimp-program
 									 image)
 					 (call-process gimp-program nil 0 nil image))))))
-	  (when (not (cdr img))
+	  (when (and (listp img) (not (cdr img)))
 		(setq img (car img)))
       (if (listp img)
 		  (progn
