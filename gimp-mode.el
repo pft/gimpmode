@@ -327,8 +327,8 @@ script-fu console."
     ("developer.gimp.org" . "http://developer.gimp.org/")
     ("registry.gimp.org" . "http://registry.gimp.org/")
     ("local help" . "file:///usr/share/gimp/2.0/help/en/index.html")
-    ("gimp talk" . "http://www.gimptalk.com/forum/")
-    ("gimp-mode page" . "http://niels.kicks-ass.org/gimpmode")
+    ("gimp talk (needs graphical browser)" . "http://www.gimptalk.com/forum/")
+    ("gimp-mode page" . "https://github.com/pft/gimpmode")
     ("grokking the gimp" .
      "http://www.linuxtopia.org/online_books/graphics_tools\
 /gimp_advanced_guide/index.html")
