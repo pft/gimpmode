@@ -419,6 +419,23 @@ completion (when possible) when point is in a string."
   :group 'gimp
   :type 'boolean)
 
+(defcustom gimp-prompt ">"
+  "Prompt TinyScheme uses.
+
+The prompt used to be >, but Gimp git commit
+9541fe03872d15d049c95809fa50b97ce5791129, of Fri Aug 7 2009
+changed this to ts>. Presumably to comply with changes in
+TinyScheme cvs. What this roughly means is that Gimp 2.7 and
+beyond need ts>, not >.
+
+Run-gimp will automagically change this session-wide to ts> if it
+deems required, but not back again.
+
+And this is *not* done when connecting to a Gimp server via
+`gimp-cl-connect'."
+  :group 'gimp
+  :type 'string)
+
  ;;;; General purpose functions and macros
 (defmacro gimp-defcommand (name arglist docstring &rest body)
 "Define NAME as a function.
@@ -844,7 +861,7 @@ make a vector in SCHEME with `in-gimp'.
    proc
    (let ((string 
 	  (replace-regexp-in-string
-	   "\n> \nEval: (tracing 0)\nEval: tracing\nEval: 0\nApply to: (0)1"
+	   (concat "\n" gimp-prompt " \nEval: (tracing 0)\nEval: tracing\nEval: 0\nApply to: (0)1")
 	   "" string)))
 
      (condition-case err
@@ -893,7 +910,7 @@ Best is to craft STRING so that script-fu returns something universal to the
 Lisp world."
   (let ((output (gimp-eval-to-string string)))
     (if (string-match "^#" output)	;unreadable by the lisp reader
-        (if (string= "#f\n> " gimp-output) ;gimp returned #f
+        (if (string= (concat "#f\n" gimp-prompt " ") gimp-output) ;gimp returned #f
             nil
           (read (substring output 1)))	;so strip
       (read output))))
@@ -906,7 +923,7 @@ Throw an error if TIMEOUT seconds have passed. This can be used
 to avoid infinite looping. "
 ;; Apparently `with-local-quit' did not cut it, therefore the timeout
 ;; option'.  Without TIMEOUT, just keep on trying until `gimp-output'
-;; matches \"^> $\""
+;; matches \"^> $\""; actually, replace > with value of `gimp-prompt'
   (cond
    ((gimp-interactive-p)
     (setq gimp-output "")
@@ -916,7 +933,7 @@ to avoid infinite looping. "
       (let ((time (current-time)))
 	(with-local-quit
 	  (while 
-	    (not (string-match "^> $" gimp-output)) ;prompt has not
+	    (not (string-match (concat "^" gimp-prompt " $") gimp-output)) ;prompt has not
 					;yet returned
 	    (when (and timeout (> (cadr (time-since time)) timeout))
 	      (error "%S Timed out" this-command))
@@ -1210,7 +1227,11 @@ or run command `gimp-cl-connect'.")
 	(gimp-progress (concat (current-message)
 			       "...waiting to finish (C-g to quit) ...")
 		       (lambda ()
-			 (not (string-match "^> "  gimp-output)))
+                         (when (and
+                                (not (string-match "ts>" gimp-prompt))
+                                (string-match "^ts> " gimp-output))
+                           (setq gimp-prompt "ts>"))
+			 (not (string-match (concat "^" gimp-prompt " ")  gimp-output)))
 		       "done!")
       (gimp-restore-caches)
       (gimp-restore-input-ring)
@@ -2535,7 +2556,7 @@ Optional argument TERSE means only show that I am there to help you."
                   "\n  ,"
                   (mapconcat 'gimp-make-input-field gimp-shortcuts "\n  ,")
                   "\n  "))
-        (insert (propertize "\n> "
+        (insert (propertize (concat "\n" gimp-prompt " ")
                             'font-lock-face 'comint-highlight-prompt
                             'field 'output
                             'inhibit-line-move-field-capture t
@@ -3076,7 +3097,7 @@ Best is to craft STRING so that script-fu returns something universal to the
 Lisp world."
   (let ((output (gimp-cl-eval-to-string string)))
     (if (string-match "^#" output)	;unreadable by the lisp reader
-        (if (string= "#f\n> " gimp-output) ;gimp returned #f
+        (if (string= (concat "#f\n" gimp-prompt " ") gimp-output) ;gimp returned #f
             nil
           (read (substring output 1)))	;so strip
       (read output))))
@@ -3167,7 +3188,7 @@ Lisp world."
 	       (setq buffer-undo-list undo-list)))))))
 
 (defun gimp-cl-mkprompt ()
-  (propertize "\n> "
+  (propertize (concat "\n" gimp-prompt " ")
               'font-lock-face 'comint-highlight-prompt
               'field 'output
               'inhibit-line-move-field-capture t
