@@ -1,5 +1,5 @@
 ;;; gimp-mode.el 
-;; Copyright (C) 2008-2010 Niels Giesen
+;; Copyright (C) 2008-2011 Niels Giesen
 
 ;; Author: Niels Giesen <nielsforkgiesen@gmailspooncom, but please
 ;; replace the kitchen utensils with a dot before hitting "Send">
