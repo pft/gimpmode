@@ -342,7 +342,20 @@ script-fu console."
                             "gimp-2.6.exe" ;Probably... does not
 					   ;really matter anyway
                             "gimp")
-  "Name of Gimp executable"
+  "Name of Gimp executable.
+
+If Gimp produces error messages, you may want to define and a
+shell script redirecting stderr, something like:
+
+    #!/bin/sh
+    GIMP=`which gimp-2.7`
+    $GIMP $@ 2>/tmp/gimp-err.log
+
+should do.
+
+This is because Emacs cannot distinguish between stderr and
+stdout for subprocesses.
+See Info node `(elisp)Output from Processes'."
   :group 'gimp
   :type '(string))
 
