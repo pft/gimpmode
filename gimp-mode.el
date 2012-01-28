@@ -1,4 +1,5 @@
-;;; gimp-mode.el 
+;;; gimp-mode.el --- Interaction/editing mode for the GIMP
+
 ;; Copyright (C) 2008-2011 Niels Giesen
 
 ;; Author: Niels Giesen <nielsforkgiesen@gmailspooncom, but please
