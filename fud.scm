@@ -1,6 +1,9 @@
-;; -*- mode: gimp; -*-
-;; Copyright (C) 2008-2009  Niels Giesen
+;;; fud.scm --- Scheme-side section of Fud -*- mode: Gimp; -*-
 
+;; Copyright (C) 2008-2009, 2012 Niels Giesen.
+
+;; Author: Niels Giesen <niels.giesen@gmail.com>
+;; Keywords: processes, languages, multimedia, tools
 
 ;; Author: Niels Giesen <nielsforkgiesen@gmailspooncom, but please
 ;; replace the kitchen utensils with a dot before hitting "Send">

@@ -1,11 +1,9 @@
 ;;; gimp-mode.el --- Interaction/editing mode for the GIMP
 
-;; Copyright (C) 2008-2011 Niels Giesen
+;; Copyright (C) 2008-2012 Niels Giesen
 
-;; Author: Niels Giesen <nielsforkgiesen@gmailspooncom, but please
-;; replace the kitchen utensils with a dot before hitting "Send">
-;; Keywords: processes, multimedia, extensions, tools, gimp, scheme
-;; Homepage: http://niels.kicks-ass.org/gimpmode
+;; Author: Niels Giesen <niels.giesen@gmail.com>
+;; Keywords: processes, languages, multimedia, tools
 
 ;; This program is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -23,7 +21,7 @@
 ;;; Commentary:
 
 ;; Interaction/editing mode for the GIMP
-;; see gimpmode.pdf for full description and usage.
+;; see README.markdown for full description and usage.
 
 ;; TOC:
  ;;;; Requirements

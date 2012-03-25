@@ -1,11 +1,9 @@
-;; -*- mode: Gimp; -*-
-;;; emacs-interaction.scm
-;; Copyright (C) 2008-2009 Niels Giesen.
+;;; emacs-interaction.scm --- Gimp-side section of Gimp Mode -*- mode: Gimp; -*-
 
-;; Author: Niels Giesen <nielsforkgiesen@gmailspooncom, but please
-;; replace the kitchen utensils with a dot before hitting "Send">
-;; Keywords: processes, multimedia, extensions, tools, gimp, scheme
-;; Homepage: http://niels.kicks-ass.org/gimpmode
+;; Copyright (C) 2008-2009, 2012 Niels Giesen.
+
+;; Author: Niels Giesen <niels.giesen@gmail.com>
+;; Keywords: processes, languages, multimedia, tools
 
 ;; This program is free software; you can redistribute it and/or
 ;; modify it under the terms of the GNU General Public License

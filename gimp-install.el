@@ -1,15 +1,14 @@
-;;; gimp-install.el
-;; Copyright (C) 2008-2009 Niels Giesen.
+;;; gimp-install.el --- Installation file for Gimp Mode
 
-;; Author: Niels Giesen <nielsforkgiesen@gmailspooncom, but please
-;; replace the kitchen utensils with a dot before hitting "Send">
-;; Keywords: processes, multimedia, extensions, tools, gimp, scheme
-;; Homepage: http://niels.kicks-ass.org/gimpmode
+;; Copyright (C) 2008-2012 Niels Giesen
 
-;; This program is free software; you can redistribute it and/or
-;; modify it under the terms of the GNU General Public License
-;; as published by the Free Software Foundation; either version 2
-;; of the License, or (at your option) any later version.
+;; Author: Niels Giesen <niels.giesen@gmail.com>
+;; Keywords: processes, languages, multimedia, tools
+
+;; This program is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
 
 ;; This program is distributed in the hope that it will be useful,
 ;; but WITHOUT ANY WARRANTY; without even the implied warranty of

@@ -1,8 +1,8 @@
 ;;; fud.el --- Fu Debugger - elisp side
 
-;; Copyright (C) 2008-2009  Niels Giesen
+;; Copyright (C) 2008-2009, 2012  Niels Giesen
 
-;; Author: Niels Giesen <sharik@localhost>
+;; Author: Niels Giesen <niels.giesen@gmail.com>
 ;; Keywords: lisp, tools
 
 ;; This file is free software; you can redistribute it and/or modify
