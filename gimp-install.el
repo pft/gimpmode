@@ -61,8 +61,8 @@ For more information consult the file README."
 		(if (eq window-system 'w32) 
 		    (format "C:/Documents and Settings/%s/%s"
 			    user-login-name
-			    ".gimp-2.6/")
-		  "~/.gimp-2.6/")))))
+			    ".gimp-2.8/")
+		  "~/.gimp-2.8/")))))
 	 (gimp-emacs-dir (expand-file-name (concat gimp-dir "/emacs/")))
 	 (emacs-interaction.scm "emacs-interaction.scm")
 	 (emacs-interaction.scm-target
