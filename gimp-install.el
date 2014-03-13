@@ -53,6 +53,10 @@ For more information consult the file README."
   (interactive)
   (let* ((gmd (file-name-directory
                (or load-file-name buffer-file-name)))
+         (gimp-version
+          (let ((command (shell-command-to-string "gimp --version")))
+            (string-match "[0-9]\.[0-9]" command)
+            (match-string 0 command)))
          (gimp-dir
           (or to-dir
               (expand-file-name
@@ -61,8 +65,8 @@ For more information consult the file README."
                 (if (eq window-system 'w32)
                     (format "C:/Documents and Settings/%s/%s"
                             user-login-name
-                            ".gimp-2.6/")
-                  "~/.gimp-2.6/")))))
+                            (concat ".gimp-" gimp-version "/"))
+                  (concat "~/.gimp-" gimp-version "/"))))))
          (gimp-emacs-dir (expand-file-name (concat gimp-dir "/emacs/")))
          (emacs-interaction.scm "emacs-interaction.scm")
          (emacs-interaction.scm-target
