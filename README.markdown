@@ -147,7 +147,7 @@ Gimp Mode can either run the Gimp as subprocess in Emacs, or connect as a client
 
 Smart 'n' fuzzy TAB-completion similar (but not equal) to that of Slime: the entire tiny-fu oblist is available and variables, functions and macros that are defined during a session are added to completion [1]. As you can see, the fuzziness accepts the first letters of a part of a hyphenated string to as input as a kind of abbreviation, so you can for instance write s-f-u-m and have it expand to script-fu-unsharp-mask. If for some reason you do not like this fuzzy factor, you can switch it off anytime by pressing C-cr or by customising the variable `gimp-complete-fuzzy-p`.
 
-![Fuzzy completion](http://github.com/pft/gimpmode/raw/master/screenshots/fuzzy-completion.png)
+![Fuzzy completion](https://raw.githubusercontent.com/pft/gimpmode/master/screenshots/fuzzy-completion.png)
 
 Completion on arguments is done via a system of rules, based on regexp-matching/custom commands that work on the registration of the functions. It means you've got completion available for stuff like fonts, palettes, brushes, images, choices of booleans etc.
 
@@ -161,7 +161,7 @@ In both documentation (echoing) and completion, the *procedural* first argument 
 
 A complete hyper-textual rework of the Procedure Browser implemented in Emacs Lisp, with history, apropos function, menu-driven look-up of plug-ins, nice faces (if I may say so) etc.
 
-![The Gimp Mode Help Browser](http://github.com/pft/gimpmode/raw/master/screenshots/gimp-help-browser.png)
+![The Gimp Mode Help Browser](https://raw.githubusercontent.com/pft/gimpmode/master/screenshots/gimp-help-browser.png)
 
 Some 'Bookmarks' to Gimp/Fu/Scheme resources on the 'net.
 
@@ -171,7 +171,7 @@ One of these shortcuts is `,trace` and `,untrace`, that toggle, well, tracing. O
 
 Some snippets are provided through the library `snippet.el` (included) by Pete Kazmier. A registration template is provided (type reg SPACE), and handy templates for script-fu-register arguments (type `sf* SPACE`). Type `M-x gimp-list-snippets` or `,list-snippets RET` from the REPL to show snippets.
 
-![Snippet to set up the framework of a script-fu script](http://github.com/pft/gimpmode/raw/master/screenshots/registration-snippet.png)
+![Snippet to set up the framework of a script-fu script](https://raw.githubusercontent.com/pft/gimpmode/master/screenshots/registration-snippet.png)
 
 Input history (which is saved on `,quit`). 
 
@@ -239,14 +239,14 @@ Now run `M-x run-gimp` to start the GIMP and its REPL within Emacs. This takes a
 
 Anyway, where were we. Yes. Once you see this, you can let the fun begin:
 
-![First encounter with the REPL](http://github.com/pft/gimpmode/raw/master/screenshots/first-encounter-with-the-REPL.png)
+![First encounter with the REPL](https://raw.githubusercontent.com/pft/gimpmode/master/screenshots/first-encounter-with-the-REPL.png)
 
 ...or attach as a client 
 ----------
 #client
 If you want to hook into a running GIMP session as a client (this is the only means of interaction on a windows system) use `M-x gimp-cl-connect` after having started the script-fu server from the GIMP. In GIMP 2.4, the server is hidden under `Xtns > Script-Fu > Start Server`. In the development versions >` 2.5 it is tucked away (somewhat strangely in my humble opinion) under `Filters > Script-Fu > Start Server`. You will also find an entry there called "Dump internals for Emacs' Gimp Mode", which can be of use when `emacs-interaction.scm` is has been loaded before other scripts in your user directory on start-up. 
 
-![Start up the server from the Gimp](http://github.com/pft/gimpmode/raw/master/screenshots/script-fu-server.png)
+![Start up the server from the Gimp](https://raw.githubusercontent.com/pft/gimpmode/master/screenshots/script-fu-server.png)
 
 Gimp Mode sets up buffers to to automatically use gimp-mode when the file begins with "s-f-" or "script-fu-" and ends with ".scm" (just ending in "scm" does *not* suffice, as it would be improper to impose gimp-mode on any scheme file). Also any file ending in ".scm" and in a path containing the string "gimp" is automatically started in gimp-mode (as of v1.49).  There are other ways, such as to put:
 
